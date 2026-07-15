@@ -1,0 +1,147 @@
+{
+  "name": "lcd-bitmap-ide",
+  "version": "0.1.1",
+  "description": "LCD-bitmap IDE offline workbench for LCD screens, bitmap glyphs, FSM flows and firmware C exports.",
+  "license": "MIT",
+  "author": "myahlovvlad <myahlov@gmail.com>",
+  "type": "module",
+  "main": "dist/main/main.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "preview:test": "node scripts/serve-static.mjs dist/renderer 4173",
+    "electron:build": "tsc -p tsconfig.electron.json --noEmit && node scripts/build-electron-main.mjs",
+    "electron:dev": "concurrently -k \"npm:dev\" \"wait-on http://127.0.0.1:5173 && node scripts/build-electron-main.mjs && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
+    "typecheck": "tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "check": "npm run typecheck && npm run test:coverage && npm run test:renderer && npm run test:importer && npm run build && npm run test:e2e:prepared",
+    "check:full": "npm run check && npm run test:dev && npm run test:electron && npm run test:performance && npm run docs:manual",
+    "build": "npm run typecheck && vite build && npm run electron:build",
+    "build:windows": "npm run build && electron-builder --win",
+    "build:macos": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux",
+    "build:all": "npm run build:windows && npm run build:macos && npm run build:linux",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:compiler": "vitest run tests/utils/compilerIr.test.ts tests/utils/compilerPerformance.test.ts tests/utils/deterministicCodegenBoundary.test.ts",
+    "test:codegen-equivalence": "vitest run tests/utils/deterministicCodegenBoundary.test.ts",
+    "test:compile-fixtures": "vitest run tests/utils/legacyCodegenCharacterization.test.ts tests/utils/deterministicCodegenBoundary.test.ts",
+    "test:fsm-roundtrip": "vitest run tests/utils/fsmScript.test.ts tests/utils/fsmSemanticRoundTrip.test.ts",
+    "test:fsm-roundtrip:integration": "vitest run tests/utils/fsmRoundTripHistory.test.ts tests/utils/fsmRoundTripConflict.test.ts tests/utils/fsmRoundTripLayout.test.ts tests/utils/fsmRoundTripScreenLinks.test.ts tests/utils/fsmRoundTripHandles.test.ts",
+    "test:fsm-roundtrip:e2e": "npm run build && playwright test --config playwright.config.ts tests/e2e/fsm-script-mermaid-roundtrip.spec.ts tests/e2e/fsm-script-python-dsl-roundtrip.spec.ts tests/e2e/fsm-script-errors.spec.ts tests/e2e/fsm-script-stale-preview.spec.ts tests/e2e/fsm-script-destructive-change.spec.ts",
+    "test:fsm-roundtrip:acceptance": "npm run test:fsm-roundtrip && npm run test:fsm-security && npm run test:fsm-roundtrip:integration && npm run test:fsm-roundtrip:e2e",
+    "test:fsm-script-sync": "vitest run tests/utils/fsmScriptSession.test.ts tests/utils/fsmScriptPreviewCoordinator.test.ts",
+    "test:fsm-script-sync:integration": "vitest run tests/utils/fsmScriptSession.test.ts tests/utils/fsmScriptPreviewCoordinator.test.ts tests/utils/fsmScriptSyncIntegration.test.ts",
+    "test:fsm-script-sync:e2e": "npm run build && playwright test --config playwright.config.ts tests/e2e/fsm-script-auto-preview.spec.ts tests/e2e/fsm-script-dirty-protection.spec.ts tests/e2e/fsm-script-format-drafts.spec.ts tests/e2e/fsm-script-graph-refresh.spec.ts tests/e2e/fsm-script-stale-preview.spec.ts",
+    "test:fsm-script-sync:acceptance": "npm run test:fsm-script-sync:integration && npm run test:fsm-script-sync:e2e && npx vitest run tests/utils/architectureBoundary.test.ts",
+    "test:fsm-behavior": "vitest run tests/utils/fsmBehavior.test.ts tests/utils/fsmBehaviorCodec.test.ts tests/utils/fsmBehaviorPersistenceMatrix.test.ts tests/utils/fsmBehaviorLegacyCompatibility.test.ts tests/utils/fsmBehaviorMigration.test.ts tests/utils/fsmBehaviorCompilerVisibility.test.ts tests/utils/fsmBehaviorStorageSecurity.test.ts",
+    "test:fsm-behavior:persistence": "vitest run tests/utils/fsmBehaviorPersistenceMatrix.test.ts tests/utils/fsmBehaviorMigration.test.ts",
+    "test:fsm-behavior:codec-security": "vitest run tests/utils/fsmBehaviorCodec.test.ts tests/utils/fsmBehaviorStorageSecurity.test.ts",
+    "test:fsm-behavior:compatibility": "vitest run tests/utils/fsmBehaviorLegacyCompatibility.test.ts tests/utils/fsmBehaviorCompilerVisibility.test.ts",
+    "test:fsm-behavior:acceptance": "npm run test:fsm-behavior && npm run test:fsm-behavior:persistence && npm run test:fsm-behavior:codec-security && npm run test:fsm-behavior:compatibility && npm run test:fsm-roundtrip && npm run test:fsm-security && npm run test:fsm-roundtrip:integration",
+    "test:fsm-security": "vitest run tests/utils/fsmSecurity.test.ts",
+    "test:screen-interchange": "vitest run tests/utils/screenInterchangeCharacterization.test.ts tests/utils/screenInterchangeModel.test.ts tests/utils/screenInterchangeFacade.test.ts",
+    "test:screen-interchange:security": "vitest run tests/utils/screenInterchangeSecurity.test.ts",
+    "test:screen-interchange:performance": "vitest run tests/utils/screenInterchangePerformance.test.ts",
+    "test:screen-interchange:acceptance": "npm run test:screen-interchange && npm run test:screen-interchange:security && npm run test:screen-interchange:performance && npx vitest run tests/utils/architectureBoundary.test.ts",
+    "test:screen-dsl": "vitest run tests/utils/screenDsl.test.ts tests/utils/screenDslPixelBudget.test.ts tests/utils/screenDslExamples.test.ts",
+    "test:screen-dsl:security": "vitest run tests/utils/screenDslSecurity.test.ts tests/utils/screenDslTransactionSecurity.test.ts",
+    "test:screen-dsl:application": "vitest run tests/utils/screenDslApplication.test.ts",
+    "test:screen-dsl:atomicity": "vitest run tests/utils/screenDslCreateAtomicity.test.ts tests/utils/screenDslUpdateAtomicity.test.ts tests/utils/screenDslCloneAtomicity.test.ts tests/utils/screenDslResourceAtomicity.test.ts",
+    "test:screen-dsl:session": "vitest run tests/utils/screenDslSessionReducer.test.ts tests/utils/screenDslSessionIdentity.test.ts tests/utils/screenDslSessionStaleness.test.ts tests/utils/screenDslSessionLifecycle.test.ts",
+    "test:screen-dsl:ui": "vitest run tests/utils/screenSchemaStudioViewModel.test.ts tests/utils/screenSchemaStudioState.test.ts tests/utils/architectureBoundary.test.ts",
+    "test:screen-dsl:ui-integration": "vitest run tests/utils/screenSchemaStudioIntegration.test.ts tests/utils/screenDslApplication.test.ts",
+    "test:screen-dsl:file": "vitest run tests/utils/screenDslFileName.test.ts tests/utils/screenDslFileValidation.test.ts tests/utils/screenDslUtf8.test.ts tests/utils/screenDslFileIpcContracts.test.ts tests/utils/screenDslFileAdapter.test.ts",
+    "test:screen-dsl:file-security": "npm run test:screen-dsl:file && vitest run tests/utils/screenDslFileSecurity.test.ts && npm run test:screen-dsl:security",
+    "test:screen-dsl:integration": "npm run test:screen-dsl && npm run test:screen-dsl:application && npm run test:screen-dsl:atomicity && npm run test:screen-dsl:ui && npm run test:screen-dsl:file",
+    "test:screen-dsl:performance": "vitest run tests/utils/screenDslPerformance.test.ts tests/utils/screenDslTransactionPerformance.test.ts",
+    "test:screen-dsl:acceptance": "npm run test:screen-dsl && npm run test:screen-dsl:security && npm run test:screen-dsl:application && npm run test:screen-dsl:atomicity && npm run test:screen-dsl:session && npm run test:screen-dsl:ui && npm run test:screen-dsl:ui-integration && npm run test:screen-dsl:file && npm run test:screen-dsl:performance && npm run test:screen-interchange:acceptance && npx vitest run tests/utils/architectureBoundary.test.ts",
+    "test:importer": "tsx scripts/verify-importer.ts",
+    "test:renderer": "tsx scripts/verify-renderer.ts",
+    "test:e2e": "npm run build && npm run test:e2e:prepared",
+    "test:e2e:prepared": "playwright test --config playwright.config.ts",
+    "test:dev": "playwright test --config playwright.dev.config.ts",
+    "test:electron": "npm run build && playwright test --config playwright.electron.config.ts",
+    "test:performance": "npm run build && playwright test --config playwright.performance.config.ts",
+    "test:package:win": "npm run build && electron-builder --win --dir && cross-env \"ELECTRON_EXECUTABLE_PATH=release/win-unpacked/LCD-bitmap IDE.exe\" playwright test --config playwright.electron.config.ts",
+    "docs:manual": "npm run build && tsx scripts/generate-manual.ts"
+  },
+  "build": {
+    "appId": "dev.myahlov.lcdbitmapide",
+    "productName": "LCD-bitmap IDE",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "dist/main/main.cjs"
+    },
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools",
+      "minimumSystemVersion": "10.15"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-${version}-Setup-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "AppImage",
+        "tar.gz"
+      ],
+      "category": "Development",
+      "maintainer": "myahlovvlad <myahlov@gmail.com>",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    }
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.8.5",
+    "elkjs": "^0.11.1",
+    "immer": "^10.1.1",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^22.10.10",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^42.0.0",
+    "electron-builder": "^25.1.8",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11",
+    "vitest": "^3.2.4",
+    "wait-on": "^8.0.2"
+  }
+}

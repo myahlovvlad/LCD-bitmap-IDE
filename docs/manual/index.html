@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Руководство пользователя LCD-bitmap IDE</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <h1>Руководство пользователя LCD-bitmap IDE</h1>
+  <div class="manual-shell">
+    <nav class="manual-toc" aria-label="Содержание">
+      <strong>Содержание</strong>
+      <a href="#intro">1. Введение</a>
+      <a href="#install">2. Установка и запуск</a>
+      <a href="#interface">3. Интерфейс приложения</a>
+      <a href="#projects">4. Работа с проектами</a>
+      <a href="#fsm">5. FSM-редактор</a>
+      <a href="#glyphs">6. Редактор bitmap-глифов</a>
+      <a href="#exports">7. Экспорт документации</a>
+      <a href="#hotkeys">8. Горячие клавиши</a>
+      <a href="#automation">9. API и MCP</a>
+      <a href="#troubleshooting">10. Устранение неполадок</a>
+    </nav>
+
+    <main>
+      <section id="intro" class="doc-section">
+        <h2>1. Введение и назначение</h2>
+        <p>LCD-bitmap IDE предназначен для проектирования LCD-экранов 128x64, FSM-логики, панели управления и runtime-preview приборных интерфейсов.</p>
+        <p>Философия приложения: пользователь проектирует поведение системы как связку состояний FSM, экранов LCD и физических кнопок панели управления. Каждый экран можно проверить в режиме просмотра и экспортировать в firmware-friendly формате.</p>
+        <figure class="doc-figure"><div class="screenshot-placeholder">[Скриншот: общий вид приложения]</div><figcaption>Рис. 1 — Общая структура рабочего пространства</figcaption></figure>
+      </section>
+
+      <section id="install" class="doc-section">
+        <h2>2. Установка и запуск</h2>
+        <ol>
+          <li>Установите Node.js 22+ и npm 10+.</li>
+          <li>Выполните <code>npm install</code>.</li>
+          <li>Для разработки запустите <code>npm run dev</code>.</li>
+          <li>Для desktop-режима запустите <code>npm run electron:dev</code>.</li>
+        </ol>
+        <div class="doc-note">Контрольная точка: приложение должно открыть стартовое окно «Открыть проект / Создать проект».</div>
+      </section>
+
+      <section id="interface" class="doc-section">
+        <h2>3. Интерфейс приложения</h2>
+        <table>
+          <thead><tr><th>Вкладка</th><th>Назначение</th><th>Основной результат</th></tr></thead>
+          <tbody>
+            <tr><td>FSM-редактор</td><td>Состояния, переходы, условия, маршруты</td><td>Граф конечного автомата</td></tr>
+            <tr><td>LCD-редактор</td><td>Экранные слои, текст, спецсимволы, bitmap-глифы</td><td>Пиксельный экран 128x64</td></tr>
+            <tr><td>Панель управления</td><td>Кнопки, дисплей, изображения, зоны управления</td><td>Физическая панель прибора</td></tr>
+            <tr><td>Просмотр</td><td>Runtime-проверка переходов</td><td>Проверенный user flow</td></tr>
+          </tbody>
+        </table>
+        <figure class="doc-figure"><div class="screenshot-placeholder">[Скриншот: навигация FSM/LCD/Панель/Просмотр]</div><figcaption>Рис. 2 — Основные рабочие области</figcaption></figure>
+      </section>
+
+      <section id="projects" class="doc-section">
+        <h2>4. Работа с проектами</h2>
+        <ol>
+          <li>Нажмите <kbd>Новый</kbd> для создания пустого проекта.</li>
+          <li>Используйте <kbd>Открыть проект</kbd> для загрузки <code>.lcdproj</code> или JSON.</li>
+          <li>Используйте <kbd>Сохранить проект</kbd> для portable hand-off файла.</li>
+          <li>Проверяйте статус в нижней панели: количество состояний, переходов, экранов, ошибок валидации.</li>
+        </ol>
+      </section>
+
+      <section id="fsm" class="doc-section">
+        <h2>5. FSM-редактор</h2>
+        <h3>5.1. Создание состояния</h3>
+        <ol>
+          <li>Откройте блок <strong>States</strong>.</li>
+          <li>Нажмите <kbd>+</kbd>.</li>
+          <li>Выберите маркировку: начальное, процесс, завершение-успех или завершение-неудача.</li>
+          <li>При необходимости привяжите LCD-экран через блок связанных экранов.</li>
+        </ol>
+        <figure class="doc-figure"><div class="screenshot-placeholder">[Скриншот: States с состоянием «Прогрев»]</div><figcaption>Рис. 3 — Панель States</figcaption></figure>
+
+        <h3>5.2. Создание переходов со всех сторон блока</h3>
+        <ol>
+          <li>Включите <kbd>Edit graph</kbd>.</li>
+          <li>Наведите на блок состояния: появятся точки соединения сверху, справа, снизу и слева.</li>
+          <li>Потяните линию от любой точки к любой точке другого состояния.</li>
+          <li>В инспекторе задайте событие, механизм и условие.</li>
+        </ol>
+        <figure class="doc-figure"><div class="screenshot-placeholder">[Скриншот: точки соединения N/E/S/W]</div><figcaption>Рис. 4 — Точки соединения состояния FSM</figcaption></figure>
+
+        <h3>5.3. Обратные связи и self-loop</h3>
+        <p>Для обратной связи соедините состояние с предыдущим состоянием или перетащите точку соединения состояния на другое соединение того же состояния. Self-loop рисуется дугой сбоку и сохраняется в проекте.</p>
+        <figure class="doc-figure"><div class="screenshot-placeholder">[Скриншот: self-loop переход состояния]</div><figcaption>Рис. 5 — Петля обратной связи</figcaption></figure>
+
+        <h3>5.4. Параметры переходов</h3>
+        <table>
+          <thead><tr><th>Поле</th><th>Описание</th><th>Пример</th></tr></thead>
+          <tbody>
+            <tr><td>Event</td><td>Событие FSM</td><td><code>START</code></td></tr>
+            <tr><td>Transition mechanism</td><td>Тип запуска</td><td>event, button, timer, fact</td></tr>
+            <tr><td>Condition</td><td>Условие ветвления</td><td><code>button == OK</code></td></tr>
+            <tr><td>Backend process</td><td>Связанный процесс</td><td>None или команда backend</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="glyphs" class="doc-section">
+        <h2>6. Редактор bitmap-глифов</h2>
+        <ol>
+          <li>В LCD-редакторе выберите bitmap-слой или импортируйте изображение.</li>
+          <li>Нажмите <kbd>Пиксельный редактор</kbd>.</li>
+          <li>Редактируйте отдельные пиксели; удержание мыши позволяет рисовать линией.</li>
+          <li>Нажмите <kbd>Сохранить</kbd>, чтобы обновить слой на LCD-макете.</li>
+        </ol>
+        <figure class="doc-figure"><div class="screenshot-placeholder">[Скриншот: редактор bitmap-глифа 128x64]</div><figcaption>Рис. 6 — Редактор bitmap-глифа</figcaption></figure>
+      </section>
+
+      <section id="exports" class="doc-section">
+        <h2>7. Экспорт PDF/HTML</h2>
+        <p>Кнопка HTML экспортирует самостоятельный документ. Кнопка PDF в Electron генерирует PDF из HTML-руководства через отдельный headless document context, поэтому в PDF не попадает текущий экран приложения.</p>
+      </section>
+
+      <section id="hotkeys" class="doc-section">
+        <h2>8. Горячие клавиши</h2>
+        <table>
+          <tbody>
+            <tr><td><kbd>Ctrl/Cmd+S</kbd></td><td>Сохранить проект</td></tr>
+            <tr><td><kbd>Ctrl/Cmd+O</kbd></td><td>Открыть проект</td></tr>
+            <tr><td><kbd>Ctrl/Cmd+N</kbd></td><td>Новый проект</td></tr>
+            <tr><td><kbd>Ctrl/Cmd+P</kbd></td><td>Просмотр</td></tr>
+            <tr><td><kbd>Ctrl/Cmd+E</kbd></td><td>FSM-редактор</td></tr>
+            <tr><td><kbd>Ctrl/Cmd+M</kbd></td><td>Руководство</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="automation" class="doc-section">
+        <h2>9. API и MCP-автоматизация</h2>
+        <p>В desktop-режиме приложение поднимает локальный REST API на <code>127.0.0.1:8766</code> и MCP endpoint на <code>127.0.0.1:8767/mcp</code>. Оба интерфейса работают с проектом, который открыт в UI.</p>
+        <table>
+          <thead><tr><th>Клиент</th><th>Рекомендуемый путь</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Code / Codex / OpenCode</td><td>MCP HTTP connector, если он доступен; иначе REST API через shell-команды.</td></tr>
+            <tr><td>LM Studio / Ollama</td><td>Локальный tool-calling wrapper, который отправляет JSON-запросы в REST API.</td></tr>
+            <tr><td>Shell / CI</td><td>REST endpoints для health, project metadata, screen export и runtime events.</td></tr>
+          </tbody>
+        </table>
+        <ol>
+          <li>Запустите <code>npm run electron:dev</code> или packaged app.</li>
+          <li>Откройте проект или bundled demo.</li>
+          <li>Проверьте <code>GET http://127.0.0.1:8766/api/health</code>.</li>
+          <li>Прочитайте <code>/api/workspaces/capabilities</code> и <code>/api/project</code> перед изменениями.</li>
+          <li>Применяйте небольшие изменения и вызывайте <code>/api/validate</code> после каждой пачки.</li>
+        </ol>
+        <div class="doc-note">Подробные connector-настройки и примеры находятся в <code>docs/API_MCP_CONNECTORS.md</code>.</div>
+      </section>
+
+      <section id="troubleshooting" class="doc-section">
+        <h2>10. Устранение неполадок</h2>
+        <table>
+          <thead><tr><th>Симптом</th><th>Причина</th><th>CAPA</th></tr></thead>
+          <tbody>
+            <tr><td>Copy не работает</td><td>Clipboard API заблокирован контекстом</td><td>Использовать desktop IPC fallback, проверить user gesture</td></tr>
+            <tr><td>Переход не срабатывает</td><td>Событие/кнопка не привязаны</td><td>Проверить Event и Bound button в инспекторе перехода</td></tr>
+            <tr><td>PDF выглядит как текущий экран</td><td>Использован browser print</td><td>Экспортировать через встроенную кнопку PDF в Electron</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

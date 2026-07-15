@@ -1,0 +1,6 @@
+format: lcd-bitmap-ide/screen
+version: 1
+layoutMode: explicit
+project: {"id":"example-project","name":"Example Project","schemaVersion":5,"display":{"width":128,"height":64,"colorMode":"monochrome","packing":"vertical-lsb"},"screenOrder":["status"]}
+screens: [{"id":"status","name":"Status","description":"","tags":["example"],"display":{"width":128,"height":64,"colorMode":"monochrome","packing":"vertical-lsb"},"objectOrder":["frame","title"],"objects":[{"id":"frame","kind":"rect","order":0,"zIndex":0,"visible":true,"locked":false,"source":"user","resourceRefs":[],"x":0,"y":0,"width":128,"height":64,"filled":false},{"id":"title","kind":"text","order":1,"zIndex":1,"visible":true,"locked":false,"source":"user","resourceRefs":["font:1"],"text":{"en":"READY","ru":"READY","zh":"READY"},"x":4,"y":4,"fontVariant":"1","pendingTranslation":false}],"linkedStateIds":[],"meta":{"createdAt":"2026-06-25T00:00:00.000Z","updatedAt":"2026-06-25T00:00:00.000Z"}}]
+resources: {"fonts":{"font:1":{"id":"font:1","name":"Bundled font 1","sourceFormat":"bundled","variant":"1","glyphCount":0,"createdAt":"2026-06-25T00:00:00.000Z","glyphIds":[]}},"glyphs":{},"bitmaps":{}}

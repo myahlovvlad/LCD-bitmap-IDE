@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' ws://127.0.0.1:* http://127.0.0.1:*; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%231f2937'/%3E%3Crect x='5' y='8' width='22' height='14' fill='%23dce8c8'/%3E%3Cpath d='M8 12h16M8 16h11' stroke='%23101820' stroke-width='2'/%3E%3C/svg%3E"
+    />
+    <title>LCD-bitmap IDE</title>
+  </head>
+  <body>
+    <div id="root">
+      <div style="font-family: system-ui, sans-serif; padding: 24px; color: #f9fafb; background: #111827; min-height: 100vh;">
+        <h1 style="margin-top: 0;">LCD-bitmap IDE</h1>
+        <p>Loading / Загрузка / 正在加载...</p>
+      </div>
+    </div>
+    <script type="module" src="/src/renderer/main.tsx"></script>
+  </body>
+</html>

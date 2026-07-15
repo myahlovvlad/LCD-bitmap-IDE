@@ -1,0 +1,699 @@
+{
+  "kind": "lcd-bitmap-project",
+  "version": 6,
+  "savedAt": "2026-07-15T10:52:32.279Z",
+  "language": "en",
+  "project": {
+    "meta": {
+      "id": "universal-lcd-demo",
+      "name": "Universal LCD Demo Project",
+      "version": "1.0.0",
+      "schemaVersion": 6,
+      "modelId": "Universal-LCD-128x64",
+      "firmwareVersion": null,
+      "author": "SpectroDesigner",
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
+    },
+    "display": {
+      "width": 128,
+      "height": 64,
+      "colorMode": "monochrome",
+      "packing": "vertical-lsb"
+    },
+    "screens": {
+      "main-menu": {
+        "id": "main-menu",
+        "name": "Main Menu Demo",
+        "description": "",
+        "tags": [],
+        "width": 128,
+        "height": 64,
+        "objects": [
+          {
+            "id": "main-title",
+            "type": "text",
+            "text": {
+              "en": "UNIVERSAL LCD",
+              "ru": "LCD СИМУЛЯТОР",
+              "zh": "通用 LCD"
+            },
+            "x": 2,
+            "y": 3,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 0,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          },
+          {
+            "id": "main-1",
+            "type": "text",
+            "text": {
+              "en": "> Photometry",
+              "ru": "> Фотометрия",
+              "zh": "> 光度测量"
+            },
+            "x": 2,
+            "y": 18,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 1,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          },
+          {
+            "id": "main-2",
+            "type": "text",
+            "text": {
+              "en": "  Settings",
+              "ru": "  Настройки",
+              "zh": "  设置"
+            },
+            "x": 2,
+            "y": 29,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 2,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          }
+        ],
+        "selectedObjectIds": [],
+        "createdAt": "2026-06-01T00:00:00.000Z",
+        "updatedAt": "2026-06-01T00:00:00.000Z"
+      },
+      "measure": {
+        "id": "measure",
+        "name": "Measurement",
+        "description": "",
+        "tags": [],
+        "width": 128,
+        "height": 64,
+        "objects": [
+          {
+            "id": "measure-title",
+            "type": "text",
+            "text": {
+              "en": "MEASURING...",
+              "ru": "ИЗМЕРЕНИЕ...",
+              "zh": "测量中..."
+            },
+            "x": 2,
+            "y": 6,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 0,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          },
+          {
+            "id": "measure-wl",
+            "type": "text",
+            "text": {
+              "en": "λ=540 nm",
+              "ru": "λ=540 нм",
+              "zh": "λ=540 nm"
+            },
+            "x": 2,
+            "y": 24,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 1,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          },
+          {
+            "id": "measure-a",
+            "type": "text",
+            "text": {
+              "en": "A=0.124",
+              "ru": "A=0.124",
+              "zh": "A=0.124"
+            },
+            "x": 2,
+            "y": 38,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 2,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          }
+        ],
+        "selectedObjectIds": [],
+        "createdAt": "2026-06-01T00:00:00.000Z",
+        "updatedAt": "2026-06-01T00:00:00.000Z"
+      },
+      "save-result": {
+        "id": "save-result",
+        "name": "Save Result",
+        "description": "",
+        "tags": [],
+        "width": 128,
+        "height": 64,
+        "objects": [
+          {
+            "id": "save-title",
+            "type": "text",
+            "text": {
+              "en": "SAVED",
+              "ru": "СОХРАНЕНО",
+              "zh": "已保存"
+            },
+            "x": 36,
+            "y": 24,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 0,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          }
+        ],
+        "selectedObjectIds": [],
+        "createdAt": "2026-06-01T00:00:00.000Z",
+        "updatedAt": "2026-06-01T00:00:00.000Z"
+      },
+      "error": {
+        "id": "error",
+        "name": "Error",
+        "description": "",
+        "tags": [],
+        "width": 128,
+        "height": 64,
+        "objects": [
+          {
+            "id": "err-title",
+            "type": "text",
+            "text": {
+              "en": "ERROR",
+              "ru": "ОШИБКА",
+              "zh": "错误"
+            },
+            "x": 42,
+            "y": 16,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 0,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          },
+          {
+            "id": "err-body",
+            "type": "text",
+            "text": {
+              "en": "Check cuvette",
+              "ru": "Проверьте кювету",
+              "zh": "检查样品池"
+            },
+            "x": 2,
+            "y": 34,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 1,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          }
+        ],
+        "selectedObjectIds": [],
+        "createdAt": "2026-06-01T00:00:00.000Z",
+        "updatedAt": "2026-06-01T00:00:00.000Z"
+      },
+      "glyph-test": {
+        "id": "glyph-test",
+        "name": "Glyph Test Screen",
+        "description": "",
+        "tags": [],
+        "width": 128,
+        "height": 64,
+        "objects": [
+          {
+            "id": "glyph-ru",
+            "type": "text",
+            "text": {
+              "en": "Съешь ещё этих мягких",
+              "ru": "Съешь ещё этих мягких",
+              "zh": "Glyph test"
+            },
+            "x": 2,
+            "y": 2,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 0,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          },
+          {
+            "id": "glyph-num",
+            "type": "text",
+            "text": {
+              "en": "1234567890 №= λ",
+              "ru": "1234567890 №= λ",
+              "zh": "1234567890"
+            },
+            "x": 2,
+            "y": 18,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 1,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          },
+          {
+            "id": "glyph-special",
+            "type": "text",
+            "text": {
+              "en": "☐ ☑ ✓ ×",
+              "ru": "☐ ☑ ✓ ×",
+              "zh": "☐ ☑ ✓ ×"
+            },
+            "x": 2,
+            "y": 34,
+            "fontVariant": "1",
+            "pendingTranslation": false,
+            "zIndex": 2,
+            "visible": true,
+            "locked": false,
+            "source": "prototype"
+          }
+        ],
+        "selectedObjectIds": [],
+        "createdAt": "2026-06-01T00:00:00.000Z",
+        "updatedAt": "2026-06-01T00:00:00.000Z"
+      }
+    },
+    "screenOrder": [
+      "main-menu",
+      "measure",
+      "save-result",
+      "error",
+      "glyph-test"
+    ],
+    "fonts": {},
+    "glyphs": {},
+    "fsm": {
+      "states": {
+        "main-menu": {
+          "id": "main-menu",
+          "runtimeId": null,
+          "legacyIds": [],
+          "title": "Main Menu Demo",
+          "subsystem": "demo",
+          "stateType": "initial",
+          "origin": "bundled-demo",
+          "screenId": "main-menu",
+          "initial": true,
+          "terminal": false
+        },
+        "measure": {
+          "id": "measure",
+          "runtimeId": null,
+          "legacyIds": [],
+          "title": "Measurement",
+          "subsystem": "demo",
+          "stateType": "screen",
+          "origin": "bundled-demo",
+          "screenId": "measure",
+          "initial": false,
+          "terminal": false
+        },
+        "save-result": {
+          "id": "save-result",
+          "runtimeId": null,
+          "legacyIds": [],
+          "title": "Save Result",
+          "subsystem": "demo",
+          "stateType": "success",
+          "origin": "bundled-demo",
+          "screenId": "save-result",
+          "initial": false,
+          "terminal": true
+        },
+        "error": {
+          "id": "error",
+          "runtimeId": null,
+          "legacyIds": [],
+          "title": "Error",
+          "subsystem": "demo",
+          "stateType": "screen",
+          "origin": "bundled-demo",
+          "screenId": "error",
+          "initial": false,
+          "terminal": false
+        },
+        "glyph-test": {
+          "id": "glyph-test",
+          "runtimeId": null,
+          "legacyIds": [],
+          "title": "Glyph Test Screen",
+          "subsystem": "demo",
+          "stateType": "screen",
+          "origin": "bundled-demo",
+          "screenId": "glyph-test",
+          "initial": false,
+          "terminal": false
+        }
+      },
+      "stateOrder": [
+        "main-menu",
+        "measure",
+        "save-result",
+        "error",
+        "glyph-test"
+      ],
+      "transitions": {
+        "tr-main-measure": {
+          "id": "tr-main-measure",
+          "from": "main-menu",
+          "to": "measure",
+          "sourceHandle": "s-right",
+          "targetHandle": "t-left",
+          "trigger": {
+            "mechanism": "event",
+            "buttonId": null,
+            "timerMs": null,
+            "fact": null,
+            "eventId": "START"
+          },
+          "kind": "navigation",
+          "condition": null,
+          "source": "demo",
+          "backendProcessId": null
+        },
+        "tr-measure-save": {
+          "id": "tr-measure-save",
+          "from": "measure",
+          "to": "save-result",
+          "sourceHandle": "s-right",
+          "targetHandle": "t-left",
+          "trigger": {
+            "mechanism": "event",
+            "buttonId": null,
+            "timerMs": null,
+            "fact": null,
+            "eventId": "SAVE"
+          },
+          "kind": "navigation",
+          "condition": null,
+          "source": "demo",
+          "backendProcessId": null
+        },
+        "tr-measure-error": {
+          "id": "tr-measure-error",
+          "from": "measure",
+          "to": "error",
+          "sourceHandle": "s-right",
+          "targetHandle": "t-left",
+          "trigger": {
+            "mechanism": "event",
+            "buttonId": null,
+            "timerMs": null,
+            "fact": null,
+            "eventId": "ERR"
+          },
+          "kind": "navigation",
+          "condition": null,
+          "source": "demo",
+          "backendProcessId": null
+        },
+        "tr-error-main": {
+          "id": "tr-error-main",
+          "from": "error",
+          "to": "main-menu",
+          "sourceHandle": "s-right",
+          "targetHandle": "t-left",
+          "trigger": {
+            "mechanism": "event",
+            "buttonId": null,
+            "timerMs": null,
+            "fact": null,
+            "eventId": "ESC"
+          },
+          "kind": "navigation",
+          "condition": null,
+          "source": "demo",
+          "backendProcessId": null
+        }
+      },
+      "transitionOrder": [
+        "tr-main-measure",
+        "tr-measure-save",
+        "tr-measure-error",
+        "tr-error-main"
+      ],
+      "events": {
+        "START": {
+          "id": "START",
+          "name": "START",
+          "legacyTrigger": "START"
+        },
+        "SAVE": {
+          "id": "SAVE",
+          "name": "SAVE",
+          "legacyTrigger": "SAVE"
+        },
+        "ERR": {
+          "id": "ERR",
+          "name": "ERR",
+          "legacyTrigger": "ERR"
+        },
+        "ESC": {
+          "id": "ESC",
+          "name": "ESC",
+          "legacyTrigger": "ESC"
+        }
+      },
+      "eventOrder": [
+        "START",
+        "SAVE",
+        "ERR",
+        "ESC"
+      ],
+      "graphLayout": {
+        "main-menu": {
+          "x": 80,
+          "y": 80
+        },
+        "measure": {
+          "x": 250,
+          "y": 200
+        },
+        "save-result": {
+          "x": 420,
+          "y": 80
+        },
+        "error": {
+          "x": 590,
+          "y": 200
+        },
+        "glyph-test": {
+          "x": 760,
+          "y": 80
+        }
+      }
+    },
+    "controlPanel": {
+      "width": 792,
+      "height": 360,
+      "backgroundColor": "#315f45",
+      "gridSize": 10,
+      "gridEnabled": true,
+      "snapToGrid": true,
+      "elements": {
+        "device-display": {
+          "id": "device-display",
+          "type": "display",
+          "x": 42,
+          "y": 46,
+          "width": 384,
+          "height": 192,
+          "rotation": 0,
+          "locked": false,
+          "visible": true,
+          "screenScale": 3
+        },
+        "button-START": {
+          "id": "button-START",
+          "type": "button",
+          "label": "START",
+          "shape": "rounded-rect",
+          "x": 478,
+          "y": 48,
+          "width": 78,
+          "height": 48,
+          "rotation": 0,
+          "locked": false,
+          "visible": true,
+          "fsmEventId": "START",
+          "pressType": "short",
+          "repeatMode": false
+        },
+        "button-SAVE": {
+          "id": "button-SAVE",
+          "type": "button",
+          "label": "SAVE",
+          "shape": "rounded-rect",
+          "x": 570,
+          "y": 48,
+          "width": 78,
+          "height": 48,
+          "rotation": 0,
+          "locked": false,
+          "visible": true,
+          "fsmEventId": "SAVE",
+          "pressType": "short",
+          "repeatMode": false
+        },
+        "button-ERR": {
+          "id": "button-ERR",
+          "type": "button",
+          "label": "ERR",
+          "shape": "rounded-rect",
+          "x": 662,
+          "y": 48,
+          "width": 78,
+          "height": 48,
+          "rotation": 0,
+          "locked": false,
+          "visible": true,
+          "fsmEventId": "ERR",
+          "pressType": "short",
+          "repeatMode": false
+        },
+        "button-ESC": {
+          "id": "button-ESC",
+          "type": "button",
+          "label": "ESC",
+          "shape": "rounded-rect",
+          "x": 478,
+          "y": 118,
+          "width": 78,
+          "height": 48,
+          "rotation": 0,
+          "locked": false,
+          "visible": true,
+          "fsmEventId": "ESC",
+          "pressType": "short",
+          "repeatMode": false
+        }
+      },
+      "elementOrder": [
+        "device-display",
+        "button-START",
+        "button-SAVE",
+        "button-ERR",
+        "button-ESC"
+      ],
+      "tokens": {
+        "panelBackground": "#315f45",
+        "panelStroke": "#17251d",
+        "buttonFill": "#e5e7eb",
+        "buttonStroke": "#1f2937",
+        "buttonText": "#111827",
+        "displayBackground": "#87aa5c",
+        "displayPixelOn": "#202a1b",
+        "displayPixelOff": "rgba(32, 42, 27, 0.08)",
+        "labelText": "#f3f4f6"
+      }
+    },
+    "backendProcesses": {},
+    "bindings": {
+      "statesByScreenId": {
+        "main-menu": [
+          "main-menu"
+        ],
+        "measure": [
+          "measure"
+        ],
+        "save-result": [
+          "save-result"
+        ],
+        "error": [
+          "error"
+        ],
+        "glyph-test": [
+          "glyph-test"
+        ]
+      },
+      "buttonsByEventId": {
+        "START": [
+          "button-START"
+        ],
+        "SAVE": [
+          "button-SAVE"
+        ],
+        "ERR": [
+          "button-ERR"
+        ],
+        "ESC": [
+          "button-ESC"
+        ]
+      },
+      "transitionsByEventId": {
+        "START": [
+          "tr-main-measure"
+        ],
+        "SAVE": [
+          "tr-measure-save"
+        ],
+        "ERR": [
+          "tr-measure-error"
+        ],
+        "ESC": [
+          "tr-error-main"
+        ]
+      }
+    },
+    "validation": {
+      "issues": [
+        {
+          "id": "fsm:state-unreachable:glyph-test",
+          "severity": "warning",
+          "domain": "fsm",
+          "message": "State \"glyph-test\" is unreachable.",
+          "entityType": "state",
+          "entityId": "glyph-test"
+        },
+        {
+          "id": "fsm:state-no-incoming:glyph-test",
+          "severity": "warning",
+          "domain": "fsm",
+          "message": "State \"glyph-test\" has no incoming transitions.",
+          "entityType": "state",
+          "entityId": "glyph-test"
+        },
+        {
+          "id": "fsm:state-no-outgoing:glyph-test",
+          "severity": "warning",
+          "domain": "fsm",
+          "message": "State \"glyph-test\" has no outgoing transitions.",
+          "entityType": "state",
+          "entityId": "glyph-test"
+        }
+      ],
+      "validatedAt": "2026-07-15T10:52:32.279Z"
+    },
+    "tags": {},
+    "dataSources": {},
+    "procedures": {},
+    "cliCatalog": {},
+    "alarms": {},
+    "trends": {}
+  },
+  "fontGlyphs": {
+    "1": {},
+    "2": {}
+  },
+  "loadedFonts": {},
+  "savedMeasurements": []
+}

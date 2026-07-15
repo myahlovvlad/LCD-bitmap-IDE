@@ -1,0 +1,26 @@
+{
+  "format": "lcd-bitmap-ide/screen",
+  "version": 1,
+  "layoutMode": "explicit",
+  "project": {
+    "id": "example-project",
+    "name": "Example Project",
+    "schemaVersion": 5,
+    "display": { "width": 128, "height": 64, "colorMode": "monochrome", "packing": "vertical-lsb" },
+    "screenOrder": ["minimal"]
+  },
+  "screens": [
+    {
+      "id": "minimal",
+      "name": "Minimal",
+      "description": "",
+      "tags": [],
+      "display": { "width": 128, "height": 64, "colorMode": "monochrome", "packing": "vertical-lsb" },
+      "objectOrder": [],
+      "objects": [],
+      "linkedStateIds": [],
+      "meta": { "createdAt": "2026-06-25T00:00:00.000Z", "updatedAt": "2026-06-25T00:00:00.000Z" }
+    }
+  ],
+  "resources": { "fonts": {}, "glyphs": {}, "bitmaps": {} }
+}

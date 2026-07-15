@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LCD-bitmap IDE - Embedded HMI Workbench</title>
+  <meta name="description" content="Professional offline workbench for monochrome LCD screens, FSM navigation, runtime simulation and firmware-ready exports.">
+  <meta property="og:title" content="LCD-bitmap IDE">
+  <meta property="og:description" content="Design embedded LCD HMIs, FSM flows and firmware exports in one deterministic desktop tool.">
+  <meta property="og:type" content="website">
+  <style>
+    :root {
+      --ink: #17201c;
+      --muted: #5c6761;
+      --paper: #f7f8f4;
+      --panel: #ffffff;
+      --line: #d8ded5;
+      --field: #eaf0e5;
+      --green: #20765a;
+      --teal: #1f6e7a;
+      --amber: #b16a22;
+      --black: #0c1110;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.55;
+      letter-spacing: 0;
+    }
+    a { color: inherit; }
+    .topbar {
+      position: fixed;
+      z-index: 5;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      color: #f7fbf7;
+      background: rgba(10, 16, 15, 0.76);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    .brand { font-weight: 750; text-decoration: none; }
+    .nav { display: flex; gap: 22px; align-items: center; font-size: 14px; }
+    .nav a { color: rgba(255,255,255,0.82); text-decoration: none; }
+    .nav a:hover { color: #fff; }
+    .nav .button {
+      color: #fff;
+      background: var(--green);
+      padding: 8px 14px;
+      border-radius: 6px;
+    }
+    .hero {
+      min-height: 88vh;
+      display: flex;
+      align-items: end;
+      padding: 110px 32px 56px;
+      color: #fff;
+      background:
+        linear-gradient(90deg, rgba(6, 12, 11, 0.92) 0%, rgba(6, 12, 11, 0.68) 44%, rgba(6, 12, 11, 0.18) 100%),
+        url("../assets/spectrodesigner-1821x969-dark-style.png") center / cover no-repeat;
+    }
+    .hero-inner {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #bfe8d5;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 18px;
+    }
+    h1 {
+      max-width: 720px;
+      margin: 0 0 18px;
+      font-size: clamp(42px, 7vw, 86px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+    .hero p {
+      max-width: 690px;
+      margin: 0 0 28px;
+      color: rgba(255,255,255,0.82);
+      font-size: 19px;
+    }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .primary, .secondary {
+      display: inline-flex;
+      align-items: center;
+      min-height: 42px;
+      padding: 10px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .primary { background: #2f8e6b; color: #fff; }
+    .secondary { color: #fff; border: 1px solid rgba(255,255,255,0.36); }
+    main section {
+      width: min(1180px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 70px 0;
+    }
+    .section-head {
+      max-width: 760px;
+      margin-bottom: 30px;
+    }
+    .section-head p { color: var(--muted); font-size: 17px; }
+    h2 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .tile {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+      min-height: 176px;
+    }
+    .tile h3 { margin: 0 0 8px; font-size: 18px; }
+    .tile p { margin: 0; color: var(--muted); }
+    .band {
+      width: 100%;
+      max-width: none;
+      background: #e7eee8;
+      border-block: 1px solid var(--line);
+      padding: 0;
+    }
+    .band-inner {
+      width: min(1180px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 70px 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 34px;
+      align-items: center;
+    }
+    .screenshot {
+      width: 100%;
+      border: 1px solid #bdc8c0;
+      border-radius: var(--radius);
+      box-shadow: 0 18px 50px rgba(23, 32, 28, 0.22);
+    }
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .step {
+      background: var(--panel);
+      padding: 20px;
+      min-height: 148px;
+    }
+    .step strong { display: block; color: var(--teal); margin-bottom: 8px; }
+    pre {
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+      border-radius: var(--radius);
+      background: #101816;
+      color: #d7f5e7;
+      font-size: 13px;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .metric {
+      border-top: 3px solid var(--green);
+      background: var(--panel);
+      padding: 18px;
+      border-radius: var(--radius);
+    }
+    .metric b { display: block; font-size: 30px; }
+    .metric span { color: var(--muted); }
+    footer {
+      padding: 34px 28px;
+      color: #d8e7df;
+      background: var(--black);
+    }
+    footer .footer-inner {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 860px) {
+      .nav a:not(.button) { display: none; }
+      .grid, .workflow, .split, .band-inner, .metric-row { grid-template-columns: 1fr; }
+      .hero { min-height: 92vh; padding-inline: 20px; }
+      main section, .band-inner { width: min(100% - 32px, 1180px); }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">LCD-bitmap IDE</a>
+    <nav class="nav" aria-label="Main navigation">
+      <a href="#capabilities">Capabilities</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#automation">API and MCP</a>
+      <a href="#start" class="button">Get started</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Embedded HMI engineering workbench</div>
+      <h1>LCD-bitmap IDE</h1>
+      <p>Design monochrome LCD screens, FSM navigation, bitmap fonts, control panels and firmware exports in one deterministic offline desktop tool.</p>
+      <div class="actions">
+        <a class="primary" href="#start">Start building</a>
+        <a class="secondary" href="https://github.com/myahlovvlad/LCD-bitmap-IDE">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section id="capabilities">
+      <div class="section-head">
+        <h2>Built for professional embedded UI work</h2>
+        <p>The project file is the contract: screens, states, transitions, tags, procedures, alarms and export settings stay together and can be reviewed, tested and generated repeatably.</p>
+      </div>
+      <div class="grid">
+        <article class="tile"><h3>Pixel LCD editor</h3><p>Draw text, bitmap layers, glyphs and primitives against strict monochrome display bounds.</p></article>
+        <article class="tile"><h3>FSM navigation</h3><p>Model UI states, event triggers and transition logic with validation and automatic graph layout.</p></article>
+        <article class="tile"><h3>Runtime simulation</h3><p>Walk through state flows, trigger events and inspect tag-driven screen updates before firmware integration.</p></article>
+        <article class="tile"><h3>Firmware exports</h3><p>Generate C, binary, XBM, Arduino, Rust embedded-graphics and ESP-IDF artifacts.</p></article>
+        <article class="tile"><h3>Text registry</h3><p>Centralize multilingual screen copy and move translations through CSV hand-offs.</p></article>
+        <article class="tile"><h3>Agent-ready API</h3><p>Operate the open desktop project through REST and MCP from local coding agents and scripts.</p></article>
+      </div>
+    </section>
+
+    <section class="band" aria-label="Product preview">
+      <div class="band-inner">
+        <div>
+          <h2>One surface for engineering, review and hand-off</h2>
+          <p>LCD-bitmap IDE keeps the visual screen model close to the behavior model. Engineers can inspect the FSM graph, edit pixels, bind runtime values and export firmware assets without switching tools.</p>
+          <div class="metric-row">
+            <div class="metric"><b>547</b><span>unit tests</span></div>
+            <div class="metric"><b>8</b><span>export formats</span></div>
+            <div class="metric"><b>3</b><span>UI languages</span></div>
+            <div class="metric"><b>2</b><span>local APIs</span></div>
+          </div>
+        </div>
+        <img class="screenshot" src="../assets/spectrodesigner-1000x900-dark-style.png" alt="LCD-bitmap IDE editor screenshot">
+      </div>
+    </section>
+
+    <section id="workflow">
+      <div class="section-head">
+        <h2>Workflow</h2>
+        <p>A practical path from first screen to firmware-ready payload.</p>
+      </div>
+      <div class="workflow">
+        <div class="step"><strong>1. Model</strong>Define FSM states, events and transitions.</div>
+        <div class="step"><strong>2. Draw</strong>Create LCD screens with text, lines, shapes and bitmaps.</div>
+        <div class="step"><strong>3. Bind</strong>Connect panel buttons and live tags to UI behavior.</div>
+        <div class="step"><strong>4. Export</strong>Generate firmware assets and verify runtime behavior.</div>
+      </div>
+    </section>
+
+    <section id="automation">
+      <div class="section-head">
+        <h2>Automation through REST and MCP</h2>
+        <p>Use local agents as engineering assistants. Read the active project, create states, update tags, compile screens or fire runtime events while the desktop UI remains visible.</p>
+      </div>
+      <div class="split">
+        <pre><code>curl http://127.0.0.1:8766/api/health
+curl http://127.0.0.1:8766/api/project/meta
+curl -X POST http://127.0.0.1:8766/api/runtime/event \
+  -H "Content-Type: application/json" \
+  -d "{\"eventId\":\"START\"}"</code></pre>
+        <article class="tile">
+          <h3>MCP clients</h3>
+          <p>Connect Claude Code, Codex, OpenCode or other MCP-capable tools to <code>http://127.0.0.1:8767/mcp</code>. For LM Studio and Ollama, use a thin tool wrapper around the REST API.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="start">
+      <div class="section-head">
+        <h2>Get started</h2>
+        <p>Clone, install and open the neutral demo project.</p>
+      </div>
+      <pre><code>git clone https://github.com/myahlovvlad/LCD-bitmap-IDE.git
+cd LCD-bitmap-IDE
+npm ci
+npm run electron:dev</code></pre>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>LCD-bitmap IDE - MIT licensed embedded HMI workbench</span>
+      <span>Offline by default. Local APIs only.</span>
+    </div>
+  </footer>
+</body>
+</html>

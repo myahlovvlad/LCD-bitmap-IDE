@@ -1,0 +1,61 @@
+name: Сборка для всех платформ
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            command: npm run build:windows
+            artifact: windows-build
+            path: release/*Setup*.exe
+          - os: macos-latest
+            command: npm run build:macos
+            artifact: macos-build
+            path: release/*.dmg
+          - os: ubuntu-latest
+            command: npm run build:linux
+            artifact: linux-build
+            path: release/*.{AppImage,deb,tar.gz}
+
+    runs-on: ${{ matrix.os }}
+    name: Сборка на ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Системные зависимости Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 \
+            xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 \
+            rpm fakeroot dpkg
+
+      - run: npm ci
+
+      - name: Сборка
+        run: ${{ matrix.command }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
+          if-no-files-found: warn
+          retention-days: 30

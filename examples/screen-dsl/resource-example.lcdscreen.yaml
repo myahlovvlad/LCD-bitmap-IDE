@@ -1,0 +1,6 @@
+format: lcd-bitmap-ide/screen
+version: 1
+layoutMode: explicit
+project: {"id":"example-project","name":"Example Project","schemaVersion":5,"display":{"width":128,"height":64,"colorMode":"monochrome","packing":"vertical-lsb"},"screenOrder":["logo"]}
+screens: [{"id":"logo","name":"Logo","description":"","tags":["resource"],"display":{"width":128,"height":64,"colorMode":"monochrome","packing":"vertical-lsb"},"objectOrder":["logo-bitmap"],"objects":[{"id":"logo-bitmap","kind":"bitmap","order":0,"zIndex":0,"visible":true,"locked":false,"source":"user","resourceRefs":["bitmap:logo:logo-bitmap"],"name":"Logo Bitmap","x":0,"y":0,"width":8,"height":8,"bitmapRef":"bitmap:logo:logo-bitmap"}],"linkedStateIds":[],"meta":{"createdAt":"2026-06-25T00:00:00.000Z","updatedAt":"2026-06-25T00:00:00.000Z"}}]
+resources: {"fonts":{},"glyphs":{},"bitmaps":{"bitmap:logo:logo-bitmap":{"id":"bitmap:logo:logo-bitmap","name":"Logo Bitmap","width":8,"height":8,"bytes":[255,129,129,129,129,129,129,255],"sourceObjectId":"logo-bitmap"}}}

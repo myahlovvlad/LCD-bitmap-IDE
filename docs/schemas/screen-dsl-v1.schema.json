@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lcd-bitmap-ide.local/schemas/screen-dsl-v1.schema.json",
+  "title": "LCD Bitmap IDE Screen DSL V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "layoutMode", "project", "screens", "resources"],
+  "properties": {
+    "format": { "const": "lcd-bitmap-ide/screen" },
+    "version": { "const": 1 },
+    "layoutMode": { "const": "explicit" },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "schemaVersion", "display", "screenOrder"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "display": { "$ref": "#/$defs/display" },
+        "screenOrder": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "screens": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/screen" }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fonts", "glyphs", "bitmaps"],
+      "properties": {
+        "fonts": { "type": "object", "additionalProperties": { "type": "object" } },
+        "glyphs": { "type": "object", "additionalProperties": { "type": "object" } },
+        "bitmaps": { "type": "object", "additionalProperties": { "$ref": "#/$defs/bitmapResource" } }
+      }
+    }
+  },
+  "$defs": {
+    "display": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["width", "height", "colorMode", "packing"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "colorMode": { "type": "string" },
+        "packing": { "type": "string" }
+      }
+    },
+    "screen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "description", "tags", "display", "objectOrder", "objects", "linkedStateIds", "meta"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "display": { "$ref": "#/$defs/display" },
+        "objectOrder": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "objects": { "type": "array", "items": { "$ref": "#/$defs/object" } },
+        "linkedStateIds": { "type": "array", "items": { "type": "string" } },
+        "meta": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["createdAt", "updatedAt"],
+          "properties": {
+            "createdAt": { "type": "string" },
+            "updatedAt": { "type": "string" }
+          }
+        }
+      }
+    },
+    "objectBase": {
+      "type": "object",
+      "required": ["id", "kind", "order", "zIndex", "visible", "locked", "source", "resourceRefs"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["text", "line", "rect", "icon", "bitmap", "special", "invert"] },
+        "order": { "type": "integer", "minimum": 0 },
+        "zIndex": { "type": "integer" },
+        "visible": { "type": "boolean" },
+        "locked": { "type": "boolean" },
+        "source": { "type": "string" },
+        "resourceRefs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "object": {
+      "allOf": [{ "$ref": "#/$defs/objectBase" }],
+      "type": "object",
+      "additionalProperties": true
+    },
+    "bitmapResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "width", "height", "bytes", "sourceObjectId"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "bytes": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 }
+        },
+        "sourceObjectId": { "type": "string" }
+      }
+    }
+  }
+}

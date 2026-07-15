@@ -1,0 +1,30 @@
+// Temporary compatibility facade: renderer callers may keep this import path
+// while domain/model/services/entities import contracts from src/domain directly.
+export type {
+  AuditEntry,
+  BitmapCanvasObject,
+  CanvasData,
+  CanvasObject,
+  CanvasObjectType,
+  DisplayConfig,
+  FontMetadata,
+  FontSourceFormat,
+  FontVariant,
+  GraphPosition,
+  HardwareCommand,
+  IconCanvasObject,
+  ImportedProjectModel,
+  InvertCanvasObject,
+  LanguageCode,
+  LegacyFsmState as FsmState,
+  LegacyFsmTransition as FsmTransition,
+  LegacyProject as Project,
+  LineCanvasObject,
+  LocalizedText,
+  RectCanvasObject,
+  SavedMeasurement,
+  SpecialCanvasObject,
+  SpecialElementKind,
+  SupportedModelId,
+  TextCanvasObject
+} from '../../domain';

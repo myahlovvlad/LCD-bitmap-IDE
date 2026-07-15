@@ -1,0 +1,138 @@
+body {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 20mm;
+  color: #1a1a1a;
+  font-family: "PT Serif", Georgia, serif;
+  font-size: 14pt;
+  line-height: 1.6;
+}
+
+.manual-shell {
+  display: grid;
+  grid-template-columns: 58mm minmax(0, 1fr);
+  gap: 12mm;
+}
+
+.manual-toc {
+  position: sticky;
+  top: 12mm;
+  align-self: start;
+  border-right: 1px solid #cbd5e1;
+  padding-right: 8mm;
+  font-size: 10.5pt;
+}
+
+.manual-toc a {
+  display: block;
+  margin: 0 0 5px;
+  color: #1f3f77;
+  text-decoration: none;
+}
+
+h1 {
+  text-align: center;
+  font-size: 18pt;
+}
+
+h2 {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+  font-size: 14pt;
+}
+
+h3 {
+  font-size: 12.5pt;
+}
+
+.doc-section {
+  margin-bottom: 2rem;
+  break-inside: avoid;
+}
+
+.doc-figure {
+  margin: 1.5rem 0;
+  text-align: center;
+  break-inside: avoid;
+}
+
+.screenshot-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  border: 2px dashed #64748b;
+  border-radius: 8px;
+  background: #111827;
+  color: #cbd5e1;
+  font-family: Arial, sans-serif;
+}
+
+figcaption {
+  margin-top: 6px;
+  color: #555;
+  font-size: 11pt;
+}
+
+.doc-note {
+  margin: 1rem 0;
+  border-left: 4px solid #2196f3;
+  border-radius: 4px;
+  background: #e8f4fd;
+  padding: 12px 16px;
+}
+
+.doc-warning {
+  border-color: #ff9800;
+  background: #fff3e0;
+}
+
+code {
+  border-radius: 3px;
+  background: #f5f5f5;
+  padding: 2px 5px;
+  font-family: monospace;
+}
+
+kbd {
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  background: #eee;
+  padding: 1px 5px;
+  font-family: monospace;
+}
+
+table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #f0f0f0;
+}
+
+@media print {
+  body {
+    padding: 15mm;
+  }
+
+  .manual-shell {
+    display: block;
+  }
+
+  .manual-toc {
+    position: static;
+    border-right: 0;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 8mm;
+  }
+}

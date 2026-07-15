@@ -1,0 +1,47 @@
+node_modules/
+dist/
+.vite-dev.log
+.vite-dev.err.log
+.playwright-mcp/
+npm-debug.log*
+*.tsbuildinfo
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Test/build output
+coverage/
+playwright-report/
+test-results/
+out/
+release/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Security - never commit certificates/keys
+.hover/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Log files
+*.log
+specs/*.log
+
+# Old prototypes and generated artifacts in root
+*.h
+LCD-*.html
+
+# Generated outputs
+docs/generated/
+test-results/
+playwright-report/

@@ -1,0 +1,12 @@
+{
+    "editor.formatOnSave": false,
+    "files.eol": "\n",
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.playwright-mcp": true,
+        "**/package-lock.json": true
+    },
+    "hover.effort": "high"
+}
