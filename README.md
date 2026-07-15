@@ -1,27 +1,31 @@
 # LCD-bitmap IDE
 
-**LCD-bitmap IDE** is an offline engineering workbench for monochrome LCD interfaces, finite-state-machine navigation, bitmap fonts, physical control panels and firmware-ready screen exports.
+**LCD-bitmap IDE** is an offline desktop workbench for designing monochrome embedded HMI projects: LCD screens, finite-state-machine navigation, button bindings, runtime tags, procedures, alarms and firmware-ready display assets.
 
-It is built for embedded HMI teams that need a deterministic design source: one portable `.lcdproj` file contains the FSM graph, LCD screens, control panel bindings, tags, procedures, alarms and runtime simulation metadata.
+The project is designed for embedded UI engineers, firmware developers, laboratory-instrument prototyping teams and technical writers who need one deterministic source file for a small display workflow. A portable `.lcdproj` file keeps the visual LCD model, FSM behavior, text registry, runtime metadata and export settings together.
 
-## Capabilities
+## Product Scope
 
-- Pixel-accurate LCD editor for text, lines, rectangles, bitmaps, glyphs and special UI elements.
-- FSM editor with draggable states, event-labelled transitions, validation and ELK-based layout.
-- Physical control panel designer with button-to-event bindings.
-- Runtime preview for stepping through state flows without target hardware.
-- Text registry for multilingual screen copy and CSV hand-off.
-- Screen DSL import/export for structured review and agent-assisted edits.
-- Embedded exports: C headers, raw binary, XBM, Arduino PROGMEM, Rust embedded-graphics and ESP-IDF.
-- Local REST API and MCP endpoint for CLI tools, Codex, Claude Code, OpenCode, LM Studio and Ollama-based agents.
+LCD-bitmap IDE helps you design and validate the operator-facing interface around a measurement or device-control workflow:
+
+- model setup, run, result, warning, error and service states;
+- draw pixel-accurate 128x64 monochrome LCD screens;
+- bind physical buttons and runtime tags to FSM behavior;
+- preview the workflow before target hardware integration;
+- export screen assets for embedded firmware projects;
+- let local LLM agents inspect and edit the open project through REST or MCP.
+
+The application does not acquire physical measurements by itself. Real acquisition requires your own instrument firmware, backend service or hardware connector.
 
 ## Download
 
-Desktop installers and portable builds are published from [GitHub Releases](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases).
+Desktop builds are published from [GitHub Releases](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases).
 
-- Windows: Setup or Portable build.
-- Linux: AppImage, deb or tar.gz.
-- Developers: clone the repository and run the desktop app locally.
+| Platform | Artifact |
+|---|---|
+| Windows | Setup installer or portable build |
+| Linux | AppImage, deb or tar.gz |
+| Developers | Source checkout with `npm ci` and `npm run electron:dev` |
 
 ## Quick Start From Source
 
@@ -29,39 +33,62 @@ Desktop installers and portable builds are published from [GitHub Releases](http
 git clone https://github.com/myahlovvlad/LCD-bitmap-IDE.git
 cd LCD-bitmap-IDE
 npm ci
+npm run electron:dev
+```
+
+For browser-only development:
+
+```bash
 npm run dev
 ```
 
 Open `http://127.0.0.1:5173`.
 
-For the desktop app:
+## Documentation Downloads
 
-```bash
-npm run electron:dev
-```
+Two beginner-oriented manuals are included in English, Russian and Chinese. Each manual is available as HTML, PDF and DOCX.
+
+### Operation User Manual
+
+| Language | HTML | PDF | DOCX |
+|---|---|---|---|
+| English | [HTML](docs/user-manuals/operation-user-manual.en.html) | [PDF](docs/user-manuals/operation-user-manual.en.pdf) | [DOCX](docs/user-manuals/operation-user-manual.en.docx) |
+| Русский | [HTML](docs/user-manuals/operation-user-manual.ru.html) | [PDF](docs/user-manuals/operation-user-manual.ru.pdf) | [DOCX](docs/user-manuals/operation-user-manual.ru.docx) |
+| 简体中文 | [HTML](docs/user-manuals/operation-user-manual.zh.html) | [PDF](docs/user-manuals/operation-user-manual.zh.pdf) | [DOCX](docs/user-manuals/operation-user-manual.zh.docx) |
+
+### LLM Project Lifecycle Manual
+
+| Language | HTML | PDF | DOCX |
+|---|---|---|---|
+| English | [HTML](docs/user-manuals/llm-project-lifecycle-manual.en.html) | [PDF](docs/user-manuals/llm-project-lifecycle-manual.en.pdf) | [DOCX](docs/user-manuals/llm-project-lifecycle-manual.en.docx) |
+| Русский | [HTML](docs/user-manuals/llm-project-lifecycle-manual.ru.html) | [PDF](docs/user-manuals/llm-project-lifecycle-manual.ru.pdf) | [DOCX](docs/user-manuals/llm-project-lifecycle-manual.ru.docx) |
+| 简体中文 | [HTML](docs/user-manuals/llm-project-lifecycle-manual.zh.html) | [PDF](docs/user-manuals/llm-project-lifecycle-manual.zh.pdf) | [DOCX](docs/user-manuals/llm-project-lifecycle-manual.zh.docx) |
+
+Manual index: [docs/user-manuals/index.html](docs/user-manuals/index.html)
+
+## Core Capabilities
+
+- **LCD authoring:** text, lines, rectangles, bitmap layers, glyph editing and special UI elements under strict monochrome display bounds.
+- **FSM modeling:** draggable states, event-labeled transitions, validation and automatic graph layout.
+- **Control-panel binding:** connect physical button events to the screen workflow.
+- **Runtime preview:** step through state flows and validate operator paths before hardware handoff.
+- **Text registry:** maintain multilingual screen copy and CSV handoff.
+- **Screen DSL:** review and edit screen layouts as structured JSON/YAML.
+- **Embedded exports:** C headers, raw binary frame buffers, XBM, Arduino PROGMEM, Rust embedded-graphics and ESP-IDF-style assets.
+- **Automation:** local REST API and MCP endpoint for Codex, Claude Code, OpenCode, LM Studio, Ollama wrappers and shell scripts.
 
 ## Public Demo
 
-The repository includes a neutral bundled demo project and Screen DSL examples:
+The repository includes a neutral demo project:
 
-- `examples/universal-lcd-demo.lcdproj`
-- `examples/screen-dsl/`
+- [examples/universal-lcd-demo.lcdproj](examples/universal-lcd-demo.lcdproj)
+- [examples/screen-dsl/](examples/screen-dsl/)
 
-The demo is intentionally generic. It does not contain proprietary instrument firmware, decompiled code, real device screen catalogs, serial-number mappings or vendor-specific specifications.
-
-## Beginner Manuals
-
-Generated user manuals are available in HTML, PDF and DOCX:
-
-- [Manual index](docs/user-manuals/index.html)
-- Operation user manual: [EN PDF](docs/user-manuals/operation-user-manual.en.pdf), [RU PDF](docs/user-manuals/operation-user-manual.ru.pdf), [ZH PDF](docs/user-manuals/operation-user-manual.zh.pdf)
-- LLM project lifecycle manual: [EN PDF](docs/user-manuals/llm-project-lifecycle-manual.en.pdf), [RU PDF](docs/user-manuals/llm-project-lifecycle-manual.ru.pdf), [ZH PDF](docs/user-manuals/llm-project-lifecycle-manual.zh.pdf)
-
-The operation manual is written for first-time users. It walks through opening the demo, modeling a measurement-oriented UI workflow, previewing setup/run/result/error paths and exporting firmware assets. Physical measurement acquisition still requires your instrument firmware, backend service or hardware connector.
+The demo is intentionally generic and excludes proprietary implementation files, private device identifiers, decompiled code and vendor-specific screen catalogs.
 
 ## API And MCP
 
-The Electron build starts local-only automation endpoints:
+The Electron desktop build starts local-only automation endpoints:
 
 - REST API: `http://127.0.0.1:8766`
 - MCP endpoint: `http://127.0.0.1:8767/mcp`
@@ -77,9 +104,9 @@ curl -X POST http://127.0.0.1:8766/api/runtime/event \
   -d "{\"eventId\":\"START\"}"
 ```
 
-See [docs/API_MCP_CONNECTORS.md](docs/API_MCP_CONNECTORS.md) for agent workflows and connector examples.
+Connector setup and agent workflows are documented in [docs/API_MCP_CONNECTORS.md](docs/API_MCP_CONNECTORS.md).
 
-## Development
+## Quality Gates
 
 ```bash
 npm run typecheck
@@ -92,26 +119,42 @@ npm run docs:user
 
 Use `npm run check` for the browser acceptance gate and `npm run check:full` for the broader local release gate.
 
+## Documentation Build
+
+The downloadable manuals are generated by:
+
+```bash
+npm run docs:user
+```
+
+The generator writes HTML, PDF and DOCX artifacts into `docs/user-manuals/`.
+
 ## Project Layout
 
 ```text
 src/
-  application/    command bus, project sessions, ChangeSet application
+  application/    command bus, project sessions and ChangeSet application
   compiler/       normalized IR and deterministic embedded exports
   domain/         shared project, FSM, LCD, tag and procedure models
-  entities/       schema-first project/screen factories and validators
+  entities/       schema-first project and screen factories
   features/       React workspaces for FSM, LCD, runtime, tags and docs
   main/           Electron main process, REST API and MCP server
   renderer/       React shell, store, i18n, manual and rendering utilities
   screen-dsl/     JSON/YAML screen authoring DSL
 docs/
-  API_MCP_CONNECTORS.md
+  user-manuals/   generated HTML/PDF/DOCX manuals
+  site/           product landing page
   SECURITY.md
   TESTING.md
-  site/
 examples/
   universal-lcd-demo.lcdproj
 ```
+
+## Security Boundary
+
+The public branch is intentionally sanitized. It does not include proprietary device projects, reverse-engineered firmware artifacts, private logs, generated confidential documentation, private keys or commercial screen catalogs.
+
+REST and MCP servers bind to `127.0.0.1` and are intended for local developer automation only. Do not expose these ports through a public tunnel.
 
 ## License
 
