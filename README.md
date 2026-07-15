@@ -23,9 +23,11 @@ Desktop builds are published from [GitHub Releases](https://github.com/myahlovvl
 
 | Platform | Artifact |
 |---|---|
-| Windows | Setup installer or portable build |
-| Linux | AppImage, deb or tar.gz |
+| Windows | [Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap%20IDE-0.1.1-Setup-x64.exe) · [Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap%20IDE-0.1.1-Portable-x64.exe) |
+| Linux | [AppImage x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap%20IDE-0.1.1-x64.AppImage) · [deb x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap%20IDE-0.1.1-x64.deb) · [tar.gz x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap%20IDE-0.1.1-x64.tar.gz) |
 | Developers | Source checkout with `npm ci` and `npm run electron:dev` |
+
+If a direct asset link is not available yet, open the [latest Release page](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest) and download the matching file from the asset list.
 
 ## Quick Start From Source
 
