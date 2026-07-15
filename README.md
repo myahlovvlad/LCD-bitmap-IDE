@@ -15,7 +15,15 @@ It is built for embedded HMI teams that need a deterministic design source: one 
 - Embedded exports: C headers, raw binary, XBM, Arduino PROGMEM, Rust embedded-graphics and ESP-IDF.
 - Local REST API and MCP endpoint for CLI tools, Codex, Claude Code, OpenCode, LM Studio and Ollama-based agents.
 
-## Quick Start
+## Download
+
+Desktop installers and portable builds are published from [GitHub Releases](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases).
+
+- Windows: Setup or Portable build.
+- Linux: AppImage, deb or tar.gz.
+- Developers: clone the repository and run the desktop app locally.
+
+## Quick Start From Source
 
 ```bash
 git clone https://github.com/myahlovvlad/LCD-bitmap-IDE.git
@@ -40,6 +48,16 @@ The repository includes a neutral bundled demo project and Screen DSL examples:
 - `examples/screen-dsl/`
 
 The demo is intentionally generic. It does not contain proprietary instrument firmware, decompiled code, real device screen catalogs, serial-number mappings or vendor-specific specifications.
+
+## Beginner Manuals
+
+Generated user manuals are available in HTML, PDF and DOCX:
+
+- [Manual index](docs/user-manuals/index.html)
+- Operation user manual: [EN PDF](docs/user-manuals/operation-user-manual.en.pdf), [RU PDF](docs/user-manuals/operation-user-manual.ru.pdf), [ZH PDF](docs/user-manuals/operation-user-manual.zh.pdf)
+- LLM project lifecycle manual: [EN PDF](docs/user-manuals/llm-project-lifecycle-manual.en.pdf), [RU PDF](docs/user-manuals/llm-project-lifecycle-manual.ru.pdf), [ZH PDF](docs/user-manuals/llm-project-lifecycle-manual.zh.pdf)
+
+The operation manual is written for first-time users. It walks through opening the demo, modeling a measurement-oriented UI workflow, previewing setup/run/result/error paths and exporting firmware assets. Physical measurement acquisition still requires your instrument firmware, backend service or hardware connector.
 
 ## API And MCP
 
@@ -69,6 +87,7 @@ npm test
 npm run test:renderer
 npm run test:importer
 npm run build
+npm run docs:user
 ```
 
 Use `npm run check` for the browser acceptance gate and `npm run check:full` for the broader local release gate.

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM Project Lifecycle Manual</title>
+  <style>
+  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #15211d; background: #f7f8f4; line-height: 1.62; letter-spacing: 0; }
+  header { padding: 48px 56px 34px; background: #10201a; color: #fff; }
+  .eyebrow { margin: 0 0 10px; color: #9ed8bf; font-weight: 700; }
+  h1 { max-width: 920px; margin: 0; font-size: 38px; line-height: 1.12; letter-spacing: 0; }
+  .subtitle { max-width: 860px; margin: 16px 0 0; color: #d9e8df; font-size: 18px; }
+  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 22px 56px; background: #e6eee8; border-bottom: 1px solid #cdd8d0; }
+  .toc a { color: #195d48; text-decoration: none; font-weight: 650; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 32px 56px; }
+  section { margin: 0 0 34px; padding: 26px; background: #fff; border: 1px solid #d7ded8; border-radius: 8px; break-inside: avoid; }
+  h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  p { margin: 0 0 12px; }
+  ol, ul { margin: 8px 0 0; padding-left: 24px; }
+  li { margin: 6px 0; }
+  .checklist li::marker { content: "□ "; color: #20765a; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+  th, td { border: 1px solid #cfd9d2; padding: 9px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef4ef; }
+  pre { margin: 14px 0 0; padding: 14px; overflow-x: auto; border-radius: 6px; background: #101816; color: #d7f5e7; font-size: 13px; }
+  footer { padding: 24px 56px; color: #5c6761; }
+  @page { size: A4; margin: 14mm; }
+  @media print { header, .toc, footer { padding-left: 0; padding-right: 0; } body { background: #fff; } section { border: 1px solid #cfd9d2; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">LCD-bitmap IDE</p>
+    <h1>LLM Project Lifecycle Manual</h1>
+    <p class="subtitle">How to prepare the environment and operate LCD-bitmap IDE with Claude Code, Codex, OpenCode, LM Studio and Ollama.</p>
+  </header>
+  <nav class="toc" aria-label="Table of contents"><a href="#chapter-1">1. What The LLM Should Do</a>
+<a href="#chapter-2">2. Prepare The Environment</a>
+<a href="#chapter-3">3. Choose A Connector Path</a>
+<a href="#chapter-4">4. Recommended System Prompt</a>
+<a href="#chapter-5">5. Read Project State</a>
+<a href="#chapter-6">6. Edit The Project Safely</a>
+<a href="#chapter-7">7. Validate Measurement Workflows</a>
+<a href="#chapter-8">8. Compile And Review</a>
+<a href="#chapter-9">9. Release Handoff</a>
+<a href="#chapter-10">10. Security Rules</a></nav>
+  <main><section id="chapter-1"><h2>1. What The LLM Should Do</h2>
+<p>Use the LLM as an assistant for structured edits, reviews and repetitive project work. The UI remains the source of truth.</p>
+<p>The LLM should read project state first, propose a small change, apply it through MCP or REST, then validate and report the result.</p>
+<ul class="checklist"><li>Read before write.</li><li>Change one concept at a time.</li><li>Validate after each batch.</li><li>Keep the desktop app visible.</li></ul>
+</section>
+<section id="chapter-2"><h2>2. Prepare The Environment</h2>
+<ol><li>Install Node.js 22+, Git and a supported LLM client.</li><li>Run npm ci in the repository.</li><li>Start the Electron app with npm run electron:dev.</li><li>Open a project or the bundled demo before calling tools.</li></ol>
+<pre><code>npm ci
+npm run electron:dev
+curl http://127.0.0.1:8766/api/health</code></pre>
+</section>
+<section id="chapter-3"><h2>3. Choose A Connector Path</h2>
+<table><thead><tr><th>Client</th><th>Best path</th><th>Fallback</th></tr></thead><tbody><tr><td>Claude Code</td><td>MCP HTTP server</td><td>REST through shell commands</td></tr><tr><td>Codex</td><td>MCP HTTP server or local shell REST calls</td><td>Small JSON scripts</td></tr><tr><td>OpenCode</td><td>MCP HTTP server</td><td>curl commands</td></tr><tr><td>LM Studio</td><td>Tool wrapper calling REST</td><td>Manual curl recipes</td></tr><tr><td>Ollama</td><td>Agent wrapper calling REST</td><td>Scripted batch edits</td></tr></tbody></table>
+</section>
+<section id="chapter-4"><h2>4. Recommended System Prompt</h2>
+<p>Give the agent explicit guardrails. It should not delete states, overwrite a project or perform broad edits without confirmation.</p>
+<pre><code>You are operating LCD-bitmap IDE through local MCP/REST.
+First read the project summary and FSM states.
+Before each mutation, describe the intended change.
+Apply small changes only.
+After each mutation, validate and summarize the result.
+Do not delete states unless the user explicitly asks.</code></pre>
+</section>
+<section id="chapter-5"><h2>5. Read Project State</h2>
+<p>Start every session by reading the current project. This avoids stale assumptions and prevents the model from editing the wrong state, screen or tag.</p>
+<pre><code>curl http://127.0.0.1:8766/api/project/meta
+curl http://127.0.0.1:8766/api/fsm/states
+curl http://127.0.0.1:8766/api/tags</code></pre>
+</section>
+<section id="chapter-6"><h2>6. Edit The Project Safely</h2>
+<ol><li>Ask for one outcome: add a state, rename a screen, add a tag or connect a transition.</li><li>Let the agent prepare the payload.</li><li>Apply the payload through MCP or REST.</li><li>Read the state again and compare the result.</li><li>Save the project in the UI after successful batches.</li></ol>
+</section>
+<section id="chapter-7"><h2>7. Validate Measurement Workflows</h2>
+<p>For measurement-oriented projects, the LLM should verify that setup, run, result, cancel and error paths all exist. It should also check that key measurement tags have units and precision.</p>
+<ul class="checklist"><li>Initial state exists.</li><li>START has a valid path.</li><li>Result state is reachable.</li><li>Cancel and error paths are reachable.</li><li>Measurement tags have names, units and precision.</li></ul>
+</section>
+<section id="chapter-8"><h2>8. Compile And Review</h2>
+<ol><li>Compile screens after LCD changes.</li><li>Run Runtime Preview after FSM changes.</li><li>Review screenshots or exported assets before handing changes to firmware.</li><li>Commit documentation and project changes together when they describe the same behavior.</li></ol>
+</section>
+<section id="chapter-9"><h2>9. Release Handoff</h2>
+<p>A clean handoff contains the .lcdproj file, exported firmware assets, screenshots, validation notes and the exact application version or commit hash used to generate them.</p>
+</section>
+<section id="chapter-10"><h2>10. Security Rules</h2>
+<ul class="checklist"><li>Do not expose 127.0.0.1 automation ports through a public tunnel.</li><li>Do not paste private implementation files, device identifiers or keys into prompts.</li><li>Review every DELETE operation manually.</li><li>Keep proprietary projects outside the public branch.</li></ul>
+</section></main>
+  <footer>Generated from scripts/generate-user-docs.mjs. For automation details see docs/API_MCP_CONNECTORS.md.</footer>
+</body>
+</html>

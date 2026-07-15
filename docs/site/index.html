@@ -229,6 +229,7 @@
     <nav class="nav" aria-label="Main navigation">
       <a href="#capabilities">Capabilities</a>
       <a href="#workflow">Workflow</a>
+      <a href="#manuals">Manuals</a>
       <a href="#automation">API and MCP</a>
       <a href="#start" class="button">Get started</a>
     </nav>
@@ -240,7 +241,8 @@
       <h1>LCD-bitmap IDE</h1>
       <p>Design monochrome LCD screens, FSM navigation, bitmap fonts, control panels and firmware exports in one deterministic offline desktop tool.</p>
       <div class="actions">
-        <a class="primary" href="#start">Start building</a>
+        <a class="primary" href="#download">Download</a>
+        <a class="secondary" href="#manuals">Read manuals</a>
         <a class="secondary" href="https://github.com/myahlovvlad/LCD-bitmap-IDE">View on GitHub</a>
       </div>
     </div>
@@ -268,7 +270,7 @@
           <h2>One surface for engineering, review and hand-off</h2>
           <p>LCD-bitmap IDE keeps the visual screen model close to the behavior model. Engineers can inspect the FSM graph, edit pixels, bind runtime values and export firmware assets without switching tools.</p>
           <div class="metric-row">
-            <div class="metric"><b>547</b><span>unit tests</span></div>
+            <div class="metric"><b>500+</b><span>unit tests</span></div>
             <div class="metric"><b>8</b><span>export formats</span></div>
             <div class="metric"><b>3</b><span>UI languages</span></div>
             <div class="metric"><b>2</b><span>local APIs</span></div>
@@ -281,13 +283,37 @@
     <section id="workflow">
       <div class="section-head">
         <h2>Workflow</h2>
-        <p>A practical path from first screen to firmware-ready payload.</p>
+        <p>A practical path from first measurement screen to firmware-ready payload.</p>
       </div>
       <div class="workflow">
-        <div class="step"><strong>1. Model</strong>Define FSM states, events and transitions.</div>
-        <div class="step"><strong>2. Draw</strong>Create LCD screens with text, lines, shapes and bitmaps.</div>
-        <div class="step"><strong>3. Bind</strong>Connect panel buttons and live tags to UI behavior.</div>
-        <div class="step"><strong>4. Export</strong>Generate firmware assets and verify runtime behavior.</div>
+        <div class="step"><strong>1. Model</strong>Define setup, run, result, cancel and error states.</div>
+        <div class="step"><strong>2. Draw</strong>Create readable LCD screens for each operator decision.</div>
+        <div class="step"><strong>3. Bind</strong>Connect buttons, tags and procedures to UI behavior.</div>
+        <div class="step"><strong>4. Verify</strong>Preview the workflow, then export firmware assets.</div>
+      </div>
+    </section>
+
+    <section id="download">
+      <div class="section-head">
+        <h2>Download the desktop app</h2>
+        <p>Installers and portable builds are published from GitHub Releases. The source build path stays available for developers and reviewers.</p>
+      </div>
+      <div class="grid">
+        <article class="tile"><h3>Windows</h3><p><a href="https://github.com/myahlovvlad/LCD-bitmap-IDE/releases">Download the latest Setup or Portable build</a> from GitHub Releases.</p></article>
+        <article class="tile"><h3>Linux</h3><p><a href="https://github.com/myahlovvlad/LCD-bitmap-IDE/releases">Download AppImage, deb or tar.gz</a> from GitHub Releases.</p></article>
+        <article class="tile"><h3>Build from source</h3><p>Run <code>npm ci</code> and <code>npm run electron:dev</code> for local desktop development.</p></article>
+      </div>
+    </section>
+
+    <section id="manuals">
+      <div class="section-head">
+        <h2>Beginner documentation in three languages</h2>
+        <p>Use the operation manual for first-time users and the LLM lifecycle manual when Claude Code, Codex, OpenCode, LM Studio or Ollama drives the project through API/MCP connectors.</p>
+      </div>
+      <div class="grid">
+        <article class="tile"><h3>English</h3><p><a href="../user-manuals/operation-user-manual.en.pdf">Operation PDF</a> · <a href="../user-manuals/llm-project-lifecycle-manual.en.pdf">LLM lifecycle PDF</a> · <a href="../user-manuals/index.html">All formats</a></p></article>
+        <article class="tile"><h3>Русский</h3><p><a href="../user-manuals/operation-user-manual.ru.pdf">Operation PDF</a> · <a href="../user-manuals/llm-project-lifecycle-manual.ru.pdf">LLM lifecycle PDF</a> · <a href="../user-manuals/index.html">Все форматы</a></p></article>
+        <article class="tile"><h3>简体中文</h3><p><a href="../user-manuals/operation-user-manual.zh.pdf">Operation PDF</a> · <a href="../user-manuals/llm-project-lifecycle-manual.zh.pdf">LLM lifecycle PDF</a> · <a href="../user-manuals/index.html">全部格式</a></p></article>
       </div>
     </section>
 

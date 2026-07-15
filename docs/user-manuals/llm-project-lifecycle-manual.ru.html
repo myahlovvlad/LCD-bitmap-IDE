@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Руководство по жизненному циклу проекта через LLM</title>
+  <style>
+  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #15211d; background: #f7f8f4; line-height: 1.62; letter-spacing: 0; }
+  header { padding: 48px 56px 34px; background: #10201a; color: #fff; }
+  .eyebrow { margin: 0 0 10px; color: #9ed8bf; font-weight: 700; }
+  h1 { max-width: 920px; margin: 0; font-size: 38px; line-height: 1.12; letter-spacing: 0; }
+  .subtitle { max-width: 860px; margin: 16px 0 0; color: #d9e8df; font-size: 18px; }
+  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 22px 56px; background: #e6eee8; border-bottom: 1px solid #cdd8d0; }
+  .toc a { color: #195d48; text-decoration: none; font-weight: 650; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 32px 56px; }
+  section { margin: 0 0 34px; padding: 26px; background: #fff; border: 1px solid #d7ded8; border-radius: 8px; break-inside: avoid; }
+  h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  p { margin: 0 0 12px; }
+  ol, ul { margin: 8px 0 0; padding-left: 24px; }
+  li { margin: 6px 0; }
+  .checklist li::marker { content: "□ "; color: #20765a; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+  th, td { border: 1px solid #cfd9d2; padding: 9px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef4ef; }
+  pre { margin: 14px 0 0; padding: 14px; overflow-x: auto; border-radius: 6px; background: #101816; color: #d7f5e7; font-size: 13px; }
+  footer { padding: 24px 56px; color: #5c6761; }
+  @page { size: A4; margin: 14mm; }
+  @media print { header, .toc, footer { padding-left: 0; padding-right: 0; } body { background: #fff; } section { border: 1px solid #cfd9d2; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">LCD-bitmap IDE</p>
+    <h1>Руководство по жизненному циклу проекта через LLM</h1>
+    <p class="subtitle">Как подготовить окружение и управлять LCD-bitmap IDE через Claude Code, Codex, OpenCode, LM Studio и Ollama.</p>
+  </header>
+  <nav class="toc" aria-label="Table of contents"><a href="#chapter-1">1. Что должен делать LLM</a>
+<a href="#chapter-2">2. Подготовка окружения</a>
+<a href="#chapter-3">3. Выбор connector-пути</a>
+<a href="#chapter-4">4. Рекомендуемый system prompt</a>
+<a href="#chapter-5">5. Чтение состояния проекта</a>
+<a href="#chapter-6">6. Безопасное редактирование проекта</a>
+<a href="#chapter-7">7. Валидация измерительных workflow</a>
+<a href="#chapter-8">8. Compile и review</a>
+<a href="#chapter-9">9. Release handoff</a>
+<a href="#chapter-10">10. Security rules</a></nav>
+  <main><section id="chapter-1"><h2>1. Что должен делать LLM</h2>
+<p>Используйте LLM как помощника для структурированных правок, review и повторяемой работы с проектом. UI остаётся источником истины.</p>
+<p>LLM сначала читает состояние проекта, предлагает небольшое изменение, применяет его через MCP или REST, затем валидирует и сообщает результат.</p>
+<ul class="checklist"><li>Сначала читать, потом писать.</li><li>Менять один концепт за раз.</li><li>Валидировать после каждой пачки.</li><li>Держать desktop app открытым.</li></ul>
+</section>
+<section id="chapter-2"><h2>2. Подготовка окружения</h2>
+<ol><li>Установите Node.js 22+, Git и выбранный LLM-клиент.</li><li>Выполните npm ci в репозитории.</li><li>Запустите Electron app через npm run electron:dev.</li><li>Откройте проект или bundled demo до вызова tools.</li></ol>
+<pre><code>npm ci
+npm run electron:dev
+curl http://127.0.0.1:8766/api/health</code></pre>
+</section>
+<section id="chapter-3"><h2>3. Выбор connector-пути</h2>
+<table><thead><tr><th>Клиент</th><th>Лучший путь</th><th>Fallback</th></tr></thead><tbody><tr><td>Claude Code</td><td>MCP HTTP server</td><td>REST через shell-команды</td></tr><tr><td>Codex</td><td>MCP HTTP server или shell REST calls</td><td>Небольшие JSON scripts</td></tr><tr><td>OpenCode</td><td>MCP HTTP server</td><td>curl commands</td></tr><tr><td>LM Studio</td><td>Tool wrapper поверх REST</td><td>Ручные curl recipes</td></tr><tr><td>Ollama</td><td>Agent wrapper поверх REST</td><td>Scripted batch edits</td></tr></tbody></table>
+</section>
+<section id="chapter-4"><h2>4. Рекомендуемый system prompt</h2>
+<p>Дайте agent явные ограничения. Он не должен удалять states, перезаписывать проект или делать широкие правки без подтверждения.</p>
+<pre><code>You are operating LCD-bitmap IDE through local MCP/REST.
+First read the project summary and FSM states.
+Before each mutation, describe the intended change.
+Apply small changes only.
+After each mutation, validate and summarize the result.
+Do not delete states unless the user explicitly asks.</code></pre>
+</section>
+<section id="chapter-5"><h2>5. Чтение состояния проекта</h2>
+<p>Каждую сессию начинайте с чтения проекта. Это предотвращает устаревшие предположения и правки не того state, screen или tag.</p>
+<pre><code>curl http://127.0.0.1:8766/api/project/meta
+curl http://127.0.0.1:8766/api/fsm/states
+curl http://127.0.0.1:8766/api/tags</code></pre>
+</section>
+<section id="chapter-6"><h2>6. Безопасное редактирование проекта</h2>
+<ol><li>Запрашивайте один outcome: добавить state, переименовать screen, добавить tag или связать transition.</li><li>Пусть agent подготовит payload.</li><li>Примените payload через MCP или REST.</li><li>Снова прочитайте state и сравните результат.</li><li>После успешной пачки сохраните проект в UI.</li></ol>
+</section>
+<section id="chapter-7"><h2>7. Валидация измерительных workflow</h2>
+<p>Для measurement-oriented проектов LLM должен проверить наличие setup, run, result, cancel и error paths. Также нужно проверить, что measurement tags имеют units и precision.</p>
+<ul class="checklist"><li>Initial state существует.</li><li>START ведёт по валидному пути.</li><li>Result state достижим.</li><li>Cancel и error paths достижимы.</li><li>Measurement tags имеют names, units и precision.</li></ul>
+</section>
+<section id="chapter-8"><h2>8. Compile и review</h2>
+<ol><li>Компилируйте screens после LCD-изменений.</li><li>Запускайте Runtime Preview после FSM-изменений.</li><li>Проверяйте screenshots или exported assets до передачи firmware-разработчику.</li><li>Коммитьте docs и project changes вместе, если они описывают одно поведение.</li></ol>
+</section>
+<section id="chapter-9"><h2>9. Release handoff</h2>
+<p>Чистая передача включает .lcdproj, exported firmware assets, screenshots, validation notes и точную версию приложения или commit hash, которыми они были созданы.</p>
+</section>
+<section id="chapter-10"><h2>10. Security rules</h2>
+<ul class="checklist"><li>Не открывайте 127.0.0.1 automation ports через публичный tunnel.</li><li>Не вставляйте private implementation files, device identifiers или keys в prompts.</li><li>Проверяйте каждый DELETE вручную.</li><li>Держите proprietary projects вне public branch.</li></ul>
+</section></main>
+  <footer>Generated from scripts/generate-user-docs.mjs. For automation details see docs/API_MCP_CONNECTORS.md.</footer>
+</body>
+</html>

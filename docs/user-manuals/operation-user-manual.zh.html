@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LCD-bitmap IDE 操作用户手册</title>
+  <style>
+  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #15211d; background: #f7f8f4; line-height: 1.62; letter-spacing: 0; }
+  header { padding: 48px 56px 34px; background: #10201a; color: #fff; }
+  .eyebrow { margin: 0 0 10px; color: #9ed8bf; font-weight: 700; }
+  h1 { max-width: 920px; margin: 0; font-size: 38px; line-height: 1.12; letter-spacing: 0; }
+  .subtitle { max-width: 860px; margin: 16px 0 0; color: #d9e8df; font-size: 18px; }
+  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 22px 56px; background: #e6eee8; border-bottom: 1px solid #cdd8d0; }
+  .toc a { color: #195d48; text-decoration: none; font-weight: 650; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 32px 56px; }
+  section { margin: 0 0 34px; padding: 26px; background: #fff; border: 1px solid #d7ded8; border-radius: 8px; break-inside: avoid; }
+  h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  p { margin: 0 0 12px; }
+  ol, ul { margin: 8px 0 0; padding-left: 24px; }
+  li { margin: 6px 0; }
+  .checklist li::marker { content: "□ "; color: #20765a; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+  th, td { border: 1px solid #cfd9d2; padding: 9px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef4ef; }
+  pre { margin: 14px 0 0; padding: 14px; overflow-x: auto; border-radius: 6px; background: #101816; color: #d7f5e7; font-size: 13px; }
+  footer { padding: 24px 56px; color: #5c6761; }
+  @page { size: A4; margin: 14mm; }
+  @media print { header, .toc, footer { padding-left: 0; padding-right: 0; } body { background: #fff; } section { border: 1px solid #cfd9d2; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">LCD-bitmap IDE</p>
+    <h1>LCD-bitmap IDE 操作用户手册</h1>
+    <p class="subtitle">面向新用户的流程：设计、检查并导出嵌入式 LCD 测量界面。</p>
+  </header>
+  <nav class="toc" aria-label="Table of contents"><a href="#chapter-1">1. 应用程序用途</a>
+<a href="#chapter-2">2. 安装与启动</a>
+<a href="#chapter-3">3. 打开演示项目</a>
+<a href="#chapter-4">4. 工作区概览</a>
+<a href="#chapter-5">5. 构建测量流程</a>
+<a href="#chapter-6">6. 设计 LCD 屏幕</a>
+<a href="#chapter-7">7. 绑定按钮、标签和过程</a>
+<a href="#chapter-8">8. 预览流程</a>
+<a href="#chapter-9">9. 导出到固件</a>
+<a href="#chapter-10">10. 保存、版本管理和交付</a>
+<a href="#chapter-11">11. 故障排除</a></nav>
+  <main><section id="chapter-1"><h2>1. 应用程序用途</h2>
+<p>LCD-bitmap IDE 是离线桌面工作台，用于设计单色 LCD 屏幕、有限状态机导航、控制面板绑定以及可交付给固件的导出文件。</p>
+<p>它适合围绕测量流程设计操作界面：设置、启动、运行进度、结果查看、警告和维护状态。</p>
+<p>应用本身不直接执行物理测量。真实数据采集需要仪器固件、后端服务或硬件连接器。LCD-bitmap IDE 用于在集成到目标固件之前设计和验证界面与运行行为。</p>
+<ul class="checklist"><li>创建或打开项目。</li><li>设计屏幕和 FSM 转换。</li><li>在预览中检查流程。</li><li>导出固件资源。</li></ul>
+</section>
+<section id="chapter-2"><h2>2. 安装与启动</h2>
+<ol><li>安装 Node.js 22 或更高版本以及 Git。</li><li>克隆仓库并运行 npm ci。</li><li>使用 npm run dev 启动浏览器版本，或使用 npm run electron:dev 启动桌面版本。</li><li>需要 REST API、MCP 自动化、PDF 导出或应用打包时，请使用桌面版本。</li></ol>
+<pre><code>git clone https://github.com/myahlovvlad/LCD-bitmap-IDE.git
+cd LCD-bitmap-IDE
+npm ci
+npm run electron:dev</code></pre>
+</section>
+<section id="chapter-3"><h2>3. 打开演示项目</h2>
+<p>在启动界面选择内置演示项目，或打开 examples/universal-lcd-demo.lcdproj。</p>
+<p>演示项目是通用的。它展示如何表示测量类界面，而不包含供应商固件、序列号或私有屏幕目录。</p>
+<ol><li>打开演示项目。</li><li>查看 FSM、LCD、Tags 和 Runtime 工作区。</li><li>不要一次修改所有内容。先修改一个屏幕或转换，然后预览。</li></ol>
+</section>
+<section id="chapter-4"><h2>4. 工作区概览</h2>
+<table><thead><tr><th>工作区</th><th>用途</th><th>新手得到的结果</th></tr></thead><tbody><tr><td>FSM</td><td>状态和转换</td><td>清晰的操作流程</td></tr><tr><td>LCD</td><td>128x64 像素级屏幕</td><td>可读的屏幕布局</td></tr><tr><td>Control panel</td><td>按钮和事件绑定</td><td>可预测的操作输入</td></tr><tr><td>Tags</td><td>屏幕和过程使用的命名值</td><td>可追踪的测量值</td></tr><tr><td>Runtime</td><td>交互式流程预览</td><td>固件导出前检查流程</td></tr></tbody></table>
+</section>
+<section id="chapter-5"><h2>5. 构建测量流程</h2>
+<p>先考虑操作员期望看到的状态，而不是先画像素。简单流程通常包含 Idle、Setup、Ready、Running、Result、Error 和 Service。</p>
+<p>每个状态都应回答一个问题：现在发生了什么，当前最重要的值是什么，用户可以执行什么操作。</p>
+<ol><li>在 FSM 中添加流程状态。</li><li>使用 START、NEXT、CANCEL 或 RETRY 等事件命名转换。</li><li>明确绘制错误转换。</li><li>在详细绘图前先运行 Runtime Preview。</li></ol>
+</section>
+<section id="chapter-6"><h2>6. 设计 LCD 屏幕</h2>
+<p>屏幕应便于快速读取。通常将当前状态放在顶部，关键数值放在中间，可执行操作放在底部附近。</p>
+<p>可以使用文本、线条、矩形、位图层以及进度条、指示器等特殊元素。避免装饰性内容占用屏幕。</p>
+<ul class="checklist"><li>文字在 128x64 上可读。</li><li>重要数值带单位。</li><li>当前可用操作清晰可见。</li><li>警告屏幕具有明显区别。</li></ul>
+</section>
+<section id="chapter-7"><h2>7. 绑定按钮、标签和过程</h2>
+<p>按钮应触发与 FSM 转换匹配的事件。Tags 描述测量值、配置值或状态标志。Procedures 描述后端动作，例如开始读数、清除结果或进入维护流程。</p>
+<p>使用稳定的名称。sample_absorbance 比 value1 更容易维护。</p>
+</section>
+<section id="chapter-8"><h2>8. 预览流程</h2>
+<ol><li>打开 Runtime。</li><li>从初始状态开始。</li><li>按照真实操作顺序按下每个按钮。</li><li>检查所有测量状态屏幕是否按正确顺序出现。</li><li>测试错误和取消路径，不要只测试成功路径。</li></ol>
+</section>
+<section id="chapter-9"><h2>9. 导出到固件</h2>
+<p>流程稳定后，可将屏幕导出为 C headers、binary frame buffers、XBM、Arduino PROGMEM、Rust embedded-graphics 或 ESP-IDF 资源。</p>
+<p>刷写硬件之前，请确认目标显示屏使用相同的分辨率、page order、bit order 和单色格式。</p>
+</section>
+<section id="chapter-10"><h2>10. 保存、版本管理和交付</h2>
+<ul class="checklist"><li>在重要修改后保存 .lcdproj 文件。</li><li>项目文件和生成资源分别提交。</li><li>在评审中包含截图。</li><li>将固件资源追溯到项目版本。</li></ul>
+</section>
+<section id="chapter-11"><h2>11. 故障排除</h2>
+<table><thead><tr><th>现象</th><th>可能原因</th><th>处理方法</th></tr></thead><tbody><tr><td>Runtime 按钮无反应</td><td>没有对应事件的转换</td><td>检查 FSM 转换事件名称</td></tr><tr><td>导出图像反色</td><td>目标显示屏 bit order 不同</td><td>确认驱动 byte order</td></tr><tr><td>文本被裁剪</td><td>文本对象或字体过大</td><td>缩短文本或调整位置</td></tr><tr><td>API connection refused</td><td>桌面应用未运行</td><td>运行 npm run electron:dev 或 packaged app</td></tr></tbody></table>
+</section></main>
+  <footer>Generated from scripts/generate-user-docs.mjs. For automation details see docs/API_MCP_CONNECTORS.md.</footer>
+</body>
+</html>

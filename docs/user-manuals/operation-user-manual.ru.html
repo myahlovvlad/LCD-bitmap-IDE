@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Руководство пользователя LCD-bitmap IDE</title>
+  <style>
+  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #15211d; background: #f7f8f4; line-height: 1.62; letter-spacing: 0; }
+  header { padding: 48px 56px 34px; background: #10201a; color: #fff; }
+  .eyebrow { margin: 0 0 10px; color: #9ed8bf; font-weight: 700; }
+  h1 { max-width: 920px; margin: 0; font-size: 38px; line-height: 1.12; letter-spacing: 0; }
+  .subtitle { max-width: 860px; margin: 16px 0 0; color: #d9e8df; font-size: 18px; }
+  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 22px 56px; background: #e6eee8; border-bottom: 1px solid #cdd8d0; }
+  .toc a { color: #195d48; text-decoration: none; font-weight: 650; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 32px 56px; }
+  section { margin: 0 0 34px; padding: 26px; background: #fff; border: 1px solid #d7ded8; border-radius: 8px; break-inside: avoid; }
+  h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  p { margin: 0 0 12px; }
+  ol, ul { margin: 8px 0 0; padding-left: 24px; }
+  li { margin: 6px 0; }
+  .checklist li::marker { content: "□ "; color: #20765a; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+  th, td { border: 1px solid #cfd9d2; padding: 9px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef4ef; }
+  pre { margin: 14px 0 0; padding: 14px; overflow-x: auto; border-radius: 6px; background: #101816; color: #d7f5e7; font-size: 13px; }
+  footer { padding: 24px 56px; color: #5c6761; }
+  @page { size: A4; margin: 14mm; }
+  @media print { header, .toc, footer { padding-left: 0; padding-right: 0; } body { background: #fff; } section { border: 1px solid #cfd9d2; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">LCD-bitmap IDE</p>
+    <h1>Руководство пользователя LCD-bitmap IDE</h1>
+    <p class="subtitle">Пошаговый workflow для новичков: проектирование, проверка и экспорт LCD-интерфейсов для измерительных сценариев.</p>
+  </header>
+  <nav class="toc" aria-label="Table of contents"><a href="#chapter-1">1. Что делает приложение</a>
+<a href="#chapter-2">2. Установка и запуск</a>
+<a href="#chapter-3">3. Открытие demo-проекта</a>
+<a href="#chapter-4">4. Основные рабочие области</a>
+<a href="#chapter-5">5. Построение измерительного workflow</a>
+<a href="#chapter-6">6. Проектирование LCD-экранов</a>
+<a href="#chapter-7">7. Привязка кнопок, tags и procedures</a>
+<a href="#chapter-8">8. Проверка workflow</a>
+<a href="#chapter-9">9. Экспорт для firmware</a>
+<a href="#chapter-10">10. Сохранение, версии и передача</a>
+<a href="#chapter-11">11. Устранение неполадок</a></nav>
+  <main><section id="chapter-1"><h2>1. Что делает приложение</h2>
+<p>LCD-bitmap IDE - offline desktop-инструмент для проектирования монохромных LCD-экранов, FSM-навигации, привязок панели управления и firmware-ready экспортов.</p>
+<p>Используйте его для проектирования интерфейса вокруг измерительного workflow: настройка, старт, ход выполнения, просмотр результата, предупреждения и сервисные состояния.</p>
+<p>Само приложение не выполняет физические измерения. Для реального снятия данных нужен firmware прибора, backend-сервис или hardware connector. В LCD-bitmap IDE вы проектируете и проверяете интерфейс и runtime-поведение до интеграции с целевой прошивкой.</p>
+<ul class="checklist"><li>Создать или открыть проект.</li><li>Спроектировать экраны и FSM-переходы.</li><li>Проверить workflow в preview.</li><li>Экспортировать firmware assets.</li></ul>
+</section>
+<section id="chapter-2"><h2>2. Установка и запуск</h2>
+<ol><li>Установите Node.js 22 или новее и Git.</li><li>Склонируйте репозиторий и выполните npm ci.</li><li>Запустите browser-сборку через npm run dev или desktop-сборку через npm run electron:dev.</li><li>Desktop-сборка нужна для REST API, MCP-автоматизации, PDF-экспорта и packaging.</li></ol>
+<pre><code>git clone https://github.com/myahlovvlad/LCD-bitmap-IDE.git
+cd LCD-bitmap-IDE
+npm ci
+npm run electron:dev</code></pre>
+</section>
+<section id="chapter-3"><h2>3. Открытие demo-проекта</h2>
+<p>На стартовом экране выберите встроенный demo-проект или откройте examples/universal-lcd-demo.lcdproj.</p>
+<p>Demo специально сделан универсальным. Он показывает, как представить измерительный интерфейс без vendor implementation files, private device identifiers и приватных каталогов экранов.</p>
+<ol><li>Откройте demo.</li><li>Посмотрите вкладки FSM, LCD, Tags и Runtime.</li><li>Не меняйте всё сразу. Измените один экран или переход, затем проверьте preview.</li></ol>
+</section>
+<section id="chapter-4"><h2>4. Основные рабочие области</h2>
+<table><thead><tr><th>Область</th><th>Назначение</th><th>Результат для новичка</th></tr></thead><tbody><tr><td>FSM</td><td>Состояния и переходы</td><td>Понятный операторский flow</td></tr><tr><td>LCD</td><td>Пиксельные экраны 128x64</td><td>Читаемые screen layouts</td></tr><tr><td>Control panel</td><td>Привязка кнопок и событий</td><td>Предсказуемый ввод оператора</td></tr><tr><td>Tags</td><td>Именованные значения экранов и процедур</td><td>Traceable измерительные значения</td></tr><tr><td>Runtime</td><td>Интерактивная проверка flow</td><td>Проверенный workflow до firmware export</td></tr></tbody></table>
+</section>
+<section id="chapter-5"><h2>5. Построение измерительного workflow</h2>
+<p>Начинайте не с пикселей, а с состояний, которые ожидает оператор. Простой workflow обычно включает Idle, Setup, Ready, Running, Result, Error и Service.</p>
+<p>Каждое состояние должно отвечать на один вопрос пользователя: что происходит, какое значение важно сейчас и какое действие доступно.</p>
+<ol><li>Добавьте состояния во вкладке FSM.</li><li>Назовите переходы событиями START, NEXT, CANCEL или RETRY.</li><li>Сделайте error transitions явными.</li><li>Проверьте workflow в Runtime Preview до детальной графики.</li></ol>
+</section>
+<section id="chapter-6"><h2>6. Проектирование LCD-экранов</h2>
+<p>Проектируйте экран для быстрого чтения. Текущее состояние обычно сверху, ключевое значение в центре, доступное действие ближе к нижней части.</p>
+<p>Используйте текст, линии, прямоугольники, bitmap-слои и special elements: progress bar, indicators, checkbox/radio. Не перегружайте экран декоративными деталями.</p>
+<ul class="checklist"><li>Текст читается на 128x64.</li><li>Важные значения имеют единицы измерения.</li><li>Доступное действие видно.</li><li>Warning screens визуально отличаются.</li></ul>
+</section>
+<section id="chapter-7"><h2>7. Привязка кнопок, tags и procedures</h2>
+<p>Кнопки должны генерировать события, совпадающие с FSM transitions. Tags описывают измерительные значения, настройки или status flags. Procedures описывают backend-действия: старт измерения, сброс результата, сервисная процедура.</p>
+<p>Используйте стабильные имена. Tag sample_absorbance проще поддерживать, чем value1.</p>
+</section>
+<section id="chapter-8"><h2>8. Проверка workflow</h2>
+<ol><li>Откройте Runtime.</li><li>Начните с initial state.</li><li>Нажимайте кнопки в порядке реального оператора.</li><li>Проверьте, что все status screens появляются в правильной последовательности.</li><li>Проверьте error и cancel paths, а не только успешный сценарий.</li></ol>
+</section>
+<section id="chapter-9"><h2>9. Экспорт для firmware</h2>
+<p>Когда workflow стабилен, экспортируйте экраны как C headers, binary frame buffers, XBM, Arduino PROGMEM, Rust embedded-graphics или ESP-IDF assets.</p>
+<p>Перед прошивкой hardware проверьте, что целевой дисплей использует ту же resolution, page order, bit order и monochrome format.</p>
+</section>
+<section id="chapter-10"><h2>10. Сохранение, версии и передача</h2>
+<ul class="checklist"><li>Сохраняйте .lcdproj после смысловых изменений.</li><li>Коммитьте project files и generated assets отдельно.</li><li>Добавляйте screenshots в review.</li><li>Связывайте firmware artifacts с версией проекта.</li></ul>
+</section>
+<section id="chapter-11"><h2>11. Устранение неполадок</h2>
+<table><thead><tr><th>Симптом</th><th>Вероятная причина</th><th>Действие</th></tr></thead><tbody><tr><td>Кнопка Runtime ничего не делает</td><td>Нет transition для события</td><td>Проверьте event names в FSM</td></tr><tr><td>Export выглядит инвертированным</td><td>Bit order целевого дисплея отличается</td><td>Проверьте byte order драйвера</td></tr><tr><td>Текст обрезан</td><td>Объект или шрифт слишком большой</td><td>Сократите текст или измените позицию</td></tr><tr><td>API connection refused</td><td>Desktop app не запущен</td><td>Запустите npm run electron:dev или packaged app</td></tr></tbody></table>
+</section></main>
+  <footer>Generated from scripts/generate-user-docs.mjs. For automation details see docs/API_MCP_CONNECTORS.md.</footer>
+</body>
+</html>

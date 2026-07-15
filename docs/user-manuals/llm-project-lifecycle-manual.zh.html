@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>通过 LLM 管理项目生命周期手册</title>
+  <style>
+  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #15211d; background: #f7f8f4; line-height: 1.62; letter-spacing: 0; }
+  header { padding: 48px 56px 34px; background: #10201a; color: #fff; }
+  .eyebrow { margin: 0 0 10px; color: #9ed8bf; font-weight: 700; }
+  h1 { max-width: 920px; margin: 0; font-size: 38px; line-height: 1.12; letter-spacing: 0; }
+  .subtitle { max-width: 860px; margin: 16px 0 0; color: #d9e8df; font-size: 18px; }
+  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 22px 56px; background: #e6eee8; border-bottom: 1px solid #cdd8d0; }
+  .toc a { color: #195d48; text-decoration: none; font-weight: 650; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 32px 56px; }
+  section { margin: 0 0 34px; padding: 26px; background: #fff; border: 1px solid #d7ded8; border-radius: 8px; break-inside: avoid; }
+  h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  p { margin: 0 0 12px; }
+  ol, ul { margin: 8px 0 0; padding-left: 24px; }
+  li { margin: 6px 0; }
+  .checklist li::marker { content: "□ "; color: #20765a; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+  th, td { border: 1px solid #cfd9d2; padding: 9px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef4ef; }
+  pre { margin: 14px 0 0; padding: 14px; overflow-x: auto; border-radius: 6px; background: #101816; color: #d7f5e7; font-size: 13px; }
+  footer { padding: 24px 56px; color: #5c6761; }
+  @page { size: A4; margin: 14mm; }
+  @media print { header, .toc, footer { padding-left: 0; padding-right: 0; } body { background: #fff; } section { border: 1px solid #cfd9d2; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">LCD-bitmap IDE</p>
+    <h1>通过 LLM 管理项目生命周期手册</h1>
+    <p class="subtitle">如何准备环境，并使用 Claude Code、Codex、OpenCode、LM Studio 和 Ollama 操作 LCD-bitmap IDE。</p>
+  </header>
+  <nav class="toc" aria-label="Table of contents"><a href="#chapter-1">1. LLM 应该做什么</a>
+<a href="#chapter-2">2. 准备环境</a>
+<a href="#chapter-3">3. 选择连接方式</a>
+<a href="#chapter-4">4. 推荐 System Prompt</a>
+<a href="#chapter-5">5. 读取项目状态</a>
+<a href="#chapter-6">6. 安全编辑项目</a>
+<a href="#chapter-7">7. 验证测量流程</a>
+<a href="#chapter-8">8. 编译与审查</a>
+<a href="#chapter-9">9. 发布交付</a>
+<a href="#chapter-10">10. 安全规则</a></nav>
+  <main><section id="chapter-1"><h2>1. LLM 应该做什么</h2>
+<p>将 LLM 作为结构化修改、审查和重复性项目工作的助手。UI 仍然是事实来源。</p>
+<p>LLM 应先读取项目状态，提出小范围修改，通过 MCP 或 REST 应用，然后验证并报告结果。</p>
+<ul class="checklist"><li>先读后写。</li><li>一次只改一个概念。</li><li>每批修改后验证。</li><li>保持桌面应用可见。</li></ul>
+</section>
+<section id="chapter-2"><h2>2. 准备环境</h2>
+<ol><li>安装 Node.js 22+、Git 和支持的 LLM 客户端。</li><li>在仓库中运行 npm ci。</li><li>使用 npm run electron:dev 启动 Electron 应用。</li><li>调用工具前先打开项目或内置演示。</li></ol>
+<pre><code>npm ci
+npm run electron:dev
+curl http://127.0.0.1:8766/api/health</code></pre>
+</section>
+<section id="chapter-3"><h2>3. 选择连接方式</h2>
+<table><thead><tr><th>客户端</th><th>最佳路径</th><th>备用路径</th></tr></thead><tbody><tr><td>Claude Code</td><td>MCP HTTP server</td><td>通过 shell 调用 REST</td></tr><tr><td>Codex</td><td>MCP HTTP server 或本地 REST 调用</td><td>小型 JSON 脚本</td></tr><tr><td>OpenCode</td><td>MCP HTTP server</td><td>curl 命令</td></tr><tr><td>LM Studio</td><td>调用 REST 的工具包装器</td><td>手动 curl 示例</td></tr><tr><td>Ollama</td><td>调用 REST 的 agent 包装器</td><td>脚本化批量编辑</td></tr></tbody></table>
+</section>
+<section id="chapter-4"><h2>4. 推荐 System Prompt</h2>
+<p>为 agent 设置明确边界。未经确认，它不应删除状态、覆盖项目或执行大范围修改。</p>
+<pre><code>You are operating LCD-bitmap IDE through local MCP/REST.
+First read the project summary and FSM states.
+Before each mutation, describe the intended change.
+Apply small changes only.
+After each mutation, validate and summarize the result.
+Do not delete states unless the user explicitly asks.</code></pre>
+</section>
+<section id="chapter-5"><h2>5. 读取项目状态</h2>
+<p>每次会话都应从读取当前项目开始。这可以避免过期假设，并防止模型编辑错误的状态、屏幕或标签。</p>
+<pre><code>curl http://127.0.0.1:8766/api/project/meta
+curl http://127.0.0.1:8766/api/fsm/states
+curl http://127.0.0.1:8766/api/tags</code></pre>
+</section>
+<section id="chapter-6"><h2>6. 安全编辑项目</h2>
+<ol><li>一次只请求一个结果：添加状态、重命名屏幕、添加标签或连接转换。</li><li>让 agent 准备 payload。</li><li>通过 MCP 或 REST 应用 payload。</li><li>再次读取状态并比较结果。</li><li>成功批量修改后在 UI 中保存项目。</li></ol>
+</section>
+<section id="chapter-7"><h2>7. 验证测量流程</h2>
+<p>对于测量类项目，LLM 应检查 setup、run、result、cancel 和 error 路径是否存在。还应检查关键测量标签是否具有单位和精度。</p>
+<ul class="checklist"><li>存在初始状态。</li><li>START 有有效路径。</li><li>Result 状态可达。</li><li>Cancel 和 error 路径可达。</li><li>测量标签具有名称、单位和精度。</li></ul>
+</section>
+<section id="chapter-8"><h2>8. 编译与审查</h2>
+<ol><li>LCD 修改后编译屏幕。</li><li>FSM 修改后运行 Runtime Preview。</li><li>交付固件前检查截图或导出资源。</li><li>当文档和项目修改描述同一行为时，一起提交。</li></ol>
+</section>
+<section id="chapter-9"><h2>9. 发布交付</h2>
+<p>清晰的交付包应包含 .lcdproj 文件、导出的固件资源、截图、验证记录，以及生成这些内容所使用的应用版本或 commit hash。</p>
+</section>
+<section id="chapter-10"><h2>10. 安全规则</h2>
+<ul class="checklist"><li>不要通过公共隧道暴露 127.0.0.1 自动化端口。</li><li>不要将私有固件、序列号或密钥粘贴到 prompt 中。</li><li>手动审查每个 DELETE 操作。</li><li>将专有项目保留在 public branch 之外。</li></ul>
+</section></main>
+  <footer>Generated from scripts/generate-user-docs.mjs. For automation details see docs/API_MCP_CONNECTORS.md.</footer>
+</body>
+</html>

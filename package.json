@@ -66,7 +66,8 @@
     "test:electron": "npm run build && playwright test --config playwright.electron.config.ts",
     "test:performance": "npm run build && playwright test --config playwright.performance.config.ts",
     "test:package:win": "npm run build && electron-builder --win --dir && cross-env \"ELECTRON_EXECUTABLE_PATH=release/win-unpacked/LCD-bitmap IDE.exe\" playwright test --config playwright.electron.config.ts",
-    "docs:manual": "npm run build && tsx scripts/generate-manual.ts"
+    "docs:manual": "npm run build && tsx scripts/generate-manual.ts",
+    "docs:user": "node scripts/generate-user-docs.mjs"
   },
   "build": {
     "appId": "dev.myahlov.lcdbitmapide",
