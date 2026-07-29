@@ -16,22 +16,22 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const outDir = resolve(root, 'dist/main');
+const preloadOutDir = resolve(root, 'dist/preload');
 
 // Write a package.json into dist/main/ so Node treats .js as CJS
 mkdirSync(outDir, { recursive: true });
+mkdirSync(preloadOutDir, { recursive: true });
 writeFileSync(
   resolve(outDir, 'package.json'),
   JSON.stringify({ type: 'commonjs' }),
   'utf8'
 );
 
-await build({
-  entryPoints: [resolve(root, 'src/main/main.ts')],
+const commonOptions = {
   bundle: true,
   platform: 'node',
   target: 'node18',
   format: 'cjs',
-  outfile: resolve(outDir, 'main.cjs'),
   external: [
     'electron',
     'node:*',
@@ -40,9 +40,21 @@ await build({
     'child_process', 'util', 'buffer', 'module',
     'serialport', '@serialport/*'
   ],
-  // __dirname is available natively in CJS, no define needed
   tsconfig: resolve(root, 'tsconfig.electron.json'),
-  logLevel: 'info',
-});
+  logLevel: 'info'
+};
 
-console.log('✅ Electron main process bundled → dist/main/main.cjs');
+await Promise.all([
+  build({
+    ...commonOptions,
+    entryPoints: [resolve(root, 'src/main/main.ts')],
+    outfile: resolve(outDir, 'main.cjs')
+  }),
+  build({
+    ...commonOptions,
+    entryPoints: [resolve(root, 'src/preload/preload.cts')],
+    outfile: resolve(preloadOutDir, 'preload.cjs')
+  })
+]);
+
+console.log('✅ Electron main and preload processes bundled → dist/main/main.cjs, dist/preload/preload.cjs');
