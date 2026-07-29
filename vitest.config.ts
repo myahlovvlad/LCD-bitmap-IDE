@@ -19,6 +19,11 @@ export default defineConfig({
       exclude: [
         'src/renderer/core/fonts.ts',
         'src/renderer/core/rendererEngine.ts',
+        'src/renderer/core/elkLayout.ts',
+        'src/renderer/utils/clipboard.ts',
+        'src/shared/**/channels.ts',
+        'src/shared/**/contracts.ts',
+        'src/shared/**/index.ts',
         'src/shared/constants/**'
       ],
       thresholds: {

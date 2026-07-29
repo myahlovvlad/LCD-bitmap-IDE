@@ -10,7 +10,7 @@
     "dev": "vite --host 127.0.0.1",
     "build:renderer": "tsc -p tsconfig.renderer.json --noEmit && vite build",
     "tauri:dev": "npm --prefix apps/tauri run dev",
-    "tauri:build": "npm --prefix apps/tauri run build",
+    "tauri:build": "npm --prefix apps/tauri exec tauri build --",
     "tauri:check": "npm --prefix apps/tauri run check",
     "preview:test": "node scripts/serve-static.mjs dist/renderer 4173",
     "electron:build": "tsc -p tsconfig.electron.json --noEmit && node scripts/build-electron-main.mjs",

@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - os: windows-2022
             platform: win
           - os: ubuntu-22.04
             platform: linux
@@ -56,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - os: windows-2022
             label: windows-x64
             bundles: nsis
           - os: ubuntu-22.04

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  EMBEDDED_FORMAT_EXTENSIONS,
+  exportScreenEmbedded,
   generateAllScreensBinary,
   generateAllScreensCHeader,
   generateScreenBinary,
@@ -70,6 +72,30 @@ describe('codegen utils', () => {
     const packed = engine.packFrameBuffer([[true]]);
     expect(packed).toHaveLength(1024);
     expect(packed[0]).toBe(1);
+  });
+
+  it('exports every embedded firmware format from the same screen model', () => {
+    const formats = Object.keys(EMBEDDED_FORMAT_EXTENSIONS) as Array<keyof typeof EMBEDDED_FORMAT_EXTENSIONS>;
+    const results = new Map(formats.map((format) => [
+      format,
+      exportScreenEmbedded(objects, format, {
+        symbolName: 'status screen',
+        language: 'en',
+        width: 8,
+        height: 8,
+        bytesPerRow: 4
+      })
+    ]));
+
+    expect(results.get('binary')).toBeInstanceOf(Uint8Array);
+    expect(results.get('binary')).toHaveLength(8);
+    expect(results.get('c-vertical-lsb')).toContain('status_screen[8]');
+    expect(results.get('c-horizontal-msb')).toContain('status_screen[8]');
+    expect(results.get('c-horizontal-lsb')).toContain('status_screen[8]');
+    expect(results.get('xbm')).toContain('#define status_screen_width 8');
+    expect(results.get('arduino-progmem')).toContain('PROGMEM status_screen[8]');
+    expect(results.get('rust-embedded')).toContain('pub const STATUS_SCREEN: [u8; 8]');
+    expect(results.get('esp-idf')).toContain('RODATA_ATTR uint8_t status_screen[8]');
   });
 });
 

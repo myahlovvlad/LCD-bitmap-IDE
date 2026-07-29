@@ -1,4 +1,4 @@
-name: Сборка для всех платформ
+name: Electron — Windows and Linux
 
 on:
   push:
@@ -13,21 +13,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - os: windows-2022
             command: npm run build:windows
             artifact: windows-build
             path: release/*Setup*.exe
-          - os: macos-latest
-            command: npm run build:macos
-            artifact: macos-build
-            path: release/*.dmg
           - os: ubuntu-latest
             command: npm run build:linux
             artifact: linux-build
             path: release/*.{AppImage,deb,tar.gz}
 
     runs-on: ${{ matrix.os }}
-    name: Сборка на ${{ matrix.os }}
+    name: Electron / ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
