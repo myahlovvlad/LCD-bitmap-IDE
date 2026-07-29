@@ -18,7 +18,7 @@ test('dirty script is preserved and marked stale when the graph changes', async 
   await page.getByTestId('fsm-add-state').click();
 
   await scripts.expectStalePreview();
-  await scripts.expectDocumentState('mermaid', /stale.*dirty/);
+  await scripts.expectDocumentState('mermaid', /stale.*modified/);
   await scripts.expectApplyDisabled('mermaid');
   await expect(scripts.source('mermaid')).toHaveValue(/Dirty Draft/);
 

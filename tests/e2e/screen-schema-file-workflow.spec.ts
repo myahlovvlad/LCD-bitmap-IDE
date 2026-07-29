@@ -38,8 +38,8 @@ test.describe('Screen Schema file workflow — browser adapter', () => {
     // Content is loaded — no auto-preview, no auto-apply
     await expect(page.getByTestId('screen-dsl-source-yaml')).toHaveValue(YAML_FIXTURE);
     await studio.expectStatus(/File loaded into YAML session/);
-    // Preview tab shows no pending preview — user must trigger it explicitly
-    await expect(page.getByTestId('screen-dsl-doc-status')).toContainText(/draft|initial/i);
+    // Loading establishes a clean source document without creating or applying a preview.
+    await expect(page.getByTestId('screen-dsl-doc-status')).toContainText(/clean/i);
   });
 
   test('open a JSON file switches to JSON tab and loads content', async ({ page }) => {
