@@ -21,10 +21,13 @@ import {
 } from '../../application';
 import type { FsmScriptDocumentSession, FsmScriptPreview } from '../../application';
 import type { FsmScriptFormat } from '../../fsm-interchange';
+import type { LanguageCode } from '../../domain';
+import { UI_TEXT, type UiText } from '../../renderer/config/i18n';
 import { copyToClipboard } from '../../renderer/utils/clipboard';
 
 interface FsmScriptStudioProps {
   readonly session: ProjectSession;
+  readonly language: LanguageCode;
   readonly onApplyPreview: (preview: FsmScriptPreview) => ProjectCommandResult | null;
 }
 
@@ -51,8 +54,10 @@ const draftCache = new Map<string, FsmScriptDocumentSession>();
  */
 export function FsmScriptStudio({
   session,
+  language,
   onApplyPreview
 }: FsmScriptStudioProps): React.ReactElement {
+  const labels = UI_TEXT[language];
   const [documents, setDocuments] = useState<DocumentMap>(() => createInitialDocuments(session));
   const documentsRef = useRef(documents);
   const [activeFormat, setActiveFormat] = useState<FsmScriptFormat>('mermaid');
@@ -114,9 +119,9 @@ export function FsmScriptStudio({
         setDocuments((current) => {
           const result = acceptFsmScriptPreviewResult(current[format], previewTask.request, preview);
           if (!result.accepted) {
-            setStatus(`${FORMAT_LABEL[format]}: ignored stale preview result (${result.reason}).`);
+            setStatus(formatUi(labels.fsmIgnoredStale, { format: FORMAT_LABEL[format], reason: result.reason }));
           } else {
-            setStatus(formatPreviewStatus(FORMAT_LABEL[format], preview));
+            setStatus(formatPreviewStatus(FORMAT_LABEL[format], preview, labels));
           }
           return { ...current, [format]: result.document };
         });
@@ -131,7 +136,7 @@ export function FsmScriptStudio({
             staleReason: null
           }
         }));
-        setStatus(`${FORMAT_LABEL[format]}: preview failed.`);
+        setStatus(formatUi(labels.fsmPreviewFailed, { format: FORMAT_LABEL[format] }));
       });
   }
 
@@ -141,15 +146,16 @@ export function FsmScriptStudio({
       ...current,
       [format]: editFsmScriptDocument(current[format], value, { autoPreview: autoPreview[format] })
     }));
-    setStatus(autoPreview[format]
-      ? `${FORMAT_LABEL[format]}: preview scheduled. Apply remains explicit.`
-      : `${FORMAT_LABEL[format]}: draft changed. Preview before Apply.`);
+    setStatus(formatUi(
+      autoPreview[format] ? labels.fsmPreviewScheduled : labels.fsmDraftChanged,
+      { format: FORMAT_LABEL[format] }
+    ));
   };
 
   const refreshFromGraph = (format: FsmScriptFormat): void => {
     const document = documentsRef.current[format];
-    if (document.dirty && !globalThis.confirm('Discard dirty script draft and refresh from graph?')) {
-      setStatus(`${FORMAT_LABEL[format]}: refresh cancelled; dirty draft preserved.`);
+    if (document.dirty && !globalThis.confirm(labels.fsmDiscardConfirm)) {
+      setStatus(formatUi(labels.fsmRefreshCancelled, { format: FORMAT_LABEL[format] }));
       return;
     }
     setActiveFormat(format);
@@ -157,7 +163,7 @@ export function FsmScriptStudio({
       ...current,
       [format]: refreshFsmScriptDocumentFromGraph(current[format], session, { force: true })
     }));
-    setStatus(`${FORMAT_LABEL[format]}: refreshed from current graph.`);
+    setStatus(formatUi(labels.fsmRefreshed, { format: FORMAT_LABEL[format] }));
   };
 
   const discardDraft = (format: FsmScriptFormat): void => {
@@ -166,22 +172,22 @@ export function FsmScriptStudio({
       ...current,
       [format]: refreshFsmScriptDocumentFromGraph(current[format], session, { force: true })
     }));
-    setStatus(`${FORMAT_LABEL[format]}: draft discarded.`);
+    setStatus(formatUi(labels.fsmDraftDiscarded, { format: FORMAT_LABEL[format] }));
   };
 
   const applyCurrentPreview = (format: FsmScriptFormat): void => {
     const document = documentsRef.current[format];
     if (!document.preview || !isFsmScriptPreviewApplicable(document, session)) {
-      setStatus('Preview a valid semantic change before Apply.');
+      setStatus(labels.fsmPreviewRequired);
       return;
     }
     const result = onApplyPreview(document.preview);
     if (!result) {
-      setStatus('Apply failed: no active project session.');
+      setStatus(labels.fsmApplyNoSession);
       return;
     }
     if (result.status === 'applied') {
-      setStatus(`Applied ${result.changes.length} semantic changes in one history entry.`);
+      setStatus(formatUi(labels.fsmAppliedChanges, { count: result.changes.length }));
       setDocuments((current) => mapDocuments(current, (item) => (
         item.format === format
           ? markFsmScriptDocumentApplied(item, result.session)
@@ -190,14 +196,14 @@ export function FsmScriptStudio({
       return;
     }
     if (result.status === 'noop') {
-      setStatus('No semantic changes to apply.');
+      setStatus(labels.fsmNoChangesApply);
       setDocuments((current) => ({
         ...current,
         [format]: refreshFsmScriptDocumentFromGraph(current[format], result.session, { force: true })
       }));
       return;
     }
-    setStatus(result.diagnostics[0]?.message ?? 'Apply rejected.');
+    setStatus(result.diagnostics[0]?.message ?? labels.fsmApplyRejected);
   };
 
   const importScriptFile = async (
@@ -209,27 +215,34 @@ export function FsmScriptStudio({
       return;
     }
     if (file.size > MAX_SCRIPT_BYTES) {
-      setStatus(`Import rejected: ${file.name} exceeds ${Math.round(MAX_SCRIPT_BYTES / 1024)} KB`);
+      setStatus(formatUi(labels.fsmImportTooLarge, {
+        file: file.name,
+        size: Math.round(MAX_SCRIPT_BYTES / 1024)
+      }));
       return;
     }
     try {
       const text = await file.text();
       updateText(target, text);
-      setStatus(`Imported ${label} script "${file.name}" (${text.split(/\r?\n/).length} lines). Review, then Apply.`);
+      setStatus(formatUi(labels.fsmImportedScript, {
+        format: label,
+        file: file.name,
+        lines: text.split(/\r?\n/).length
+      }));
     } catch {
-      setStatus(`Import failed: could not read ${file.name}`);
+      setStatus(formatUi(labels.fsmImportFailed, { file: file.name }));
     }
   };
 
   return (
-    <section className="script-studio" aria-label="FSM scripts" data-testid="fsm-script-studio">
+    <section className="script-studio" aria-label={labels.fsmScripts} data-testid="fsm-script-studio">
       <header>
         <div>
-          <h2>FSM Scripts</h2>
-          <p>Mermaid stateDiagram-v2 and LCD-bitmap IDE Python specification share one FSM data model.</p>
+          <h2>{labels.fsmScripts}</h2>
+          <p>{labels.fsmScriptsDescription}</p>
         </div>
         <button type="button" onClick={() => void copyToClipboard(documents.mermaid.sourceText)} data-testid="fsm-script-copy-mermaid">
-          Copy Mermaid
+          {labels.copyMermaid}
         </button>
       </header>
 
@@ -239,7 +252,7 @@ export function FsmScriptStudio({
           <textarea
             id="fsm-script-mermaid"
             name="fsm-script-mermaid"
-            aria-label="Mermaid stateDiagram-v2 script editor"
+            aria-label={labels.mermaidEditorAria}
             data-testid="fsm-script-source-mermaid"
             value={documents.mermaid.sourceText}
             spellCheck={false}
@@ -256,15 +269,15 @@ export function FsmScriptStudio({
               event.target.value = '';
             }}
           />
-          <DocumentStateBadge document={documents.mermaid} />
+          <DocumentStateBadge document={documents.mermaid} labels={labels} />
           <div className="script-actions">
-            <button type="button" onClick={() => mermaidFileRef.current?.click()} data-testid="fsm-script-import-mermaid">Import file...</button>
-            <button type="button" onClick={() => refreshFromGraph('mermaid')} data-testid="fsm-script-generate-mermaid">Refresh</button>
-            <button type="button" onClick={() => discardDraft('mermaid')} data-testid="fsm-script-discard-mermaid">Discard</button>
+            <button type="button" onClick={() => mermaidFileRef.current?.click()} data-testid="fsm-script-import-mermaid">{labels.importFile}</button>
+            <button type="button" onClick={() => refreshFromGraph('mermaid')} data-testid="fsm-script-generate-mermaid">{labels.refresh}</button>
+            <button type="button" onClick={() => discardDraft('mermaid')} data-testid="fsm-script-discard-mermaid">{labels.discard}</button>
             <button type="button" onClick={() => runPreview('mermaid')} data-testid="fsm-script-preview-mermaid">
-              {documents.mermaid.status === 'stale' ? 'Re-preview' : 'Preview'}
+              {documents.mermaid.status === 'stale' ? labels.dslRePreview : labels.dslPreview}
             </button>
-            <button type="button" onClick={() => applyCurrentPreview('mermaid')} disabled={!isFsmScriptPreviewApplicable(documents.mermaid, session)} data-testid="fsm-script-apply-mermaid">Apply</button>
+            <button type="button" onClick={() => applyCurrentPreview('mermaid')} disabled={!isFsmScriptPreviewApplicable(documents.mermaid, session)} data-testid="fsm-script-apply-mermaid">{labels.dslApply}</button>
             <label className="checkbox-line script-auto-preview">
               <input
                 type="checkbox"
@@ -272,7 +285,7 @@ export function FsmScriptStudio({
                 onChange={(event) => setAutoPreview((current) => ({ ...current, mermaid: event.target.checked }))}
                 data-testid="fsm-script-auto-preview-mermaid"
               />
-              Auto-preview
+              {labels.autoPreview}
             </label>
           </div>
         </article>
@@ -282,7 +295,7 @@ export function FsmScriptStudio({
           <textarea
             id="fsm-script-python"
             name="fsm-script-python"
-            aria-label="LCD-bitmap IDE Python DSL script editor"
+            aria-label={labels.pythonEditorAria}
             data-testid="fsm-script-source-python"
             value={documents.python.sourceText}
             spellCheck={false}
@@ -299,15 +312,15 @@ export function FsmScriptStudio({
               event.target.value = '';
             }}
           />
-          <DocumentStateBadge document={documents.python} />
+          <DocumentStateBadge document={documents.python} labels={labels} />
           <div className="script-actions">
-            <button type="button" onClick={() => pythonFileRef.current?.click()} data-testid="fsm-script-import-python">Import file...</button>
-            <button type="button" onClick={() => refreshFromGraph('python')} data-testid="fsm-script-generate-python">Refresh</button>
-            <button type="button" onClick={() => discardDraft('python')} data-testid="fsm-script-discard-python">Discard</button>
+            <button type="button" onClick={() => pythonFileRef.current?.click()} data-testid="fsm-script-import-python">{labels.importFile}</button>
+            <button type="button" onClick={() => refreshFromGraph('python')} data-testid="fsm-script-generate-python">{labels.refresh}</button>
+            <button type="button" onClick={() => discardDraft('python')} data-testid="fsm-script-discard-python">{labels.discard}</button>
             <button type="button" onClick={() => runPreview('python')} data-testid="fsm-script-preview-python">
-              {documents.python.status === 'stale' ? 'Re-preview' : 'Preview'}
+              {documents.python.status === 'stale' ? labels.dslRePreview : labels.dslPreview}
             </button>
-            <button type="button" onClick={() => applyCurrentPreview('python')} disabled={!isFsmScriptPreviewApplicable(documents.python, session)} data-testid="fsm-script-apply-python">Apply</button>
+            <button type="button" onClick={() => applyCurrentPreview('python')} disabled={!isFsmScriptPreviewApplicable(documents.python, session)} data-testid="fsm-script-apply-python">{labels.dslApply}</button>
             <label className="checkbox-line script-auto-preview">
               <input
                 type="checkbox"
@@ -315,7 +328,7 @@ export function FsmScriptStudio({
                 onChange={(event) => setAutoPreview((current) => ({ ...current, python: event.target.checked }))}
                 data-testid="fsm-script-auto-preview-python"
               />
-              Auto-preview
+              {labels.autoPreview}
             </label>
           </div>
         </article>
@@ -328,16 +341,16 @@ fsm.event(id="OK", name="OK", order=0)
 fsm.transition(id="tr_main_measure", from="main_menu", to="measure_mode", event="OK", order=0)`}</pre>
       {activeDocumentStale ? (
         <p className="script-status danger" role="alert" data-testid="fsm-script-stale-preview">
-          {FORMAT_LABEL[activeFormat]} document is stale. Re-preview before Apply.
+          {formatUi(labels.fsmScriptStale, { format: FORMAT_LABEL[activeFormat] })}
         </p>
       ) : null}
       {activePreview ? (
-        <section className="script-preview-panel" aria-label="FSM script preview" data-testid="fsm-script-preview-panel">
+        <section className="script-preview-panel" aria-label={labels.scriptPreviewAria} data-testid="fsm-script-preview-panel">
           <div className="script-preview-meta" data-testid="fsm-script-preview-revision">
-            Preview revision {activePreview.baseRevision}; current revision {session.revision}
+            {labels.previewRevision} {activePreview.baseRevision}; {labels.currentRevision} {session.revision}
           </div>
           {activePreview.diagnostics.length > 0 ? (
-            <ul className="script-diagnostics" aria-label="FSM script diagnostics" data-testid="fsm-script-diagnostics">
+            <ul className="script-diagnostics" aria-label={labels.scriptDiagnosticsAria} data-testid="fsm-script-diagnostics">
               {activePreview.diagnostics.map((diagnostic, index) => (
                 <li key={`${diagnostic.code}-${diagnostic.line}-${index}`} className={`script-diagnostic severity-${diagnostic.severity}`}>
                   <strong>{diagnostic.code}</strong>
@@ -348,14 +361,14 @@ fsm.transition(id="tr_main_measure", from="main_menu", to="measure_mode", event=
             </ul>
           ) : null}
           {activePreview.diff ? (
-            <ul className="script-diff-list" aria-label="FSM semantic diff" data-testid="fsm-script-semantic-diff">
+            <ul className="script-diff-list" aria-label={labels.semanticDiffAria} data-testid="fsm-script-semantic-diff">
               {activePreviewOperationCount === 0 ? (
-                <li data-testid="fsm-script-noop-change">No semantic changes.</li>
+                <li data-testid="fsm-script-noop-change">{labels.noSemanticChanges}</li>
               ) : activePreview.diff.operations.map((operation) => (
                 <li key={`${operation.type}-${operation.id}`} data-testid={`fsm-script-change-${operation.type}`}>
                   <strong>{operation.type}</strong>
                   <span>{operation.id}</span>
-                  {operation.type.endsWith('.delete') ? <span className="script-destructive-marker" data-testid="fsm-script-destructive-change">destructive</span> : null}
+                  {operation.type.endsWith('.delete') ? <span className="script-destructive-marker" data-testid="fsm-script-destructive-change">{labels.dslDestructiveMarker}</span> : null}
                 </li>
               ))}
             </ul>
@@ -396,20 +409,32 @@ function mapDocuments(
   };
 }
 
-function DocumentStateBadge({ document }: { readonly document: FsmScriptDocumentSession }): React.ReactElement {
+function DocumentStateBadge({
+  document,
+  labels
+}: {
+  readonly document: FsmScriptDocumentSession;
+  readonly labels: UiText;
+}): React.ReactElement {
   const reason = document.staleReason ? ` (${document.staleReason})` : '';
   return (
     <p className={`script-status script-document-status status-${document.status}`} data-testid={`fsm-script-document-state-${document.format}`}>
-      {document.status}{document.dirty ? ' dirty' : ' clean'}{reason}
+      {document.status} · {document.dirty ? labels.dirty : labels.clean}{reason}
     </p>
   );
 }
 
-function formatPreviewStatus(label: string, preview: FsmScriptPreview): string {
+function formatPreviewStatus(label: string, preview: FsmScriptPreview, labels: UiText): string {
   if (!preview.ok) {
     const first = preview.diagnostics[0];
-    return first ? `${label}: ${first.code} at ${first.line}:${first.column} - ${first.message}` : `${label}: preview failed`;
+    return first
+      ? `${label}: ${first.code} ${first.line}:${first.column} — ${first.message}`
+      : formatUi(labels.fsmPreviewFailed, { format: label });
   }
   const operations = preview.diff?.operations.length ?? 0;
-  return `${label}: ${operations} semantic changes ready for explicit Apply.`;
+  return formatUi(labels.semanticChangesReady, { format: label, count: operations });
+}
+
+function formatUi(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
 }

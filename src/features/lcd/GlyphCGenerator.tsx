@@ -2,8 +2,9 @@ import type React from 'react';
 import { useMemo, useState } from 'react';
 import { FontRenderer, type FontGlyphs, type FontVariantKey, type Glyph } from '../../renderer/core/fonts';
 import { copyToClipboard } from '../../renderer/utils/clipboard';
+import type { UiText } from '../../renderer/config/i18n';
 
-export function GlyphCGenerator({ fontGlyphs }: { fontGlyphs: FontGlyphs }): React.ReactElement {
+export function GlyphCGenerator({ fontGlyphs, labels }: { fontGlyphs: FontGlyphs; labels: UiText }): React.ReactElement {
   const [input, setInput] = useState('ABC123');
   const [variant, setVariant] = useState<FontVariantKey>('1');
   const [prefix, setPrefix] = useState('lcd_font');
@@ -11,21 +12,21 @@ export function GlyphCGenerator({ fontGlyphs }: { fontGlyphs: FontGlyphs }): Rea
   return (
     <section className="glyph-c-generator">
       <div className="glyph-c-controls">
-        <label>Characters<textarea value={input} onChange={(event) => setInput(event.target.value)} /></label>
-        <label>Array prefix<input value={prefix} onChange={(event) => setPrefix(event.target.value)} /></label>
+        <label>{labels.glyphInput}<textarea value={input} onChange={(event) => setInput(event.target.value)} /></label>
+        <label>{labels.arrayPrefix}<input value={prefix} onChange={(event) => setPrefix(event.target.value)} /></label>
         <label>
-          Font
+          {labels.font}
           <select value={variant} onChange={(event) => setVariant(event.target.value as FontVariantKey)}>
-            <option value="1">Font 1</option>
-            <option value="2">Font 2</option>
+            <option value="1">{labels.fontOne}</option>
+            <option value="2">{labels.fontTwo}</option>
           </select>
         </label>
         <div className="glyph-c-actions">
-          <button type="button" onClick={() => void copyToClipboard(output)}>Copy C</button>
-          <button type="button" onClick={() => downloadText(`${sanitizeIdentifier(prefix)}.h`, output)}>Download header</button>
+          <button type="button" onClick={() => void copyToClipboard(output)}>{labels.copyC}</button>
+          <button type="button" onClick={() => downloadText(`${sanitizeIdentifier(prefix)}.h`, output)}>{labels.downloadHeader}</button>
         </div>
       </div>
-      <div className="glyph-c-output"><h3>Generated C</h3><pre>{output}</pre></div>
+      <div className="glyph-c-output"><h3>{labels.generatedC}</h3><pre>{output}</pre></div>
     </section>
   );
 }

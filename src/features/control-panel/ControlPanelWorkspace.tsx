@@ -294,7 +294,7 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
           onUpdate={(updates) => primary && updateControlElement(primary.id, updates)}
           onDelete={() => deleteControlElements(selectedControlElementIds)}
         />
-        <ValidationPanel issues={project.validation.issues} domain="control-panel" title={labels.panelValidation} />
+        <ValidationPanel issues={project.validation.issues} domain="control-panel" title={labels.panelValidation} labels={labels} />
       </aside>
       {showTutorial ? (
         <TutorialOverlay workspace="control-panel" language={language} onClose={() => setShowTutorial(false)} />
@@ -486,9 +486,9 @@ function ButtonFields({
       <label>
         {labels.pressType}
         <select value={button.pressType ?? 'short'} onChange={(event) => onUpdate({ pressType: event.target.value as ControlPanelButton['pressType'] })}>
-          <option value="short">short</option>
-          <option value="long">long</option>
-          <option value="repeat">repeat</option>
+          <option value="short">{labels.pressShort}</option>
+          <option value="long">{labels.pressLong}</option>
+          <option value="repeat">{labels.pressRepeat}</option>
         </select>
       </label>
       <h4>{labels.bindingsSection}</h4>

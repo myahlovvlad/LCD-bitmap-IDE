@@ -12,9 +12,9 @@ interface GuidedTourProps {
 }
 
 const LABELS = {
-  en: { check: 'Check & Next', next: 'Next', finish: 'Finish tour', skip: 'Skip step', stepOf: 'of', failed: 'Not yet — try again.', close: 'Close tour' },
-  ru: { check: 'Проверить и далее', next: 'Далее', finish: 'Завершить', skip: 'Пропустить', stepOf: 'из', failed: 'Ещё нет — попробуйте ещё раз.', close: 'Закрыть' },
-  zh: { check: '检查并继续', next: '下一步', finish: '完成向导', skip: '跳过', stepOf: '/', failed: '尚未完成，请再试一次。', close: '关闭向导' }
+  en: { check: 'Check & Next', next: 'Next', finish: 'Finish tour', skip: 'Skip step', stepOf: 'of', failed: 'Not yet — try again.', close: 'Close tour', label: 'Guided tour' },
+  ru: { check: 'Проверить и далее', next: 'Далее', finish: 'Завершить', skip: 'Пропустить', stepOf: 'из', failed: 'Ещё нет — попробуйте ещё раз.', close: 'Закрыть', label: 'Интерактивное руководство' },
+  zh: { check: '检查并继续', next: '下一步', finish: '完成向导', skip: '跳过', stepOf: '/', failed: '尚未完成，请再试一次。', close: '关闭向导', label: '交互式向导' }
 };
 
 export function GuidedTour({ steps, language, onClose }: GuidedTourProps): React.ReactElement {
@@ -129,7 +129,7 @@ export function GuidedTour({ steps, language, onClose }: GuidedTourProps): React
           aria-hidden="true"
         />
       ) : null}
-      <div className="guided-tour-panel" role="dialog" aria-modal="false" aria-label="Guided tour">
+      <div className="guided-tour-panel" role="dialog" aria-modal="false" aria-label={l.label}>
         <div className="guided-tour-header">
           <span className="guided-tour-progress">{stepIndex + 1} {l.stepOf} {steps.length}</span>
           <button type="button" className="guided-tour-close" onClick={onClose} aria-label={l.close}><X size={15} /></button>

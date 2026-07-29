@@ -20,10 +20,11 @@ const PROTECTED_ROOTS = [
   'src/application',
   'src/compiler',
   'src/domain',
+  'src/fsm-behavior',
   'src/fsm-interchange',
-  'src/model',
   'src/screen-dsl',
   'src/screen-interchange',
+  'src/shared',
   'src/services',
   'src/entities'
 ] as const;
@@ -61,7 +62,7 @@ const SCREEN_DSL_STUDIO_FORBIDDEN_INTERNAL = [
 ];
 
 describe('architecture boundaries', () => {
-  it('keeps application, domain, model, services and entities independent from renderer UI infrastructure', () => {
+  it('keeps core and interchange layers independent from renderer UI infrastructure', () => {
     const violations = collectBoundaryViolations();
 
     expect(violations).toEqual([]);

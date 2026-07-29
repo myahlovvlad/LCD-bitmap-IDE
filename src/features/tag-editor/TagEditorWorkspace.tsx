@@ -317,6 +317,15 @@ function TagForm({
         <label className="hmi-form-label">{labels.tagUnit}</label>
         <input className="hmi-form-input" value={draft.unit ?? ''} onChange={(e) => set({ unit: e.target.value || undefined })} />
       </div>
+      <div className="hmi-form-row">
+        <label className="hmi-form-label">{labels.printfFormat}</label>
+        <input
+          className="hmi-form-input"
+          value={draft.format ?? ''}
+          placeholder={draft.dataType === 'int' ? '%d' : '%.3f'}
+          onChange={(e) => set({ format: e.target.value || undefined })}
+        />
+      </div>
       {(draft.dataType === 'float' || draft.dataType === 'int') ? (
         <>
           <div className="hmi-form-row">
@@ -399,7 +408,7 @@ function DataSourceForm({
       set({ config: parsed });
       setConfigError('');
     } catch {
-      setConfigError('Invalid JSON');
+      setConfigError(labels.invalidJson);
     }
   };
 
@@ -420,7 +429,7 @@ function DataSourceForm({
         </select>
       </div>
       <div className="hmi-form-row hmi-form-row-column">
-        <label className="hmi-form-label">Config (JSON)</label>
+        <label className="hmi-form-label">{labels.configJson}</label>
         <textarea
           className={`hmi-form-textarea${configError ? ' hmi-input-error' : ''}`}
           value={configText}

@@ -130,7 +130,7 @@ export function RuntimeWorkspace(): React.ReactElement {
             type="button"
             className="sidebar-collapse-button"
             onClick={() => setLeftCollapsed((v) => !v)}
-            aria-label="Toggle sidebar"
+            aria-label={labels.toggleSidebar}
           >
             {leftCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
@@ -185,7 +185,7 @@ export function RuntimeWorkspace(): React.ReactElement {
             </div>
 
             <div className="sidebar-content">
-              <ValidationPanel issues={project.validation.issues} />
+              <ValidationPanel issues={project.validation.issues} labels={labels} />
             </div>
           </>
         )}
@@ -231,7 +231,7 @@ export function RuntimeWorkspace(): React.ReactElement {
           </label>
           {engine?.isExecutingProcedure && (
             <span className="runtime-running-badge">
-              <Activity size={13} className="spin" /> Running…
+              <Activity size={13} className="spin" /> {labels.runtimeRunning}
             </span>
           )}
           <button type="button" className="hmi-help-button" title={labels.showHelp} onClick={() => setShowTutorial(true)}>
@@ -273,7 +273,7 @@ export function RuntimeWorkspace(): React.ReactElement {
                 className="runtime-event-chip"
                 disabled={!!engine?.isExecutingProcedure}
                 onClick={() => refresh(() => engine?.sendEvent(t.trigger.eventId))}
-                title={`Event: ${t.trigger.eventId} → ${t.to}`}
+                title={`${labels.fsmEvent}: ${t.trigger.eventId} → ${t.to}`}
               >
                 <ChevronRight size={12} />{t.trigger.eventId}
               </button>
@@ -303,7 +303,7 @@ export function RuntimeWorkspace(): React.ReactElement {
             type="button"
             className="sidebar-collapse-button"
             onClick={() => setRightCollapsed((v) => !v)}
-            aria-label="Toggle inspector"
+            aria-label={labels.toggleInspector}
           >
             {rightCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
@@ -313,7 +313,7 @@ export function RuntimeWorkspace(): React.ReactElement {
           <div className="sidebar-content runtime-log-panel">
             {activeTab === 'log' && (
               <div className="runtime-log-scroll">
-                {eventLog.length === 0 && <p className="runtime-empty-hint">No events yet.</p>}
+                {eventLog.length === 0 && <p className="runtime-empty-hint">{labels.noEventsYet}</p>}
                 {[...eventLog].reverse().map((entry) => (
                   <div key={entry.id} className={`runtime-log-entry log-${entry.level}`}>
                     <span className="log-time">{new Date(entry.timestamp).toLocaleTimeString()}</span>
@@ -327,7 +327,7 @@ export function RuntimeWorkspace(): React.ReactElement {
 
             {activeTab === 'tags' && (
               <div className="runtime-tag-table">
-                {tagValues.length === 0 && <p className="runtime-empty-hint">No tags defined.</p>}
+                {tagValues.length === 0 && <p className="runtime-empty-hint">{labels.noTagsDefined}</p>}
                 {tagValues.map(([id, val]) => (
                   <div key={id} className="runtime-tag-row">
                     <span className="tag-id">{id}</span>
@@ -340,7 +340,7 @@ export function RuntimeWorkspace(): React.ReactElement {
             {activeTab === 'procedure' && (
               <div className="runtime-proc-panel">
                 {!lastProc ? (
-                  <p className="runtime-empty-hint">No procedure executed yet.</p>
+                  <p className="runtime-empty-hint">{labels.noProcedureExecutedYet}</p>
                 ) : (
                   <>
                     <div className="inspector-card" style={{ marginBottom: 8 }}>
@@ -354,7 +354,7 @@ export function RuntimeWorkspace(): React.ReactElement {
                       {lastProc.failureReason && (
                         <small className="text-danger">{lastProc.failureReason}</small>
                       )}
-                      <small>Transition: {lastProc.transitionId}</small>
+                      <small>{labels.transitionPrefix}: {lastProc.transitionId}</small>
                     </div>
                     <div className="runtime-log-scroll">
                       {lastProc.auditTrail.map((entry, i) => (

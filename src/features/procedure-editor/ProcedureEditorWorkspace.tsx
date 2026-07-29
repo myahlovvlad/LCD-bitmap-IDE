@@ -308,12 +308,12 @@ export function ProcedureEditorWorkspace(): React.ReactElement {
           </div>
         ) : null}
         <div className="inspector-card">
-          <div className="workspace-section-header">CLI catalog</div>
+          <div className="workspace-section-header">{labels.cliCatalog}</div>
           {Object.values(cliCatalog).slice(0, 8).map((cmd) => (
             <p key={cmd.id} className="inspector-detail"><code>{cmd.command}</code></p>
           ))}
           {Object.keys(cliCatalog).length > 8
-            ? <p className="inspector-detail-dim">+{Object.keys(cliCatalog).length - 8} more</p>
+            ? <p className="inspector-detail-dim">+{Object.keys(cliCatalog).length - 8} {labels.moreLabel}</p>
             : null
           }
         </div>
@@ -495,9 +495,9 @@ function ExpressionInput({
           else onChange({ kind: 'formula', expression: '', deps: [] });
         }}
       >
-        <option value="literal">literal</option>
-        <option value="tag">tag</option>
-        <option value="formula">formula</option>
+        <option value="literal">{labels.expressionLiteral}</option>
+        <option value="tag">{labels.expressionTag}</option>
+        <option value="formula">{labels.expressionFormula}</option>
       </select>
       {kind === 'literal' && (
         <input

@@ -901,20 +901,20 @@ function SpecialGlyphPanel({
           <option value="1">{labels.fontOne}</option>
           <option value="2">{labels.fontTwo}</option>
         </select>
-        <div className="segmented-control" role="group" aria-label="Glyph edit scope">
+        <div className="segmented-control" role="group" aria-label={labels.glyphEditScope}>
           <button
             type="button"
             className={scope === 'global' ? 'active' : ''}
             onClick={() => onScopeChange('global')}
           >
-            {language === 'ru' ? 'Глобально' : 'Global'}
+            {labels.globalScope}
           </button>
           <button
             type="button"
             className={scope === 'local' ? 'active' : ''}
             onClick={() => onScopeChange('local')}
           >
-            {language === 'ru' ? 'Локально' : 'Local'}
+            {labels.localScope}
           </button>
         </div>
       </div>

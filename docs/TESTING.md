@@ -26,7 +26,7 @@ Use `npm run check` for the cross-platform acceptance gate and `npm run check:fu
 - `codegen.test.ts`: C symbol sanitization, C header export, binary export and C header import.
 - `fontImport.test.ts`: BDF and app `.fnt` bitmap font import.
 - `projectInterop.test.ts`: legacy LCD editor import and universal project export.
-- `projectMigrationV5.test.ts`: v1/v2/v4/legacy conversion to schema v5,
+- `projectMigrationV5.test.ts`: v1/v2/v4/schema-5 conversion to current schema 6,
   event/process migration and generated control panels.
 - `projectValidationService.test.ts`: dependency integrity, graph reachability
   and control-button restrictions.
@@ -47,7 +47,7 @@ Use `npm run check` for the cross-platform acceptance gate and `npm run check:fu
   parser failure isolation.
 - `fsmRoundTripLayout.test.ts`: explicit layout updates and omitted-layout
   preservation.
-- `fsmRoundTripScreenLinks.test.ts`: schema-v5 save/reopen authoring equality
+- `fsmRoundTripScreenLinks.test.ts`: save/reopen authoring equality
   and screen-link preservation.
 - `fsmRoundTripHandles.test.ts`: transition handle updates and unchanged handle
   preservation.
@@ -70,8 +70,9 @@ Use `npm run check` for the cross-platform acceptance gate and `npm run check:fu
 - `screenInterchangePerformance.test.ts`: synthetic package export,
   validation and fingerprint performance envelope.
 - `architectureBoundary.test.ts`: AST-based dependency boundary check ensuring
-  `src/application`, `src/compiler`, `src/domain`, `src/fsm-interchange`,
-  `src/model`, `src/screen-interchange`, `src/services` and `src/entities` do
+  `src/application`, `src/compiler`, `src/domain`, `src/fsm-behavior`,
+  `src/fsm-interchange`, `src/screen-dsl`, `src/screen-interchange`,
+  `src/shared`, `src/services` and `src/entities` do
   not import renderer, features, React, Zustand, Electron or React Flow. It
   also prevents compiler imports from application sessions,
   Electron main/preload and command infrastructure. Additionally checks that
@@ -110,7 +111,7 @@ Use `npm run check` for the cross-platform acceptance gate and `npm run check:fu
   full-batch rejection on new blocking validation errors.
 - `projectStoreCommandAdapter.test.ts`: Zustand adapter revision/history
   behavior for the Phase 1B.1 vertical slice.
-- `tests/e2e/app.spec.ts`: four isolated workspaces, FSM-to-LCD navigation,
+- `tests/e2e/app.spec.ts`: workspace routing, FSM-to-LCD navigation,
   panel button editing, runtime transitions/step mode, locales and manual tour.
 - `tests/e2e/fsm-script-*.spec.ts`: targeted FSM Script Studio acceptance for
   Mermaid, Python-like DSL, parser/security errors, stale previews, destructive

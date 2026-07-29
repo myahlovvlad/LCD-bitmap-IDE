@@ -130,10 +130,10 @@ export function TextRegistryWorkspace(): React.ReactElement {
   const cellKey = (e: TextEntry, f: string): string => `${e.screenId}:${e.objectId}:${f}`;
 
   return (
-    <section className="workspace-root text-registry-workspace" aria-label="Text Registry">
+    <section className="workspace-root text-registry-workspace" aria-label={labels.textRegistryWorkspace}>
       <header className="workspace-section-header text-registry-header">
         <h2>
-          {language === 'ru' ? 'Реестр текстов' : language === 'zh' ? '文本注册表' : 'Text Registry'}
+          {labels.textRegistryWorkspace}
           <span className="text-registry-count">
             {allEntries.length} {language === 'ru' ? 'строк' : 'strings'}
             {untranslated > 0 ? ` · ${untranslated} ${language === 'ru' ? 'без перевода' : 'untranslated'}` : ''}
@@ -220,7 +220,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
                         ) : (
                           <span
                             className={`text-registry-value${entry[lang] ? '' : ' text-registry-empty'}`}
-                            title={language === 'ru' ? 'Нажмите для редактирования' : 'Click to edit'}
+                            title={labels.clickToEdit}
                             onClick={() => setEditingCell({ id: key, field: lang })}
                           >
                             {entry[lang] || '—'}
@@ -231,9 +231,9 @@ export function TextRegistryWorkspace(): React.ReactElement {
                   })}
                   <td>
                     {empty ? (
-                      <span className="text-registry-status status-empty">empty</span>
+                      <span className="text-registry-status status-empty">{labels.statusEmpty}</span>
                     ) : missing ? (
-                      <span className="text-registry-status status-partial">partial</span>
+                      <span className="text-registry-status status-partial">{labels.statusPartial}</span>
                     ) : (
                       <span className="text-registry-status status-ok">✓</span>
                     )}
@@ -244,7 +244,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-registry-empty-row">
-                  {language === 'ru' ? 'Нет строк' : 'No entries found'}
+                  {labels.noEntriesFound}
                 </td>
               </tr>
             ) : null}

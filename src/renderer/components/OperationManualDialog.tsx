@@ -67,14 +67,14 @@ export function OperationManualDialog({
         <section className="manual-dialog">
           <header className="manual-header">
             <div><h2>{manualLabels.manualTitle}</h2><p>{manualLabels.manualSubtitle}</p></div>
-            <button type="button" onClick={onClose} aria-label="Close manual"><X size={18} /></button>
+            <button type="button" onClick={onClose} aria-label={manualLabels.closeManual}><X size={18} /></button>
           </header>
           <div className="manual-tools">
             <label className="manual-search">
               <Search size={16} />
               <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={manualLabels.searchManual} />
             </label>
-            <select value={manualLanguage} onChange={(event) => setManualLanguage(event.target.value as LanguageCode)} aria-label="Manual language">
+            <select value={manualLanguage} onChange={(event) => setManualLanguage(event.target.value as LanguageCode)} aria-label={manualLabels.manualLanguage}>
               <option value="ru">RU</option>
               <option value="zh">CH</option>
               <option value="en">EN</option>
@@ -114,7 +114,7 @@ export function OperationManualDialog({
                   {active.summary ? <p className="manual-summary">{active.summary}</p> : null}
                   {active.blocks.map((block, index) => <ManualBlockView key={index} block={block} />)}
                 </article>
-              ) : <p className="manual-empty">No matching section.</p>}
+              ) : <p className="manual-empty">{manualLabels.noMatchingSection}</p>}
             </div>
           </div>
         </section>

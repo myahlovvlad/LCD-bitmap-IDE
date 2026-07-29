@@ -92,6 +92,7 @@ export type FsmSemanticRoundTripApplyCommand = BaseProjectCommand<
 
 export type ScreenCreateCommand = BaseProjectCommand<'screen.create', { name?: string }>;
 export type ScreenDuplicateCommand = BaseProjectCommand<'screen.duplicate', { screenId: string }>;
+export type ScreenDuplicateLayoutCommand = BaseProjectCommand<'screen.duplicateLayout', { screenId: string }>;
 export type ScreenRenameCommand = BaseProjectCommand<'screen.rename', { screenId: string; name: string }>;
 export type ScreenResizeCommand = BaseProjectCommand<
   'screen.resize',
@@ -196,6 +197,7 @@ export type ProjectCommand =
   | FsmSemanticRoundTripApplyCommand
   | ScreenCreateCommand
   | ScreenDuplicateCommand
+  | ScreenDuplicateLayoutCommand
   | ScreenRenameCommand
   | ScreenResizeCommand
   | ScreenDeleteCommand

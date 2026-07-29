@@ -11,6 +11,7 @@ import {
   Monitor,
   Network,
   PanelTop,
+  Package,
   Play,
   PlayCircle,
   RotateCcw,
@@ -62,6 +63,7 @@ const AlarmWorkspace = lazy(() => import('../features/alarms/AlarmWorkspace').th
 const ScreenDslStudio = lazy(() => import('../features/screen-dsl-studio/ScreenDslStudio').then((module) => ({ default: module.ScreenDslStudio })));
 const SettingsWorkspace = lazy(() => import('../features/settings/SettingsWorkspace').then((module) => ({ default: module.SettingsWorkspace })));
 const TextRegistryWorkspace = lazy(() => import('../features/text-registry/TextRegistryWorkspace').then((module) => ({ default: module.TextRegistryWorkspace })));
+const HmiHandoffWorkspace = lazy(() => import('../features/hmi-handoff/HmiHandoffWorkspace').then((module) => ({ default: module.HmiHandoffWorkspace })));
 
 interface Toast {
   id: string;
@@ -188,12 +190,7 @@ function AppShell(): React.ReactElement {
       const issues = validate();
       if (hasBlockingValidationIssues(issues)) {
         const errorCount = issues.filter((issue) => issue.severity === 'error').length;
-        pushToast(
-          language === 'ru'
-            ? `Выполнение открыто, но в проекте ${errorCount} ошибок валидации — экран может быть пуст. Список ошибок слева.`
-            : `Runtime opened, but the project has ${errorCount} validation errors — the screen may stay blank. See the list on the left.`,
-          'warning'
-        );
+        pushToast(formatUi(labels.runtimeValidationWarning, { count: errorCount }), 'warning');
       }
     }
     navigate(next);
@@ -222,13 +219,15 @@ function AppShell(): React.ReactElement {
   const exportProject = (): void => {
     const issues = validate();
     if (hasBlockingValidationIssues(issues)) {
-      pushToast(`Export blocked: ${issues.filter((issue) => issue.severity === 'error').length} validation errors.`, 'danger');
+      pushToast(formatUi(labels.exportBlockedWithErrors, {
+        count: issues.filter((issue) => issue.severity === 'error').length
+      }), 'danger');
       return;
     }
     const payload = snapshot();
     if (payload && project) {
       downloadJson(`${sanitizeFilename(project.meta.id)}-v5.json`, payload);
-      pushToast('Project JSON exported.', 'success');
+      pushToast(labels.projectJsonExported, 'success');
     }
   };
 
@@ -251,17 +250,17 @@ function AppShell(): React.ReactElement {
   };
 
   const createNewProject = (): void => {
-    const name = window.prompt(labels.projectNamePrompt, 'Universal LCD project');
+    const name = window.prompt(labels.projectNamePrompt, labels.defaultProjectName);
     if (!name) {
       return;
     }
-    loadProjectSnapshot(migrateLegacySnapshot(createBlankProject({ name })));
+    loadProjectSnapshot(migrateLegacySnapshot({ ...createBlankProject({ name }), language }));
     setLastSavedAt(null);
     navigate({ mode: 'fsm' });
   };
 
   const loadDemo = (): void => {
-    loadProjectSnapshot(migrateLegacySnapshot(createDemoProject()));
+    loadProjectSnapshot(migrateLegacySnapshot({ ...createDemoProject(), language }));
     setLastSavedAt(null);
     navigate({ mode: 'fsm' });
   };
@@ -275,7 +274,7 @@ function AppShell(): React.ReactElement {
       pushToast(labels.autosaved, 'success');
       return;
     }
-    loadProjectSnapshot(migrateLegacySnapshot(createDemoProject()));
+    loadProjectSnapshot(migrateLegacySnapshot({ ...createDemoProject(), language }));
     setLastSavedAt(null);
     navigate({ mode: 'fsm' });
   };
@@ -293,11 +292,24 @@ function AppShell(): React.ReactElement {
             <h1 id="startup-title">{PRODUCT_IDENTITY.name}</h1>
             <p>{labels.startupPrompt}</p>
           </div>
+          <label className="startup-language">
+            <Globe2 size={17} />
+            <span>{labels.interfaceLanguage}</span>
+            <select
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as typeof language)}
+              data-testid="startup-language"
+            >
+              <option value="en">English</option>
+              <option value="ru">Русский</option>
+              <option value="zh">中文</option>
+            </select>
+          </label>
           <div className="startup-actions">
             <button type="button" onClick={() => fileInputRef.current?.click()}>
               <FolderOpen size={17} />{labels.openProject}
             </button>
-            <button type="button" onClick={createNewProject}>
+            <button type="button" onClick={createNewProject} data-testid="startup-create-project">
               <Monitor size={17} />{labels.createProject}
             </button>
             <button type="button" onClick={restoreAutosave}>
@@ -323,11 +335,11 @@ function AppShell(): React.ReactElement {
         <div className="project-identity">
           <h1>{PRODUCT_IDENTITY.name}</h1>
           <label>
-            <span>{language === 'ru' ? 'Проект' : 'Project'}</span>
+            <span>{labels.projectLabel}</span>
             <input
               value={project.meta.name}
               onChange={(event) => updateProjectMetadata({ name: event.target.value })}
-              aria-label={language === 'ru' ? 'Проект' : 'Project'}
+              aria-label={labels.projectLabel}
             />
           </label>
           <span className="project-version">v{project.meta.version} / schema 6</span>
@@ -354,7 +366,14 @@ function AppShell(): React.ReactElement {
             <option value="">{labels.versionHistory}</option>
             {history.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
           </select>
-          <button type="button" onClick={cycleLanguage} aria-label="Toggle interface language"><Globe2 size={16} />{language.toUpperCase()}</button>
+          <button
+            type="button"
+            onClick={cycleLanguage}
+            aria-label={labels.interfaceLanguage}
+            data-testid="interface-language-cycle"
+          >
+            <Globe2 size={16} />{language.toUpperCase()}
+          </button>
           <button type="button" onClick={createNewProject}>{labels.new}</button>
           <button type="button" onClick={loadDemo}>{labels.demo}</button>
         </div>
@@ -371,6 +390,7 @@ function AppShell(): React.ReactElement {
         <WorkspaceButton mode="runtime" active={location.mode === 'runtime'} onClick={() => navigateTo({ mode: 'runtime' })} icon={<PlayCircle size={17} />} label={labels.runtimeWorkspace} />
         <WorkspaceButton mode="screen-dsl" active={location.mode === 'screen-dsl'} onClick={() => navigate({ mode: 'screen-dsl' })} icon={<Code2 size={17} />} label={labels.screenDslWorkspace} />
         <WorkspaceButton mode="text-registry" active={location.mode === 'text-registry'} onClick={() => navigate({ mode: 'text-registry' })} icon={<Tag size={17} />} label={labels.textRegistryWorkspace} />
+        <WorkspaceButton mode="handoff" active={location.mode === 'handoff'} onClick={() => navigate({ mode: 'handoff' })} icon={<Package size={17} />} label={labels.hmiHandoffWorkspace} />
         <WorkspaceButton mode="settings" active={location.mode === 'settings'} onClick={() => navigate({ mode: 'settings' })} icon={<Settings size={17} />} label={labels.settingsWorkspace} />
       </nav>
 
@@ -385,6 +405,7 @@ function AppShell(): React.ReactElement {
           {location.mode === 'runtime' ? <RuntimeWorkspace /> : null}
           {location.mode === 'screen-dsl' ? <ScreenDslStudioWrapper screenId={location.screenId} /> : null}
           {location.mode === 'text-registry' ? <TextRegistryWorkspace /> : null}
+          {location.mode === 'handoff' ? <HmiHandoffWorkspace /> : null}
           {location.mode === 'settings' ? <SettingsWorkspace /> : null}
         </Suspense>
       </section>
@@ -441,7 +462,7 @@ function WorkspaceButton({
 function ScreenDslStudioWrapper({ screenId }: { screenId?: string }): React.ReactElement {
   const { session, language, applyScreenDslPreview } = useProjectStore();
   if (!session) {
-    return <section className="workspace-empty">No project loaded.</section>;
+    return <section className="workspace-empty">{UI_TEXT[language].noProjectLoaded}</section>;
   }
   return (
     <ScreenDslStudio
@@ -451,6 +472,10 @@ function ScreenDslStudioWrapper({ screenId }: { screenId?: string }): React.Reac
       onApplyPreview={applyScreenDslPreview}
     />
   );
+}
+
+function formatUi(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
 }
 
 function ToastViewport({

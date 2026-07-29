@@ -1,0 +1,10 @@
+/gen/schemas/
+/target/
+
+# Desktop release uses only the icon files listed in tauri.conf.json.
+/icons/android/
+/icons/ios/
+/icons/Square*Logo.png
+/icons/StoreLogo.png
+/icons/64x64.png
+/icons/icon.png

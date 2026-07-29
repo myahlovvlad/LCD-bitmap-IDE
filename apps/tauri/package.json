@@ -1,0 +1,15 @@
+{
+  "name": "lcd-bitmap-ide-tauri",
+  "version": "0.1.2",
+  "private": true,
+  "description": "Independent Tauri/Rust desktop shell for LCD-bitmap IDE",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "check": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "test": "cargo test --manifest-path src-tauri/Cargo.toml"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.4"
+  }
+}

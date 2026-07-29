@@ -24,6 +24,7 @@ interface PixelImporterProps {
     readonly applyNewScreen: string;
     readonly insertCurrentScreen: string;
     readonly applyAndEditBitmap: string;
+    readonly importedOriginal: string;
   };
   readonly language: LanguageCode;
   readonly onOpenEditor?: () => void;
@@ -158,7 +159,7 @@ export function PixelImporter({ labels, language, onOpenEditor }: PixelImporterP
         </label>
       </div>
       <div className="pixel-importer-preview">
-        <div className="original-preview">{originalUrl ? <img src={originalUrl} alt="Imported original" /> : null}</div>
+        <div className="original-preview">{originalUrl ? <img src={originalUrl} alt={labels.importedOriginal} /> : null}</div>
         <div className="lcd-editor-frame">
           {previewCanvas ? (
             <LCDCanvas canvasData={previewCanvas} language={language} scale={5} fontRenderer={defaultFontRenderer} className="lcd-canvas" />

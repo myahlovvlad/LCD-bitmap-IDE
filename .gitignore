@@ -1,4 +1,5 @@
 node_modules/
+**/target/
 dist/
 .vite-dev.log
 .vite-dev.err.log
@@ -17,6 +18,8 @@ playwright-report/
 test-results/
 out/
 release/
+build-diagnostics/
+graphify-out/
 
 # OS/editor noise
 .DS_Store
@@ -43,5 +46,3 @@ LCD-*.html
 
 # Generated outputs
 docs/generated/
-test-results/
-playwright-report/

@@ -6,13 +6,13 @@ truth for coverage; new features must add a row here when merged.
 
 | Requirement | Implementation | Tests |
 | --- | --- | --- |
-| Four isolated workspaces | `src/app/WorkspaceRouter.tsx`, `src/features/{fsm,lcd,control-panel,preview}` | `tests/e2e/app.spec.ts` |
-| Schema-v5 project and legacy migration | `src/model/project.ts`, `src/services/projectMigrationService.ts` | `tests/utils/projectMigrationV5.test.ts` |
-| Separate FSM states and LCD screens | `src/model/project.ts`, `src/renderer/store/projectStore.ts` | migration and E2E workspace tests |
+| Typed routing for current workspaces | `src/domain/project.ts`, `src/app/WorkspaceRouter.tsx`, `src/renderer/App.tsx` | `tests/e2e/app.spec.ts`, `npm run typecheck` |
+| Schema-6 project and legacy migration | `src/domain/project.ts`, `src/services/projectMigrationService.ts` | `tests/utils/projectMigrationV5.test.ts` |
+| Separate FSM states and LCD screens | `src/domain/project.ts`, `src/renderer/store/projectStore.ts` | migration and E2E workspace tests |
 | Physical control-panel editor | `src/features/control-panel/ControlPanelWorkspace.tsx` | `tests/e2e/app.spec.ts` |
-| Runtime FSM engine | `src/services/runtimeEngine.ts`, `src/features/preview/PreviewWorkspace.tsx` | `tests/utils/runtimeEngine.test.ts`, `tests/e2e/app.spec.ts` |
+| Runtime FSM engine | `src/services/runtimeEngine.ts`, `src/features/runtime-workspace/RuntimeWorkspace.tsx` | `tests/utils/runtimeEngine.test.ts`, `tests/utils/runtimeOrchestration.test.ts`, `tests/e2e/app.spec.ts` |
 | Dependency validation and gates | `src/services/projectValidationService.ts`, `src/renderer/App.tsx` | `tests/utils/projectValidationService.test.ts` |
-| IDE/device token separation | `src/renderer/styles.css`, `src/model/project.ts` | `tests/e2e/visual.spec.ts` |
+| IDE/device token separation | `src/renderer/styles.css`, `src/domain/project.ts` | `tests/e2e/visual.spec.ts` |
 | Preserve 128x64 LCD constants | `src/shared/constants/display.ts`, `src/renderer/config/constants.ts` | `tests/utils/render.test.ts` |
 | Preserve design tokens | `src/shared/constants/tokens.ts`, `src/renderer/styles.css` | `tests/e2e/visual.spec.ts` |
 | Zustand project state | `src/renderer/store/projectStore.ts` | `tests/utils/history.test.ts`, `npm run typecheck` |
@@ -24,9 +24,9 @@ truth for coverage; new features must add a row here when merged.
 | Screen cloning and CRUD | `src/features/lcd/LcdWorkspace.tsx`, `src/renderer/store/projectStore.ts` | `npm run typecheck`, `tests/e2e/app.spec.ts` |
 | BitmapObject import | `src/renderer/types/domain.ts`, `src/features/pixel-importer/PixelImporter.tsx` | `tests/utils/render.test.ts` |
 | Floyd-Steinberg worker | `src/features/pixel-importer/dithering.ts`, `src/features/pixel-importer/pixelWorker.ts` | `tests/utils/dithering.test.ts` |
-| Preview Mode | `src/features/preview/PreviewWorkspace.tsx`, `src/services/runtimeEngine.ts` | `tests/e2e/app.spec.ts`, `tests/utils/runtimeEngine.test.ts` |
+| Runtime workspace | `src/features/runtime-workspace/RuntimeWorkspace.tsx`, `src/services/runtimeEngine.ts` | `tests/e2e/app.spec.ts`, `tests/utils/runtimeEngine.test.ts` |
 | FSM multi-side handles and self-loop edges | `src/features/fsm/FsmWorkspace.tsx`, `src/renderer/components/StateNode.tsx` | `tests/e2e/app.spec.ts`, manual smoke |
-| Transition mechanisms and conditional branching | `src/model/project.ts`, `src/services/runtimeEngine.ts`, `src/features/preview/PreviewWorkspace.tsx` | `tests/utils/runtimeEngine.test.ts` |
+| Transition mechanisms and conditional branching | `src/domain/project.ts`, `src/services/runtimeEngine.ts`, `src/features/runtime-workspace/RuntimeWorkspace.tsx` | `tests/utils/runtimeEngine.test.ts` |
 | Hotkeys | `src/renderer/App.tsx` | `tests/e2e/app.spec.ts` |
 | Clipboard copy actions | `src/renderer/utils/clipboard.ts`, `src/main/main.ts`, `src/preload/preload.cts` | `tests/e2e/app.spec.ts`, manual Electron smoke |
 | C header and binary screen export | `src/renderer/utils/codegen.ts`, `src/renderer/core/ExportEngine.ts` | `tests/utils/codegen.test.ts` |
@@ -58,7 +58,7 @@ truth for coverage; new features must add a row here when merged.
 | Performance budgets and bundle splitting | `src/renderer/App.tsx`, `vite.config.ts` | `tests/performance/app.performance.spec.ts` |
 | Desktop packaging (Windows/macOS/Linux) | `package.json` (build), `.github/workflows/build.yml`, `.github/workflows/release.yml` | GitHub Actions native runners, `npm run build:*` |
 | Import security | `src/shared/lib/security.ts`, `src/entities/project/schema.ts` | `tests/utils/schema.test.ts` |
-| Domain/application boundary independence | `src/application/`, `src/domain/`, `src/model/project.ts`, `src/services/projectInterop.ts`, `src/renderer/types/domain.ts` | `tests/utils/architectureBoundary.test.ts` |
+| Domain/application boundary independence | `src/application/`, `src/domain/`, `src/services/projectInterop.ts`, `src/renderer/types/domain.ts` | `tests/utils/architectureBoundary.test.ts` |
 | Portable `.lcdproj` migration preservation | `src/services/projectInterop.ts`, `src/services/projectMigrationService.ts` | `tests/utils/projectMigrationV5.test.ts`, `tests/utils/schema.test.ts` |
 
 ## 2026-06-16 Update
@@ -68,8 +68,8 @@ The matrix now tracks multi-side FSM handles, self-loop transitions, clipboard I
 ## Known Limitations
 
 - Some workflows still require manual smoke checks until dedicated Playwright coverage is added for self-loop drawing and Electron clipboard.
-- MCP, Behavior DSL, Operation Registry, Screen DSL and full live collaborative
-  synchronization are deferred after Phase 4A.
+- Full live collaborative synchronization remains future work. MCP, typed FSM
+  behavior storage and Screen DSL are implemented and covered by subsystem tests.
 
 ## Changelog
 

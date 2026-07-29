@@ -167,7 +167,7 @@ test('opens the searchable operation manual and guided tour', async ({ page }) =
 });
 
 test('switches locales without encoding artifacts', async ({ page }) => {
-  const languageButton = page.getByRole('button', { name: 'Toggle interface language' });
+  const languageButton = page.getByTestId('interface-language-cycle');
   const brokenEncoding = /(?:Р.|С.){3,}|�/;
   for (const expected of ['RU', 'ZH', 'EN']) {
     await languageButton.click();

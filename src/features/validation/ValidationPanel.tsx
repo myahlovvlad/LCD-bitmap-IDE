@@ -2,11 +2,13 @@ import type React from 'react';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { ValidationDomain, ValidationIssue } from '../../domain/project';
+import type { UiText } from '../../renderer/config/i18n';
 
 export function ValidationPanel({
   issues,
   domain,
   title = 'Validation',
+  labels,
   onSelectEntity,
   onFixInitialState,
   defaultCollapsed = false
@@ -14,6 +16,7 @@ export function ValidationPanel({
   issues: readonly ValidationIssue[];
   domain?: ValidationDomain;
   title?: string;
+  labels: UiText;
   onSelectEntity?: (entityType: string, entityId: string) => void;
   onFixInitialState?: () => void;
   /** Collapse the panel by default when there are no errors. */
@@ -51,14 +54,14 @@ export function ValidationPanel({
           {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
         </span>
         <h3>{title}</h3>
-        <span className={`validation-badge ${badgeClass}`} aria-label={`${visible.length} issues`}>
+        <span className={`validation-badge ${badgeClass}`} aria-label={`${visible.length} ${labels.validation.toLowerCase()}`}>
           {errorCount > 0 ? `${errorCount}✗` : warnCount > 0 ? `${warnCount}⚠` : '✓'}
         </span>
       </header>
 
       {!collapsed ? (
         visible.length === 0 ? (
-          <p className="validation-empty">No validation issues.</p>
+          <p className="validation-empty">{labels.noValidationIssues}</p>
         ) : (
           <div className="validation-list">
             {visible.map((issue) => {
@@ -71,7 +74,7 @@ export function ValidationPanel({
                   {issue.suggestedFix ? <small>{issue.suggestedFix}</small> : null}
                   {isInitialMissing && onFixInitialState ? (
                     <button type="button" className="validation-fix-button" onClick={onFixInitialState}>
-                      Fix: mark first state as initial
+                      {labels.validationFixInitial}
                     </button>
                   ) : null}
                   {canSelect ? (
@@ -80,7 +83,7 @@ export function ValidationPanel({
                       className="validation-fix-button"
                       onClick={() => onSelectEntity!(issue.entityType, issue.entityId!)}
                     >
-                      Go to {issue.entityType}
+                      {labels.goToEntity} {issue.entityType}
                     </button>
                   ) : null}
                 </article>

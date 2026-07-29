@@ -37,7 +37,8 @@ await build({
     'node:*',
     // Allow node builtins without the prefix too
     'fs', 'path', 'url', 'http', 'https', 'crypto', 'os', 'stream', 'events',
-    'child_process', 'util', 'buffer', 'module'
+    'child_process', 'util', 'buffer', 'module',
+    'serialport', '@serialport/*'
   ],
   // __dirname is available natively in CJS, no define needed
   tsconfig: resolve(root, 'tsconfig.electron.json'),
