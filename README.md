@@ -17,14 +17,26 @@ LCD-bitmap IDE helps you design and validate the operator-facing interface aroun
 
 The application does not acquire physical measurements by itself. Real acquisition requires your own instrument firmware, backend service or hardware connector.
 
+## Start Here
+
+New users should begin with [Start Here](docs/START_HERE.md) or
+[С чего начать](docs/START_HERE.ru.md), then open the built-in **Demo** and
+complete the **Tour**. The [conceptual model](docs/CONCEPTUAL_MODEL.md) explains
+how FSM states, LCD screens, controls, tags, procedures, runtime and firmware
+handoff form one project rather than separate tools.
+
+Contributors can use the [documentation index](docs/DOCUMENTATION_INDEX.md) to
+find current architecture, data model, testing and subsystem documents.
+
 ## Download
 
 Desktop builds are published from [GitHub Releases](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases).
 
-| Platform | Artifact |
+| Platform | Stable artifacts |
 |---|---|
-| Windows | [Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.1-Setup-x64.exe) · [Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.1-Portable-x64.exe) |
-| Linux | [AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.1-x86_64.AppImage) · [deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.1-amd64.deb) · [tar.gz x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.1-x64.tar.gz) |
+| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Portable-x64.exe) |
+| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-x86_64.AppImage) |
+| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-macOS-x64.dmg) |
 | Developers | Source checkout with `npm ci` and `npm run electron:dev` |
 
 If a direct asset link is not available yet, open the [latest Release page](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest) and download the matching file from the asset list.
@@ -45,6 +57,18 @@ npm run dev
 ```
 
 Open `http://127.0.0.1:5173`.
+
+For the Tauri/Rust desktop application:
+
+```bash
+npm --prefix apps/tauri ci
+npm run tauri:dev
+```
+
+Build the Tauri installer for the current operating system with
+`npm run tauri:build`. The Electron and Tauri dependencies are isolated:
+Electron remains the stable root application, while the Rust shell lives in
+[`apps/tauri`](apps/tauri/README.md).
 
 ## Documentation Downloads
 
@@ -134,6 +158,8 @@ The generator writes HTML, PDF and DOCX artifacts into `docs/user-manuals/`.
 ## Project Layout
 
 ```text
+apps/
+  tauri/          isolated Tauri CLI package and Rust desktop backend
 src/
   application/    command bus, project sessions and ChangeSet application
   compiler/       normalized IR and deterministic embedded exports
@@ -150,6 +176,8 @@ docs/
   TESTING.md
 examples/
   universal-lcd-demo.lcdproj
+.github/workflows/
+  tauri-build.yml native Windows, Linux and macOS Tauri builds
 ```
 
 ## Security Boundary

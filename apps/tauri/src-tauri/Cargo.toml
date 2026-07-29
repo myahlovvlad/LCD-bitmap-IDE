@@ -1,0 +1,30 @@
+[package]
+name = "lcd-bitmap-ide-tauri"
+version = "0.1.2"
+description = "Rust desktop shell for LCD-bitmap IDE"
+authors = ["Vlad Myahlov <myahlov@gmail.com>"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "lcd_bitmap_ide_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+arboard = "3"
+rfd = "0.15"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serialport = "4"
+tauri = { version = "2", features = [] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

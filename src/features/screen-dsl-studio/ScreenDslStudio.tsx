@@ -321,7 +321,7 @@ export function ScreenDslStudio({ session, selectedScreenId, language, onApplyPr
   const preview = docSession.preview;
 
   return (
-    <section className="screen-dsl-studio" aria-label="Screen Schema Studio" data-testid="screen-dsl-studio">
+    <section className="screen-dsl-studio" aria-label={labels.dslTitle} data-testid="screen-dsl-studio">
       <header className="screen-dsl-studio-header">
         <div>
           <h2>{labels.dslTitle}</h2>
@@ -341,7 +341,7 @@ export function ScreenDslStudio({ session, selectedScreenId, language, onApplyPr
         </span>
       </header>
 
-      <div className="screen-dsl-config-bar" role="toolbar" aria-label="Screen Schema Studio configuration">
+      <div className="screen-dsl-config-bar" role="toolbar" aria-label={labels.dslConfiguration}>
         <fieldset className="screen-dsl-format-group">
           <legend>{labels.dslFormat}</legend>
           {FORMATS.map((fmt) => (
@@ -445,7 +445,7 @@ export function ScreenDslStudio({ session, selectedScreenId, language, onApplyPr
       <div className="screen-dsl-editor-area">
         <label className="screen-dsl-editor-label" htmlFor="screen-dsl-source">
           {labels.dslSourceLabel} ({FORMAT_LABEL[activeFormat]})
-          {docSession.dirty ? <span className="screen-dsl-dirty-marker" aria-label="modified"> •</span> : null}
+          {docSession.dirty ? <span className="screen-dsl-dirty-marker" aria-label={labels.dirty}> •</span> : null}
         </label>
         <textarea
           id="screen-dsl-source"
@@ -468,8 +468,8 @@ export function ScreenDslStudio({ session, selectedScreenId, language, onApplyPr
       </div>
 
       {preview ? (
-        <section className="screen-dsl-result-area" aria-label="Preview results">
-          <nav className="screen-dsl-result-tabs" role="tablist" aria-label="Preview result tabs">
+        <section className="screen-dsl-result-area" aria-label={labels.dslPreviewResults}>
+          <nav className="screen-dsl-result-tabs" role="tablist" aria-label={labels.dslPreviewResultTabs}>
             {(['diagnostics', 'diff', 'raster', 'budget'] as const).map((tab) => (
               <button
                 key={tab}
@@ -603,7 +603,7 @@ function SemanticDiffPanel({ groups, preview, labels }: { readonly groups: Scree
                 <strong>{item.type}</strong>
                 <span>{item.id}</span>
                 {item.destructive ? (
-                  <span className="screen-dsl-destructive-marker" aria-label="Destructive change">{labels.dslDestructiveMarker}</span>
+                  <span className="screen-dsl-destructive-marker" aria-label={labels.dslDestructiveWarning}>{labels.dslDestructiveMarker}</span>
                 ) : null}
               </li>
             ))}
@@ -620,14 +620,14 @@ function RasterPanel({ rasterSummary, labels }: { readonly rasterSummary: Screen
   }
   return (
     <div className="screen-dsl-raster-panel" data-testid="screen-dsl-raster-panel">
-      <dl className="screen-dsl-raster-summary" aria-label="Raster summary">
+      <dl className="screen-dsl-raster-summary" aria-label={labels.dslRasterTab}>
         <dt>{labels.dslRasterBefore}</dt><dd data-testid="screen-dsl-raster-before">{rasterSummary.beforeBytes}</dd>
         <dt>{labels.dslRasterAfter}</dt><dd data-testid="screen-dsl-raster-after">{rasterSummary.afterBytes}</dd>
         <dt>{labels.dslRasterDelta}</dt><dd data-testid="screen-dsl-raster-delta">{rasterSummary.delta >= 0 ? '+' : ''}{rasterSummary.delta} bytes</dd>
         <dt>{labels.dslRasterChangedScreens}</dt><dd data-testid="screen-dsl-raster-changed-count">{rasterSummary.changedScreens.length}</dd>
       </dl>
       {rasterSummary.changedScreens.length > 0 ? (
-        <ul aria-label="Changed screens">
+        <ul aria-label={labels.dslRasterChangedScreens}>
           {rasterSummary.changedScreens.map((id) => <li key={id}>{id}</li>)}
         </ul>
       ) : (
@@ -647,7 +647,7 @@ function PixelBudgetPanel({ preview, labels }: { readonly preview: ScreenDslPrev
   }
   return (
     <div className="screen-dsl-budget-panel" data-testid="screen-dsl-budget-panel">
-      <dl aria-label="Pixel budget summary">
+      <dl aria-label={labels.dslPixelBudgetTab}>
         <dt>{labels.dslBudgetBytes}</dt><dd data-testid="screen-dsl-budget-bytes">{raster.afterByteLength}</dd>
         <dt>{labels.dslBudgetChanged}</dt><dd data-testid="screen-dsl-budget-changed">{raster.changedScreens.length}</dd>
       </dl>
@@ -683,7 +683,7 @@ const ScreenDslApplyDialogComp = forwardRef<HTMLDialogElement, ScreenDslApplyDia
         <h3 id="screen-dsl-dialog-title">{labels.dslConfirmDestructiveTitle}</h3>
         <p>{summary}</p>
         {deletions.length > 0 ? (
-          <ul aria-label="Items to be deleted">
+          <ul aria-label={labels.dslItemsToBeDeleted}>
             {deletions.map((op, idx) => (
               <li key={`${op.type}-${op.id}-${idx}`}>{op.type}: {op.id}</li>
             ))}

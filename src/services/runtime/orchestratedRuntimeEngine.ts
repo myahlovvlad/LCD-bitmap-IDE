@@ -6,6 +6,9 @@ import { ProjectRuntimeEngine, type RuntimeEngine, type RuntimeEvent } from '../
 import { executeProcedure } from './actionExecutor';
 import { MutableTagContext, defaultTagValues, type TagContext } from './TagContext';
 import { evaluateTypedGuard, parseBackendBehaviorStorage } from '../../fsm-behavior';
+import { resolveLcdScreenBindings } from './resolveLcdBindings';
+import { ECROS_5300_FORMULAS } from '../../spectrophotometer';
+import { evaluatePortableFormula } from '../../domain/portableFormula';
 
 export type ProcedureStatus = 'idle' | 'running' | 'success' | 'failure';
 
@@ -67,7 +70,11 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
   reset(): void { this.inner.reset(); this.procedureStatus = 'idle'; this.lastProcedureRun = null; }
   step(): void { this.inner.step(); }
   setStepMode(enabled: boolean): void { this.inner.setStepMode(enabled); }
-  getCurrentScreen(): LcdScreen | null { return this.inner.getCurrentScreen(); }
+  getCurrentScreen(): LcdScreen | null {
+    this.refreshFormulaTags();
+    const screen = this.inner.getCurrentScreen();
+    return screen ? resolveLcdScreenBindings(screen, this.tags, this.project.tags ?? {}) : null;
+  }
   getAvailableButtons(): ControlPanelButton[] { return this.inner.getAvailableButtons(); }
   isButtonAllowed(button: ControlPanelButton): boolean { return this.inner.isButtonAllowed(button); }
 
@@ -120,6 +127,29 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
 
   get isExecutingProcedure(): boolean {
     return this.procedureStatus === 'running';
+  }
+
+  private refreshFormulaTags(): void {
+    if (!this.project.dataSources?.['ecros.formulas']) {
+      return;
+    }
+    for (const formula of ECROS_5300_FORMULAS) {
+      const values: Record<string, number> = {};
+      let complete = true;
+      for (const dependency of formula.dependencies) {
+        const value = this.tags.get(dependency);
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+          complete = false;
+          break;
+        }
+        values[dependency] = value;
+      }
+      if (!complete) continue;
+      const result = evaluatePortableFormula(formula.expression, values);
+      if (result.value !== null) {
+        this.tags.set(formula.targetTagId, result.value);
+      }
+    }
   }
 
   // ---- Orchestration internals ----

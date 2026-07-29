@@ -28,5 +28,5 @@ test('Mermaid and Python drafts are independent and other format becomes stale a
 
   await fsm.expectStateTitle('measure', 'Mermaid Draft');
   await expect(scripts.source('python')).toHaveValue(/Python Draft/);
-  await scripts.expectDocumentState('python', /stale.*dirty/);
+  await scripts.expectDocumentState('python', /stale.*modified/);
 });

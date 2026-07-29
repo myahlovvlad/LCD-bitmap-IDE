@@ -116,7 +116,7 @@ export function AlarmWorkspace(): React.ReactElement {
               type="button"
               className="sidebar-collapse-button"
               onClick={() => setLeftCollapsed((v) => !v)}
-              aria-label="Toggle sidebar"
+              aria-label={labels.toggleSidebar}
             >
               {leftCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
@@ -157,10 +157,10 @@ export function AlarmWorkspace(): React.ReactElement {
                     </div>
                   </button>
                   <div>
-                    <button type="button" title="Duplicate" onClick={() => handleDuplicate(alarm.id)}>
+                    <button type="button" title={labels.duplicate} onClick={() => handleDuplicate(alarm.id)}>
                       <Copy size={14} />
                     </button>
-                    <button type="button" title="Delete" onClick={() => doDelete(alarm.id)}>
+                    <button type="button" title={labels.delete} onClick={() => doDelete(alarm.id)}>
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -314,13 +314,19 @@ export function AlarmWorkspace(): React.ReactElement {
 
             {/* Active alarms preview */}
             <section className="inspector-card sidebar-content">
-              <h3>Active alarms ({alarms.filter((a) => a.severity === 'critical').length} critical)</h3>
+              <h3>{labels.activeAlarms} ({alarms.filter((a) => a.severity === 'critical').length} {labels.criticalAlarms})</h3>
               <div className="alarm-severity-summary">
                 {(['critical', 'warning', 'info'] as AlarmSeverity[]).map((sev) => {
                   const count = alarms.filter((a) => a.severity === sev).length;
                   return (
                     <div key={sev} className={`alarm-severity-badge ${SEVERITY_CLASS[sev]}`}>
-                      {SEVERITY_ICONS[sev]} {count} {sev}
+                      {SEVERITY_ICONS[sev]} {count} {
+                        sev === 'critical'
+                          ? labels.alarmSeverityCritical
+                          : sev === 'warning'
+                            ? labels.alarmSeverityWarning
+                            : labels.alarmSeverityInfo
+                      }
                     </div>
                   );
                 })}

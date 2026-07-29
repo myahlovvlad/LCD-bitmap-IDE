@@ -64,8 +64,18 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Setup Python for Windows node-gyp
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Chromium for Windows performance tests
+        if: runner.os == 'Windows'
+        run: npx playwright install chromium
 
       - name: Electron smoke on Windows
         if: runner.os == 'Windows'

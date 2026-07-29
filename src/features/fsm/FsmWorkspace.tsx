@@ -249,10 +249,10 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
     });
   }, [project, selectedTransitionId]);
 
-  if (!project) {
-    return <section className="workspace-empty">No project loaded.</section>;
-  }
   const labels = UI_TEXT[language];
+  if (!project) {
+    return <section className="workspace-empty">{labels.noProjectLoaded}</section>;
+  }
 
   const selectedState = selectedStateId ? project.fsm.states[selectedStateId] : null;
   const selectedTransition = selectedTransitionId ? project.fsm.transitions[selectedTransitionId] : null;
@@ -293,7 +293,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   return (
     <section
       className="workspace-root fsm-workspace fsm-workspace-resizable"
-      aria-label="FSM editor"
+      aria-label={labels.fsmEditor}
       data-testid="fsm-workspace"
       style={{ gridTemplateColumns: `${layout.leftWidth}px 6px minmax(430px, 1fr) 6px ${layout.rightWidth}px` }}
       onPointerMove={updateSidebarResize}
@@ -302,16 +302,16 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
     >
       <aside className="workspace-sidebar">
         <header className="workspace-section-header">
-          <h2>States</h2>
-          <button type="button" onClick={addFsmState} title="Add state" data-testid="fsm-add-state"><Plus size={16} /></button>
+          <h2>{labels.states}</h2>
+          <button type="button" onClick={addFsmState} title={labels.addState} data-testid="fsm-add-state"><Plus size={16} /></button>
         </header>
         <div className="sidebar-search">
           <Search size={14} />
           <input
             value={stateSearch}
             onChange={(event) => setStateSearch(event.target.value)}
-            placeholder={language === 'ru' ? 'Поиск состояний' : 'Search states'}
-            aria-label={language === 'ru' ? 'Поиск состояний' : 'Search states'}
+            placeholder={labels.search}
+            aria-label={labels.search}
           />
         </div>
         <div className="entity-list">
@@ -329,10 +329,10 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                   <small>{state.id}</small>
                 </button>
                 <div>
-                  <button type="button" onClick={() => void copyToClipboard(state.id)} title="Copy ID">
+                  <button type="button" onClick={() => void copyToClipboard(state.id)} title={labels.copyId}>
                     <Copy size={14} />
                   </button>
-                  <button type="button" onClick={() => deleteFsmState(stateId)} title="Delete">
+                  <button type="button" onClick={() => deleteFsmState(stateId)} title={labels.delete}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -341,12 +341,13 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           })}
         </div>
         <button type="button" className={showScripts ? 'workspace-tool active' : 'workspace-tool'} onClick={() => setShowScripts((value) => !value)} data-testid="fsm-open-script-studio">
-          FSM Scripts
+          {labels.fsmScripts}
         </button>
         <ValidationPanel
           issues={project.validation.issues}
           domain="fsm"
-          title="FSM validation"
+          title={labels.fsmValidation}
+          labels={labels}
           defaultCollapsed
           onSelectEntity={(entityType, entityId) => {
             if (entityType === 'state') {
@@ -369,7 +370,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       <div
         className="workspace-splitter"
         role="separator"
-        aria-label="Resize FSM States"
+        aria-label={labels.resizeFsmStates}
         aria-orientation="vertical"
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -380,27 +381,27 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       <main className="workspace-canvas-column">
         <header className="workspace-toolbar">
           <button type="button" className={editing ? 'active' : ''} onClick={() => setEditing((value) => !value)}>
-            Edit graph
+            {labels.editGraph}
           </button>
           <button
             type="button"
             onClick={() => updateGraphPositions(buildCompactGraphLayout(project.fsm.stateOrder, legacyStateMap(project.fsm.states)))}
           >
-            <LayoutGrid size={16} /> Auto arrange
+            <LayoutGrid size={16} /> {labels.autoArrange}
           </button>
           <button
             type="button"
             className={elkRunning ? 'active' : ''}
             disabled={elkRunning}
             onClick={() => void runElkLayout()}
-            title="ELK LAYERED layout — ортогональные рёбра без пересечений"
+            title={labels.elkLayoutTip}
           >
             <LayoutGrid size={16} />
             {elkRunning ? 'ELK…' : 'ELK Layout'}
           </button>
           {showSwimlanes ? (
-            <button type="button" className="active" onClick={() => setShowSwimlanes(false)} title="Скрыть подсистемы">
-              Swimlanes ✓
+            <button type="button" className="active" onClick={() => setShowSwimlanes(false)} title={labels.hideSubsystems}>
+              {labels.swimlanes} ✓
             </button>
           ) : null}
           <button type="button" className="hmi-help-button" title={labels.showHelp} onClick={() => setShowTutorial(true)}>
@@ -411,6 +412,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           session ? (
             <FsmScriptStudio
               session={session}
+              language={language}
               onApplyPreview={applyFsmScriptPreview}
             />
           ) : null
@@ -442,7 +444,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       <div
         className="workspace-splitter"
         role="separator"
-        aria-label="Resize FSM Inspector"
+        aria-label={labels.resizeFsmInspector}
         aria-orientation="vertical"
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -540,7 +542,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
               </div>
             </section>
           </>
-        ) : <p>Select a state or transition.</p>}
+        ) : <p>{labels.selectStateOrTransition}</p>}
       </aside>
       {showTutorial ? (
         <TutorialOverlay workspace="fsm" language={language} onClose={() => setShowTutorial(false)} />

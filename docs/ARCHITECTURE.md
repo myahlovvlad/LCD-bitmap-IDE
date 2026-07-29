@@ -1,143 +1,155 @@
 # Architecture
 
-The Electron/Vite renderer is organized as a project shell plus four isolated
-workspaces. Legacy project readers remain at the import boundary; application
-state and current exports use schema version 5.
+LCD-bitmap IDE is a shared React/Vite editor hosted by two desktop shells:
+Electron is the established shell and Tauri 2 is the Rust-based migration
+target. Both operate on the same schema-6 domain model and renderer.
+
+For the product vocabulary and state categories, read
+[CONCEPTUAL_MODEL.md](CONCEPTUAL_MODEL.md) first.
+
+## Runtime Shape
+
+```text
+Electron main/preload ─┐
+                       ├─ desktop capability boundary ─ React renderer
+Tauri Rust backend ────┘                              │
+                                                      ↓
+                                            application commands
+                                                      ↓
+                                             schema-6 project
+                                               ├─ runtime
+                                               └─ compiler/export
+```
+
+The shells provide file, clipboard and native integration. Product behavior
+belongs in the shared TypeScript layers unless an operating-system capability
+requires a native adapter.
 
 ## Layers
 
-- `src/domain`: renderer-independent contracts and pure defaults for language,
-  display geometry, canvas objects, fonts, legacy import models and schema-v5
-  project data. This layer must not import React, Zustand, Electron, renderer,
-  features or DOM-specific modules.
-- `src/application`: renderer-independent command bus, session revision model,
-  semantic changes, dry-run execution and atomic ChangeSet support for the
-  command-based application layer.
-- `src/fsm-interchange`: renderer-independent FSM authoring interchange model,
-  Mermaid/Python-like DSL writers and safe parsers, semantic diff and pure FSM
-  project application helpers.
-- `src/screen-interchange`: renderer-independent LCD screen authoring
-  interchange model v1, resource closure validation, canonical serialization,
-  fingerprints and read-only reconstruction helpers. It does not import the
-  renderer, compiler backend, React, Zustand or Electron.
-- `src/compiler`: renderer-independent Phase 2A compiler source snapshots,
-  normalized semantic IR v1, diagnostics, traceability, canonical
-  serialization and deterministic fingerprints. This layer does not import
-  application sessions, renderer modules, React, Zustand, Electron, DOM or
-  Canvas APIs.
-- `src/model`: the schema-v5 project, workspace, control-panel, runtime and
-  validation contracts. This path is now a compatibility re-export over
-  `src/domain/project`.
-- `src/services`: migration, project interoperability, dependency validation and
-  runtime execution. These modules do not import renderer, React, Zustand or
-  Electron.
+- `src/domain`: framework-independent contracts for the schema-6 project, FSM,
+  LCD canvas, localization, tags, procedures, alarms and trends.
+- `src/application`: command bus, `ProjectSession`, revisions, semantic
+  ChangeSets, dry runs, history integration and application facades.
+- `src/entities`: project and screen factories.
+- `src/services`: migration, interoperability, dependency validation and runtime
+  execution.
+- `src/fsm-behavior`: typed FSM behavior storage and codecs.
+- `src/fsm-interchange`: safe FSM interchange models, parsers, writers,
+  semantic diff and project application helpers.
+- `src/screen-interchange`: stable screen authoring package, resources,
+  canonicalization, traceability and reconstruction.
+- `src/screen-dsl`: JSON/YAML screen DSL contracts and conversion.
+- `src/compiler`: read-only source snapshots, normalized IR, target lowering,
+  backend registry and deterministic artifact generation.
 - `src/app`: typed workspace routing.
-- `src/features/fsm`: FSM graph, inspectors, linked LCD preview and FSM
-  validation.
-- `src/features/lcd`: screen list, bitmap canvas, pixel import, fonts, glyphs,
-  C export and templates.
-- `src/features/control-panel`: SVG physical-panel editor and button bindings.
-- `src/features/preview`: read-only device simulator and runtime log.
-- `src/renderer`: thin shell, v5 Zustand store, canvas renderer and Electron
+- `src/features`: user-facing workspace and workflow modules.
+- `src/renderer`: React shell, Zustand adapter, rendering, i18n and desktop
   integration.
+- `src/shared`: narrow cross-boundary contracts and security utilities.
+- `src/main` and `src/preload`: Electron-only host and IPC bridge.
+- `apps/tauri`: isolated Tauri package and Rust host.
 
-## State
+The repository has no `src/model` compatibility directory and no
+`src/features/preview` workspace. Current contracts live in `src/domain`;
+runtime UI lives in `src/features/runtime-workspace`.
 
-`projectStore.ts` is now a renderer adapter over `ProjectSession` for
-canonical engineering state. Project mutations flow through the application
-command bus and command-history patches; renderer state still owns selections,
-language and local UI resources.
+## Workspaces
 
-Compiler source snapshots are read-only projections of application workspace
-data. They exclude application revision, history, savepoints, processed command
-IDs, selections, active workspace, zoom and validation timestamps from compiler
-fingerprints.
+The router supports these current modes:
 
-## Rendering
+- Design: FSM, LCD and Control panel.
+- Integrate: Tags, Procedures and Alarms.
+- Validate: Runtime.
+- Deliver: Text registry and Handoff.
+- Advanced: Screen DSL and Settings.
 
-LCD rendering stays Canvas API based. The control panel uses an SVG design
-surface. Runtime consumes the same panel and FSM model but never mutates design
-data.
+`preview` remains in the routing type for compatibility, but the active
+navigation uses `runtime`. The flat navigation does not yet express the groups
+above; this is tracked in [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md).
 
-## Compiler
+## State And Mutation Boundary
 
-Phase 2A adds a normalized semantic IR but does not move production export. The
-current C/binary generator remains `src/renderer/core/ExportEngine.ts` and
-`src/renderer/utils/codegen.ts`. See `docs/CURRENT_CODEGEN_AUDIT.md`,
-`docs/COMPILER_ARCHITECTURE.md` and `docs/COMPILER_IR_V1.md`.
+`LcdBitmapProject` is canonical persisted engineering state.
+`projectStore.ts` adapts a `ProjectSession` to React and owns UI-facing state
+such as selection, language and local resources.
 
-## Current Component Map
+Normal project mutations cross the application command bus and produce
+revision-aware changes. Atomic imports and DSL applies use ChangeSets. Parsers,
+renderers, runtime simulation and compiler stages must not mutate the canonical
+project directly.
 
-- The former mixed `App.tsx` workspace was split into `FsmWorkspace`,
-  `LcdWorkspace`, `ControlPanelWorkspace` and `PreviewWorkspace`.
-- `LCDCanvasEditor` remains the LCD object editor and now receives a screen ID
-  view instead of an FSM state canvas.
-- `PixelImporter` is an LCD-internal tool.
-- FSM scripts are exposed from the FSM workspace.
-- Phase 3A routes FSM script import through semantic preview and explicit
-  ChangeSet Apply; parsers do not mutate Zustand or project JSON directly.
-- Phase 3A.1 hardens Script Studio UX: Apply requires a valid current preview,
-  stale previews are rejected visibly and targeted E2E tests use semantic
-  selectors instead of bitmap snapshots.
-- Phase 3C adds controlled Script Studio synchronization through transient
-  per-format document sessions. Clean script documents refresh from the graph,
-  dirty drafts become stale instead of being overwritten and Apply still crosses
-  the existing ChangeSet boundary explicitly.
-- Phase 4A adds Screen Interchange Model V1 as a stable authoring package for
-  project and single-screen export. It preserves screen object order, geometry,
-  localized text, font refs, bitmap refs, resource closure, traceability and a
-  canonical fingerprint without changing schema-v5 or generated C/binary output.
-- The former project settings "Control panel" drawer is removed; project
-  metadata remains in the common header.
+Application revision, command history, savepoints, processed command IDs,
+selection, active workspace, zoom and validation timestamps are not persisted
+domain data and do not affect compiler fingerprints.
 
-## Migration Formats
+## Persistence And Migration
 
-- Schema v5 (`kind: "lcd-bitmap-project"`, `version: 5`) is the native format.
-- SpectroDesigner snapshots v1/v2/v4, portable `.lcdproj` 1.0, universal JSON
-  and legacy LCD editor snapshots are input-only compatibility formats.
-- Every legacy `canvasByStateId` becomes a separate screen and the matching
-  state receives `screenId`.
-- Legacy transition trigger strings become `FsmEvent` records.
-- Legacy `cliCommands` become `BackendProcess` records.
-- Missing panels are populated with an LCD and one button per migrated event.
+- Schema 6 (`kind: "lcd-bitmap-project"`, `version: 6`) is current.
+- Schema 5 is accepted as a legacy project version.
+- SpectroDesigner snapshots, portable `.lcdproj` 1.0, universal JSON and older
+  LCD editor snapshots are input compatibility formats.
+- Legacy input is size-checked, schema-validated and migrated before it enters
+  the application store.
+- Runtime conditions and backend commands are declarative and are never
+  evaluated as arbitrary JavaScript.
 
-## Import Safety
+Some public TypeScript symbols still use a `V5` suffix while accepting current
+schema-6 data. This is legacy naming debt, not a second native schema.
 
-Legacy imports are validated by their existing Zod schemas before migration.
-Files larger than 10 MB are rejected before parsing. Runtime conditions and
-backend commands are declarative and are never evaluated as arbitrary code.
+## Rendering And Runtime
 
-## Document History
+LCD authoring and preview use the Canvas API. The physical control panel uses
+SVG. Runtime builds a derived execution context from the FSM, bindings, tags,
+procedures and alarms; it records execution without becoming a second editable
+project model.
 
-Point-in-time audit, QA and roadmap reports authored under the project's earlier working name are retained under `docs/archive/` for provenance. The files under `docs/` (this file, `DATA_MODEL.md`, `SECURITY.md`, `TESTING.md`, `TRACEABILITY_MATRIX.md`, `operation_manual.md`) are the living, authoritative documentation.
+## Compiler And Export
 
-## 2026-06-16 Update
+The compiler path is:
 
-- FSM graph nodes expose multi-side connection handles and preserve transition `sourceHandle` / `targetHandle` in schema-v5 projects.
-- Feedback routes and self-loop transitions are rendered by a custom React Flow edge.
-- The operation manual can be exported as standalone HTML and, in Electron, as PDF generated from the manual HTML document.
-- Clipboard operations use an Electron IPC bridge with web fallbacks.
+```text
+CompilerSourceSnapshot
+  → NormalizedCompilerIrV1
+  → LoweredTargetIrV1
+  → backend artifacts and integrity metadata
+```
+
+The project also retains legacy renderer export surfaces in
+`src/renderer/core/ExportEngine.ts` and `src/renderer/utils/codegen.ts`.
+Migration toward one production backend is incremental and guarded by
+characterization and deterministic-equivalence tests.
+
+See [COMPILER_ARCHITECTURE.md](COMPILER_ARCHITECTURE.md),
+[COMPILER_IR_V1.md](COMPILER_IR_V1.md) and
+[CURRENT_CODEGEN_AUDIT.md](CURRENT_CODEGEN_AUDIT.md).
+
+## Automation Boundary
+
+The Electron host exposes local REST and MCP adapters bound to `127.0.0.1`.
+Mutation requests are routed back through the application mutation surface.
+These endpoints are implemented features, not deferred roadmap items. See
+[API_MCP_CONNECTORS.md](API_MCP_CONNECTORS.md).
+
+## Enforced Invariants
+
+`tests/utils/architectureBoundary.test.ts` checks that the domain, application,
+compiler, interchange, services and entity layers remain independent of React,
+Zustand and desktop infrastructure. It also protects the Screen DSL file and
+IPC boundaries.
+
+These tests complement, but do not replace, review of broad barrel exports and
+cross-community bridge types identified in the architecture graph.
 
 ## Known Limitations
 
-- Cross-platform installers should be produced on native CI runners; local `build:all` is a convenience command and may fail when packaging non-native targets.
-- Manual screenshots in `docs/manual/` are structured placeholders until the next captured screenshot refresh.
-- Target lowering and backend migration are deferred to Phase 2B.
-- MCP adapters, REST API, Screen DSL, Behavior DSL, Operation Registry and
-  screen live synchronization are deferred beyond Phase 4A.
+- Navigation exposes advanced and primary workspaces at equal weight.
+- Several central UI, mutation, manual and localization modules are too large.
+- Electron and Tauri do not yet share one explicit typed capability port.
+- Some current APIs and tests retain schema-5 names.
+- Legacy and normalized compiler export paths coexist.
+- Cross-platform installers must be built on native runners.
+- Manual screenshots under `docs/manual/` require a current capture refresh.
 
-## Changelog
-
-- 2026-06-24: added Phase 1B.1 application command bus, session revision model,
-  dry-run ChangeSets and Zustand adapter for the first vertical slice.
-- 2026-06-24: added Phase 2A normalized compiler IR contracts,
-  renderer-independent source snapshots and compiler boundary tests.
-- 2026-06-24: added Phase 3A.1 FSM round-trip integration hardening and
-  targeted E2E acceptance documentation.
-- 2026-06-25: added Phase 3C controlled Script Studio synchronization
-  architecture and document session boundary.
-- 2026-06-25: added Phase 4A Screen Interchange Model V1 architecture,
-  resource refs, validation, traceability and canonical serialization.
-- 2026-06-24: added Phase 1A domain boundary, renderer compatibility facades,
-  pure service project interop and architecture boundary tests.
-- 2026-06-16: documented multi-side FSM handles, self-loop edges, HTML/PDF manual export and clipboard IPC.
+The prioritized remediation plan is in
+[TECHNICAL_DEBT.md](TECHNICAL_DEBT.md).

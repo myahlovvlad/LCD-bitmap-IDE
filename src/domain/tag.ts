@@ -22,6 +22,8 @@ export interface HmiTag {
   name: LocalizedText;
   dataType: HmiTagDataType;
   unit?: string;
+  /** printf-compatible display format used by LCD preview and firmware handoff. */
+  format?: string;
   sourceId?: string;
   address?: string;
   precision?: number;

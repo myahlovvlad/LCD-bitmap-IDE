@@ -1,65 +1,167 @@
 name: Release
 
-# Builds desktop distributables on native runners so Linux and Windows
-# artifacts are always reproducible regardless of the developer's host OS.
-# Trigger by pushing a v* tag, or run manually from the Actions tab.
+# A v* tag builds distributables on native runners. The release is published
+# only after every required package job succeeds.
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  package:
+  package-electron:
+    name: Electron / ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - os: windows-2022
             platform: win
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             platform: linux
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - uses: actions/setup-python@v5
+        if: runner.os == 'Windows'
+        with:
+          python-version: "3.11"
 
-      - name: Build distributable
+      - run: npm ci
+
+      - name: Build Electron distributable
         run: npm run dist:${{ matrix.platform }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: lcd-bitmap-ide-${{ matrix.platform }}
+          name: electron-${{ matrix.platform }}
           path: |
             release/*.exe
             release/*.AppImage
             release/*.deb
             release/*.tar.gz
-          if-no-files-found: ignore
+          if-no-files-found: error
+          retention-days: 30
 
-      - name: Publish GitHub Release assets
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+  package-tauri:
+    name: Tauri / ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            label: windows-x64
+            bundles: nsis
+          - os: ubuntu-22.04
+            label: linux-x64
+            bundles: deb,appimage
+          - os: macos-15
+            label: macos-arm64
+            bundles: dmg
+          - os: macos-15-intel
+            label: macos-x64
+            bundles: dmg
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libudev-dev
+
+      - uses: actions/setup-node@v4
         with:
-          files: |
-            release/*.exe
-            release/*.AppImage
-            release/*.deb
-            release/*.tar.gz
-          fail_on_unmatched_files: false
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/tauri/src-tauri -> target
+
+      - run: npm ci
+      - run: npm ci --prefix apps/tauri
+
+      - name: Build Tauri distributable
+        run: npm run tauri:build -- --bundles ${{ matrix.bundles }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tauri-${{ matrix.label }}
+          path: apps/tauri/src-tauri/target/release/bundle
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish stable release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [package-electron, package-tauri]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-input
+
+      - name: Prepare stable asset names and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p release-assets
+
+          find release-input/electron-win release-input/electron-linux \
+            -type f \( -name '*.exe' -o -name '*.AppImage' -o -name '*.deb' -o -name '*.tar.gz' \) \
+            -exec cp '{}' release-assets/ \;
+
+          copy_first() {
+            local source_dir="$1"
+            local pattern="$2"
+            local destination="$3"
+            local source
+            source="$(find "$source_dir" -type f -name "$pattern" -print -quit)"
+            test -n "$source"
+            cp "$source" "release-assets/$destination"
+          }
+
+          copy_first release-input/tauri-windows-x64 '*.exe' \
+            "LCD-bitmap-IDE-${version}-Tauri-Windows-x64-Setup.exe"
+          copy_first release-input/tauri-linux-x64 '*.AppImage' \
+            "LCD-bitmap-IDE-${version}-Tauri-Linux-x86_64.AppImage"
+          copy_first release-input/tauri-linux-x64 '*.deb' \
+            "LCD-bitmap-IDE-${version}-Tauri-Linux-amd64.deb"
+          copy_first release-input/tauri-macos-arm64 '*.dmg' \
+            "LCD-bitmap-IDE-${version}-Tauri-macOS-arm64.dmg"
+          copy_first release-input/tauri-macos-x64 '*.dmg' \
+            "LCD-bitmap-IDE-${version}-Tauri-macOS-x64.dmg"
+
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt
+          ls -lh
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          make_latest: true
+          fail_on_unmatched_files: true
+          files: release-assets/*

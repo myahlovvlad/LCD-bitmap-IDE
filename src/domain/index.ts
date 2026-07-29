@@ -32,6 +32,17 @@ export type {
   HmiTagDataType,
   ValueExpression
 } from './tag';
+export {
+  emitPortableFormulaC,
+  evaluatePortableFormula,
+  parsePortableFormula
+} from './portableFormula';
+export type {
+  PortableFormulaDiagnostic,
+  PortableFormulaFunction,
+  PortableFormulaNode,
+  PortableFormulaResult
+} from './portableFormula';
 export type { TrendDefinition } from './trend';
 export {
   CANVAS_OBJECT_DEFAULTS,

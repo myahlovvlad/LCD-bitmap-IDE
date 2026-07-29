@@ -20,7 +20,8 @@ export type WorkspaceMode =
   | 'runtime'
   | 'screen-dsl'
   | 'settings'
-  | 'text-registry';
+  | 'text-registry'
+  | 'handoff';
 
 export type WorkspaceLocation =
   | { mode: 'fsm'; stateId?: string; transitionId?: string }
@@ -33,7 +34,8 @@ export type WorkspaceLocation =
   | { mode: 'runtime'; stateId?: string }
   | { mode: 'screen-dsl'; screenId?: string }
   | { mode: 'settings' }
-  | { mode: 'text-registry' };
+  | { mode: 'text-registry' }
+  | { mode: 'handoff'; screenId?: string };
 
 export interface ProjectMeta {
   id: string;

@@ -1,6 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { SaveScreenDslFileRequest } from '../shared/screenDslFiles/contracts.js';
 import { SCREEN_DSL_FILE_OPEN_CHANNEL, SCREEN_DSL_FILE_SAVE_CHANNEL } from '../shared/screenDslFiles/channels.js';
+import {
+  SPECTRO_SERIAL_CLOSE_CHANNEL,
+  SPECTRO_SERIAL_COMMAND_CHANNEL,
+  SPECTRO_SERIAL_LIST_CHANNEL,
+  SPECTRO_SERIAL_OPEN_CHANNEL,
+  SPECTRO_SERIAL_STATUS_CHANNEL
+} from '../shared/spectrophotometerSerial/channels.js';
+import type { SpectroSerialCommandRequest } from '../shared/spectrophotometerSerial/contracts.js';
 
 const ALLOWED_SEND_CHANNELS = new Set(['api:project-state', 'api:runtime-state', 'api:mutate-res']);
 
@@ -29,5 +37,12 @@ contextBridge.exposeInMainWorld('spectroDesigner', {
   screenDslFiles: {
     open: () => ipcRenderer.invoke(SCREEN_DSL_FILE_OPEN_CHANNEL),
     save: (request: SaveScreenDslFileRequest) => ipcRenderer.invoke(SCREEN_DSL_FILE_SAVE_CHANNEL, request)
+  },
+  spectrophotometerSerial: {
+    list: () => ipcRenderer.invoke(SPECTRO_SERIAL_LIST_CHANNEL),
+    open: (path: string) => ipcRenderer.invoke(SPECTRO_SERIAL_OPEN_CHANNEL, path),
+    close: () => ipcRenderer.invoke(SPECTRO_SERIAL_CLOSE_CHANNEL),
+    status: () => ipcRenderer.invoke(SPECTRO_SERIAL_STATUS_CHANNEL),
+    command: (request: SpectroSerialCommandRequest) => ipcRenderer.invoke(SPECTRO_SERIAL_COMMAND_CHANNEL, request)
   }
 });

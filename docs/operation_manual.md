@@ -1,12 +1,13 @@
 # LCD-bitmap IDE Operation Manual
 
-Version: 0.1.0
+Version: 0.1.2
 
 ## 1. Purpose
 
 LCD-bitmap IDE is an LCD screen and state-machine editor for monochrome instrument displays. It is intended for creating, editing, validating and exporting screen layouts for firmware integration.
 
-The preserved prototype `LCD-редактор и bitmap_12-05-2026.html` remains in the repository as the baseline reference. The product implementation is the Vite + React + Electron application in `src/`.
+The product implementation is the shared Vite + React editor in `src/`, hosted
+by Electron and the Tauri/Rust migration shell.
 
 > **In-app manual.** The application ships a built-in, trilingual operation manual
 > (English, Russian, Simplified Chinese) opened from the **Manual** button. It is
@@ -16,10 +17,18 @@ The preserved prototype `LCD-редактор и bitmap_12-05-2026.html` remains
 > [`src/renderer/config/operationManual.ts`](../src/renderer/config/operationManual.ts).
 > This file is the developer-facing companion reference.
 
-The dialog includes full-text search, progress-tracked learning cases and a guided tour that highlights the real controls. Standalone HTML/PDF editions for all three languages are generated with:
+The dialog includes full-text search, progress-tracked learning cases and a
+guided tour that highlights the real controls. Standalone editions generated
+from the in-app manual content use:
 
 ```bash
 npm run docs:manual
+```
+
+The downloadable user and LLM lifecycle manuals in HTML/PDF/DOCX use:
+
+```bash
+npm run docs:user
 ```
 
 ## 2. Starting The Application
@@ -49,10 +58,13 @@ Do not open the root `index.html` directly with `file://`. It is a Vite entrypoi
 
 - Common project header: open, save, export, undo/redo, documentation, version
   history and language.
-- Four isolated workspaces: FSM logic, LCD bitmap design, physical control-panel
-  design and read-only runtime preview.
-- Preview executes button-bound FSM events through the standalone runtime engine
+- Design workspaces: FSM logic, LCD bitmap design and physical control-panel
+  design.
+- Integration workspaces: tags, procedures and alarms.
+- Runtime executes button-bound FSM events through the standalone runtime engine
   and records transitions, backend requests and errors in the runtime log.
+- Delivery and advanced workspaces: text registry, HMI handoff, Screen DSL and
+  settings.
 - Collapsible Control panel: local snapshots, project metrics and custom display width/height.
 - Panel row: show or hide Screens, State list, FSM canvas and LCD editor.
 - Resizable workspace: drag vertical separators to set custom panel widths; the widths are restored locally.

@@ -8,12 +8,12 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('button', { name: /Open demo|Открыть демо/ }).click();
 });
 
-test('exposes four isolated workspaces', async ({ page }) => {
+test('exposes the primary isolated workspaces', async ({ page }) => {
   const navigation = page.getByRole('navigation', { name: /Workspaces|Рабочие области/ });
   await expect(navigation.getByRole('button', { name: /FSM editor|FSM-редактор/ })).toBeVisible();
   await expect(navigation.getByRole('button', { name: /LCD editor|LCD-редактор/ })).toBeVisible();
   await expect(navigation.getByRole('button', { name: /Control panel|Панель управления/ })).toBeVisible();
-  await expect(navigation.getByRole('button', { name: /Preview|Просмотр/ })).toBeVisible();
+  await expect(navigation.getByRole('button', { name: /Runtime|Выполнение/ })).toBeVisible();
 
   await navigation.getByRole('button', { name: /Control panel|Панель управления/ }).click();
   await expect(page.getByLabel(/Control panel editor/)).toBeVisible();
@@ -113,27 +113,28 @@ test('creates a panel button and binds it to an FSM event', async ({ page }) => 
 
 test('presses a virtual button and performs a runtime transition', async ({ page }) => {
   await page.getByRole('button', { name: 'Demo' }).click();
-  await page.locator('.workspace-navigation button[data-workspace="preview"]').click();
-  await expect(page.getByLabel(/Runtime preview/)).toBeVisible();
+  await page.locator('.workspace-navigation button[data-workspace="runtime"]').click();
+  await expect(page.locator('.runtime-workspace')).toBeVisible();
 
-  await page.getByRole('button', { name: 'START', exact: true }).click();
+  await page.locator('button.runtime-hw-btn', { hasText: /^START$/ }).click();
 
-  await expect(page.locator('.runtime-lcd-card').getByRole('heading', { name: 'Measurement' })).toBeVisible();
-  await expect(page.locator('.runtime-log').getByText(/tr-main-measure/)).toBeVisible();
+  await expect(page.locator('.runtime-state-name strong')).toHaveText('Measurement');
+  await expect(page.locator('.runtime-log-scroll').getByText(/tr-main-measure/)).toBeVisible();
 });
 
 test('queues runtime events in step mode', async ({ page }) => {
   await page.getByRole('button', { name: 'Demo' }).click();
-  await page.locator('.workspace-navigation button[data-workspace="preview"]').click();
+  await page.locator('.workspace-navigation button[data-workspace="runtime"]').click();
   await page.getByRole('button', { name: 'Step mode' }).click();
-  await page.getByRole('button', { name: 'START', exact: true }).click();
-  await expect(page.getByText('Pending: 1')).toBeVisible();
+  await page.locator('button.runtime-hw-btn', { hasText: /^START$/ }).click();
+  await expect(page.locator('.runtime-state-name strong')).toHaveText('Main Menu Demo');
+  await expect(page.locator('.runtime-log-scroll')).not.toContainText('tr-main-measure');
 
   await page.getByRole('button', { name: /^Step$/ }).click();
-  await expect(page.locator('.runtime-lcd-card').getByRole('heading', { name: 'Measurement' })).toBeVisible();
+  await expect(page.locator('.runtime-state-name strong')).toHaveText('Measurement');
 });
 
-test('blocks preview and export when validation has reference errors', async ({ page }) => {
+test('warns in runtime and blocks export when validation has reference errors', async ({ page }) => {
   await page.getByRole('button', { name: 'Demo' }).click();
   await expect.poll(async () => page.evaluate(() => Boolean(localStorage.getItem('lcd-bitmap-ide.project.autosave.v5')))).toBe(true);
   await page.evaluate(() => {
@@ -148,9 +149,9 @@ test('blocks preview and export when validation has reference errors', async ({ 
   await page.reload();
   await page.getByRole('button', { name: /Restore autosave|Восстановить автосохранение/ }).click();
 
-  await page.locator('.workspace-navigation button[data-workspace="preview"]').click();
-  await expect(page.locator('.toast-danger').getByText(/Preview blocked/)).toBeVisible();
-  await expect(page.locator('.workspace-navigation button[data-workspace="fsm"]')).toHaveClass(/active/);
+  await page.locator('.workspace-navigation button[data-workspace="runtime"]').click();
+  await expect(page.locator('.toast-warning').getByText(/Runtime opened, but the project has \d+ validation errors/)).toBeVisible();
+  await expect(page.locator('.workspace-navigation button[data-workspace="runtime"]')).toHaveClass(/active/);
 
   await page.locator('.project-actions').getByRole('button', { name: /Export universal|Универсальный экспорт/ }).click();
   await expect(page.locator('.toast-danger').getByText(/Export blocked/)).toBeVisible();
@@ -167,7 +168,7 @@ test('opens the searchable operation manual and guided tour', async ({ page }) =
 });
 
 test('switches locales without encoding artifacts', async ({ page }) => {
-  const languageButton = page.getByRole('button', { name: 'Toggle interface language' });
+  const languageButton = page.getByTestId('interface-language-cycle');
   const brokenEncoding = /(?:Р.|С.){3,}|�/;
   for (const expected of ['RU', 'ZH', 'EN']) {
     await languageButton.click();

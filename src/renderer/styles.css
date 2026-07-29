@@ -4214,6 +4214,23 @@ button:disabled {
   color: #cbd5e1;
 }
 
+.startup-language {
+  display: grid;
+  grid-template-columns: auto 1fr minmax(130px, auto);
+  align-items: center;
+  gap: 9px;
+  color: #e5e7eb;
+}
+
+.startup-language select {
+  min-height: 36px;
+  border: 1px solid #64748b;
+  border-radius: 7px;
+  background: #111827;
+  color: #f9fafb;
+  padding: 5px 9px;
+}
+
 .startup-actions {
   display: grid;
   gap: 9px;
@@ -5362,3 +5379,227 @@ button:disabled {
   font-size: 0.8rem;
 }
 .hmi-toggle input { accent-color: var(--ide-accent, #2563eb); }
+.hmi-handoff-workspace {
+  grid-template-columns: minmax(210px, 250px) minmax(560px, 1fr) minmax(260px, 320px);
+}
+
+.hmi-handoff-sidebar,
+.hmi-handoff-inspector {
+  min-width: 0;
+}
+
+.hmi-handoff-sidebar .entity-card {
+  width: 100%;
+  text-align: left;
+}
+
+.hmi-handoff-clone-actions {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  margin-top: auto;
+  border-top: 1px solid var(--ide-border);
+}
+
+.hmi-handoff-clone-actions button,
+.hmi-handoff-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.hmi-handoff-main {
+  min-width: 0;
+  overflow: auto;
+}
+
+.hmi-handoff-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex-wrap: wrap;
+}
+
+.hmi-handoff-status {
+  min-height: 1.2rem;
+  margin-left: auto;
+  color: var(--ide-text-secondary);
+  font-size: 12px;
+}
+
+.hmi-handoff-status.done {
+  color: var(--ide-success);
+}
+
+.hmi-handoff-status.error {
+  color: var(--ide-danger);
+}
+
+.hmi-handoff-preview-card {
+  display: grid;
+  place-items: center;
+  gap: 16px;
+  margin: 16px;
+  padding: 18px;
+  border: 1px solid var(--ide-border);
+  border-radius: 12px;
+  background: var(--ide-surface-raised);
+  box-shadow: var(--ide-shadow-sm);
+}
+
+.hmi-handoff-preview-card > div {
+  display: flex;
+  width: min(100%, 640px);
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--ide-text-secondary);
+}
+
+.hmi-handoff-preview-card canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.hmi-handoff-field-section {
+  padding: 0 16px 20px;
+}
+
+.hmi-handoff-field-section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.hmi-handoff-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.hmi-handoff-field {
+  position: relative;
+  display: grid;
+  min-height: 112px;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--ide-border);
+  border-radius: 10px;
+  background: var(--ide-surface);
+  color: var(--ide-text);
+  text-align: left;
+}
+
+.hmi-handoff-field:hover:not(:disabled),
+.hmi-handoff-field.active {
+  border-color: var(--ide-accent);
+  background: var(--ide-selection);
+}
+
+.hmi-handoff-field:focus-visible {
+  outline: 2px solid var(--ide-focus);
+  outline-offset: 2px;
+}
+
+.hmi-handoff-field:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.hmi-handoff-field strong {
+  font-family: var(--ide-font-mono);
+  font-size: 18px;
+}
+
+.hmi-handoff-field code {
+  overflow: hidden;
+  color: var(--ide-text-secondary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+.hmi-field-label {
+  color: var(--ide-text-secondary);
+  font-size: 12px;
+}
+
+.hmi-binding-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ide-accent);
+  font-size: 10px;
+}
+
+.hmi-handoff-inspector .inspector-card {
+  display: grid;
+  gap: 9px;
+}
+
+.hmi-handoff-inspector select {
+  width: 100%;
+}
+
+.hmi-handoff-checklist p {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.hmi-handoff-warning {
+  border-color: var(--ide-warning);
+}
+
+.hmi-serial-card label {
+  display: grid;
+  gap: 5px;
+}
+
+.hmi-serial-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.hmi-serial-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.hmi-serial-state {
+  margin: 0;
+  color: var(--ide-text-secondary);
+}
+
+.hmi-serial-state.connected {
+  color: var(--ide-success);
+}
+
+.hmi-serial-card pre {
+  max-height: 130px;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--ide-border);
+  border-radius: 6px;
+  background: var(--ide-surface);
+  color: var(--ide-text-secondary);
+  font: 10px/1.45 var(--ide-font-mono);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 1180px) {
+  .hmi-handoff-workspace {
+    grid-template-columns: 190px minmax(480px, 1fr) 250px;
+  }
+
+  .hmi-handoff-field-grid {
+    grid-template-columns: repeat(2, minmax(210px, 1fr));
+  }
+}

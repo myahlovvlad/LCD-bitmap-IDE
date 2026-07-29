@@ -4,6 +4,8 @@ test('interactive workspace stays responsive within interaction budgets', async 
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  await page.getByRole('button', { name: /Open demo|Открыть демо/ }).click();
+  await expect(page.getByTestId('fsm-workspace')).toBeVisible();
 
   const metrics = await page.evaluate(async () => {
     const longTasks: number[] = [];
@@ -20,8 +22,10 @@ test('interactive workspace stays responsive within interaction budgets', async 
 
     const dispatchDurations: number[] = [];
     const settleDurations: number[] = [];
-    const search = document.querySelector<HTMLInputElement>('.state-filter input');
-    const graphButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.graph-toolbar button')).slice(0, 2);
+    const search = document.querySelector<HTMLInputElement>('.fsm-workspace .sidebar-search input');
+    const graphButtons = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.fsm-workspace .workspace-toolbar button')
+    ).slice(0, 2);
     if (!search || graphButtons.length < 2) {
       throw new Error('Performance controls are unavailable');
     }

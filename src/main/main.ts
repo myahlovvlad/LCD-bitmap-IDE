@@ -1,23 +1,21 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { handleScreenDslFileOpen } from './screenDslFiles/openHandler.js';
 import { handleScreenDslFileSave } from './screenDslFiles/saveHandler.js';
 import { SCREEN_DSL_FILE_OPEN_CHANNEL, SCREEN_DSL_FILE_SAVE_CHANNEL } from '../shared/screenDslFiles/channels.js';
 import { startApiServer, stopApiServer, setMainWindow as setApiMainWindow } from './api/apiServer.js';
 import { startMcpServer, stopMcpServer, setMcpMainWindow, setMcpProjectCache, setMcpRuntimeState } from './mcp/mcpServer.js';
+import { registerSpectrophotometerSerialHandlers } from './spectrophotometerSerial/registerHandlers.js';
 
-// In CJS (esbuild bundle) __dirname is native; in ESM (tsc output) we derive it
-declare const __dirname: string | undefined;  // native in CJS, undefined in ESM
-const _dirname: string = typeof __dirname !== 'undefined' && __dirname
-  ? __dirname
-  : path.dirname(fileURLToPath(import.meta.url));
+// The Electron entry point is emitted as CommonJS, where __dirname is native.
+const _dirname = __dirname;
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 
 // Screen DSL file handlers — narrow, feature-specific (no generic filesystem bridge)
 ipcMain.handle(SCREEN_DSL_FILE_OPEN_CHANNEL, () => handleScreenDslFileOpen(dialog));
 ipcMain.handle(SCREEN_DSL_FILE_SAVE_CHANNEL, (_event, request: unknown) => handleScreenDslFileSave(dialog, request));
+const spectrophotometerSerial = registerSpectrophotometerSerialHandlers(ipcMain);
 
 ipcMain.handle('clipboard-write', (_event, text: string) => {
   clipboard.writeText(String(text ?? ''));
@@ -130,6 +128,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
+  void spectrophotometerSerial.close();
   stopApiServer();
   stopMcpServer();
   if (process.platform !== 'darwin') {

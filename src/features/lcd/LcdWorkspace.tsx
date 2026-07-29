@@ -91,8 +91,9 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
   };
 
   const templates = useMemo(() => readTemplates(), [templatesVersion]);
+  const labels = UI_TEXT[language];
   if (!project) {
-    return <section className="workspace-empty">No project loaded.</section>;
+    return <section className="workspace-empty">{labels.noProjectLoaded}</section>;
   }
   const visibleScreenIds = project.screenOrder.filter((screenId) => {
     const item = project.screens[screenId];
@@ -103,12 +104,10 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
   const linkedStates = screen
     ? project.fsm.stateOrder.map((id) => project.fsm.states[id]).filter((state) => state.screenId === screen.id)
     : [];
-  const labels = UI_TEXT[language];
-
   return (
     <section
       className="workspace-root lcd-workspace lcd-workspace-resizable"
-      aria-label="LCD editor"
+      aria-label={labels.lcdEditor}
       style={{
         gridTemplateColumns: `${layout.leftCollapsed ? 46 : layout.leftWidth}px 6px minmax(420px, 1fr) 6px ${layout.rightCollapsed ? 46 : layout.rightWidth}px`
       }}
@@ -118,15 +117,15 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
     >
       <aside className={layout.leftCollapsed ? 'workspace-sidebar collapsible-sidebar collapsed' : 'workspace-sidebar collapsible-sidebar'}>
         <header className="workspace-section-header">
-          <h2>Screens</h2>
+          <h2>{labels.screens}</h2>
           <div className="sidebar-header-actions">
-            {!layout.leftCollapsed ? <button type="button" onClick={() => createScreen()} title="Add screen"><Plus size={16} /></button> : null}
+            {!layout.leftCollapsed ? <button type="button" onClick={() => createScreen()} title={labels.addScreen}><Plus size={16} /></button> : null}
             <button
               type="button"
               className="sidebar-collapse-button"
               onClick={() => setLayout((current) => ({ ...current, leftCollapsed: !current.leftCollapsed }))}
-              title={layout.leftCollapsed ? 'Open Left Sidebar' : 'Collapse Left Sidebar'}
-              aria-label={layout.leftCollapsed ? 'Open Left Sidebar' : 'Collapse Left Sidebar'}
+              title={layout.leftCollapsed ? labels.openLeftSidebar : labels.collapseLeftSidebar}
+              aria-label={layout.leftCollapsed ? labels.openLeftSidebar : labels.collapseLeftSidebar}
             >
               {layout.leftCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
             </button>
@@ -137,8 +136,8 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
           <input
             value={screenSearch}
             onChange={(event) => setScreenSearch(event.target.value)}
-            placeholder={language === 'ru' ? 'Поиск экранов' : 'Search screens'}
-            aria-label={language === 'ru' ? 'Поиск экранов' : 'Search screens'}
+            placeholder={labels.searchScreens}
+            aria-label={labels.searchScreens}
           />
         </div>
         <div className="sidebar-content entity-list">
@@ -151,22 +150,22 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
                   <small>{item.id}</small>
                 </button>
                 <div>
-                  <button type="button" onClick={() => duplicateScreen(screenId)} title="Duplicate"><Copy size={14} /></button>
-                  <button type="button" onClick={() => deleteScreen(screenId)} title="Delete"><Trash2 size={14} /></button>
+                  <button type="button" onClick={() => duplicateScreen(screenId)} title={labels.duplicate}><Copy size={14} /></button>
+                  <button type="button" onClick={() => deleteScreen(screenId)} title={labels.delete}><Trash2 size={14} /></button>
                 </div>
               </article>
             );
           })}
         </div>
         <div className="sidebar-content">
-          <ValidationPanel issues={project.validation.issues} domain="lcd" title="LCD validation" />
+          <ValidationPanel issues={project.validation.issues} domain="lcd" title={labels.lcdValidation} labels={labels} />
         </div>
       </aside>
 
       <div
         className={layout.leftCollapsed ? 'workspace-splitter disabled' : 'workspace-splitter'}
         role="separator"
-        aria-label="Resize Left Sidebar"
+        aria-label={labels.resizeLeftSidebar}
         aria-orientation="vertical"
         onPointerDown={(event) => {
           if (layout.leftCollapsed) return;
@@ -177,20 +176,20 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
 
       <main className="workspace-canvas-column">
         <header className="workspace-toolbar">
-          <button type="button" className={toolPanel === 'editor' ? 'active' : ''} onClick={() => setToolPanel('editor')}>{language === 'ru' ? 'Холст' : language === 'zh' ? '画布' : 'Canvas'}</button>
+          <button type="button" className={toolPanel === 'editor' ? 'active' : ''} onClick={() => setToolPanel('editor')}>{labels.canvas}</button>
           <button type="button" className={toolPanel === 'pixel-import' ? 'active' : ''} onClick={() => setToolPanel('pixel-import')}>
-            <Upload size={15} /> {language === 'ru' ? 'Импорт картинки' : language === 'zh' ? '导入图像' : 'Import image'}
+            <Upload size={15} /> {labels.importImage}
           </button>
-          <button type="button" className={toolPanel === 'glyph-c' ? 'active' : ''} onClick={() => setToolPanel('glyph-c')}>{language === 'ru' ? 'C-глифы' : language === 'zh' ? 'C 字形' : 'C glyphs'}</button>
-          <button type="button" className={toolPanel === 'templates' ? 'active' : ''} onClick={() => setToolPanel('templates')}>{language === 'ru' ? 'Шаблоны' : language === 'zh' ? '模板' : 'Templates'}</button>
+          <button type="button" className={toolPanel === 'glyph-c' ? 'active' : ''} onClick={() => setToolPanel('glyph-c')}>{labels.cGlyphTab}</button>
+          <button type="button" className={toolPanel === 'templates' ? 'active' : ''} onClick={() => setToolPanel('templates')}>{labels.templates}</button>
           <button
             type="button"
             className={toolPanel === 'screen-dsl' ? 'active' : ''}
             onClick={() => setToolPanel('screen-dsl')}
-            aria-label={language === 'ru' ? 'Схема экрана' : 'Screen Schema Studio'}
+            aria-label={labels.dslTitle}
             data-testid="lcd-open-screen-dsl-studio"
           >
-            <Workflow size={15} /> {language === 'ru' ? 'Схема' : language === 'zh' ? '模式' : 'Schema'}
+            <Workflow size={15} /> {labels.schemaShort}
           </button>
           {screen ? (
             <button
@@ -200,7 +199,7 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
                 setTemplatesVersion((value) => value + 1);
               }}
             >
-              <Save size={15} /> Save as template
+              <Save size={15} /> {labels.saveAsTemplate}
             </button>
           ) : null}
           <button type="button" className="hmi-help-button" title={labels.showHelp} onClick={() => setShowTutorial(true)}>
@@ -219,28 +218,29 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
               dithering: language === 'ru' ? 'Дизеринг' : language === 'zh' ? '抖动' : 'Dithering',
               applyNewScreen: language === 'ru' ? 'Создать экран' : language === 'zh' ? '作为新屏幕应用' : 'Apply as new screen',
               insertCurrentScreen: language === 'ru' ? 'Вставить в экран' : language === 'zh' ? '插入当前屏幕' : 'Insert into current screen',
-              applyAndEditBitmap: labels.applyAndEditBitmap
+              applyAndEditBitmap: labels.applyAndEditBitmap,
+              importedOriginal: labels.importedOriginal
             }}
           />
         ) : toolPanel === 'glyph-c' ? (
-          <GlyphCGenerator fontGlyphs={fontGlyphs} />
+          <GlyphCGenerator fontGlyphs={fontGlyphs} labels={labels} />
         ) : toolPanel === 'templates' ? (
           <section className="template-gallery">
             <header className="template-gallery-header">
-              <h2>{language === 'ru' ? 'Шаблоны экранов' : 'Screen templates'}</h2>
+              <h2>{labels.screenTemplates}</h2>
               <div>
                 <button type="button" onClick={() => exportTemplates(templates)}>
-                  <Download size={15} /> {language === 'ru' ? 'Экспорт' : 'Export'}
+                  <Download size={15} /> {labels.exportLabel}
                 </button>
                 <button type="button" onClick={() => templateInputRef.current?.click()}>
-                  <Upload size={15} /> {language === 'ru' ? 'Импорт шаблона' : 'Import template'}
+                  <Upload size={15} /> {labels.importTemplate}
                 </button>
               </div>
             </header>
-            {templates.length === 0 ? <p>No saved templates.</p> : templates.map((template) => (
+            {templates.length === 0 ? <p>{labels.noSavedTemplates}</p> : templates.map((template) => (
               <button key={template.id} type="button" onClick={() => createScreenFromTemplate(template.id)}>
                 <strong>{template.name}</strong>
-                <span>{template.width}x{template.height}, {template.objects.length} objects</span>
+                <span>{template.width}x{template.height}, {template.objects.length} {labels.canvasObjects.toLowerCase()}</span>
               </button>
             ))}
             <input
@@ -276,13 +276,13 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
             onTogglePixelGrid={() => setShowPixelGrid((value) => !value)}
             onOpenImageGlyphImport={() => setToolPanel('pixel-import')}
           />
-        ) : <section className="workspace-empty">Create or select an LCD screen.</section>}
+        ) : <section className="workspace-empty">{labels.selectOrCreateScreen}</section>}
       </main>
 
       <div
         className={layout.rightCollapsed ? 'workspace-splitter disabled' : 'workspace-splitter'}
         role="separator"
-        aria-label="Resize Right Sidebar"
+        aria-label={labels.resizeRightSidebar}
         aria-orientation="vertical"
         onPointerDown={(event) => {
           if (layout.rightCollapsed) return;
@@ -293,29 +293,29 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
 
       <aside className={layout.rightCollapsed ? 'workspace-inspector collapsible-sidebar collapsed' : 'workspace-inspector collapsible-sidebar'}>
         <header className="sidebar-drawer-header">
-          <strong>{language === 'ru' ? 'Свойства экрана' : 'Screen properties'}</strong>
+          <strong>{labels.screenProperties}</strong>
           <button
             type="button"
             className="sidebar-collapse-button"
             onClick={() => setLayout((current) => ({ ...current, rightCollapsed: !current.rightCollapsed }))}
-            title={layout.rightCollapsed ? 'Open Right Sidebar' : 'Collapse Right Sidebar'}
-            aria-label={layout.rightCollapsed ? 'Open Right Sidebar' : 'Collapse Right Sidebar'}
+            title={layout.rightCollapsed ? labels.openRightSidebar : labels.collapseRightSidebar}
+            aria-label={layout.rightCollapsed ? labels.openRightSidebar : labels.collapseRightSidebar}
           >
             {layout.rightCollapsed ? <PanelRightOpen size={17} /> : <PanelRightClose size={17} />}
           </button>
         </header>
         <section className="inspector-card sidebar-content">
-          <h3>{language === 'ru' ? 'Экран' : 'Screen'}</h3>
+          <h3>{labels.screenLabel}</h3>
           {screen ? (
             <>
-              <label>{language === 'ru' ? 'Название' : 'Name'}<input value={screen.name} onChange={(event) => renameScreen(screen.id, event.target.value)} /></label>
+              <label>{labels.nameLabel}<input value={screen.name} onChange={(event) => renameScreen(screen.id, event.target.value)} /></label>
               <div className="screen-property-actions">
                 <small>ID: {screen.id}</small>
-                <button type="button" onClick={() => duplicateScreen(screen.id)}><Copy size={14} />{language === 'ru' ? 'Копировать' : 'Copy'}</button>
+                <button type="button" onClick={() => duplicateScreen(screen.id)}><Copy size={14} />{labels.copy}</button>
               </div>
               <div className="geometry-grid">
                 <label>
-                  {language === 'ru' ? 'Ширина' : 'Width'}
+                  {labels.width}
                   <input
                     type="number"
                     min={8}
@@ -325,7 +325,7 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
                   />
                 </label>
                 <label>
-                  {language === 'ru' ? 'Высота' : 'Height'}
+                  {labels.height}
                   <input
                     type="number"
                     min={8}
@@ -337,11 +337,11 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
               </div>
               <small>{screen.width}x{screen.height}</small>
             </>
-          ) : <p>{language === 'ru' ? 'Экран не выбран.' : 'No screen selected.'}</p>}
+          ) : <p>{labels.noScreenSelected}</p>}
         </section>
         <section className="inspector-card sidebar-content">
-          <h3>{language === 'ru' ? 'Связанные FSM-состояния' : 'Linked FSM states'}</h3>
-          {linkedStates.length === 0 ? <p>{language === 'ru' ? 'Экран не связан.' : 'This screen is not linked.'}</p> : linkedStates.map((state) => (
+          <h3>{labels.linkedFsmStates}</h3>
+          {linkedStates.length === 0 ? <p>{labels.screenNotLinked}</p> : linkedStates.map((state) => (
             <button
               key={state.id}
               type="button"

@@ -93,6 +93,7 @@ interface ProjectStoreState {
   ensureStateScreen: (stateId: string) => string | null;
   createScreen: (name?: string) => void;
   duplicateScreen: (screenId: string) => void;
+  duplicateScreenLayout: (screenId: string) => void;
   renameScreen: (screenId: string, name: string) => void;
   resizeScreen: (screenId: string, width: number, height: number) => void;
   deleteScreen: (screenId: string) => void;
@@ -132,10 +133,11 @@ interface ProjectStoreState {
 }
 
 const SCREEN_TEMPLATES_KEY = 'lcd-bitmap-ide.screen-templates.v1';
+const UI_LANGUAGE_KEY = 'lcd-bitmap-ide.interface-language.v1';
 let commandSequence = 0;
 
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
-  language: DEFAULT_LANGUAGE,
+  language: readPersistedLanguage(),
   session: null,
   project: null,
   revision: 0,
@@ -152,7 +154,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   canRedo: false,
   pendingHistoryCapture: false,
 
-  setLanguage: (language) => set({ language }),
+  setLanguage: (language) => {
+    persistLanguage(language);
+    set({ language });
+  },
   loadProjectSnapshot: (snapshot) => {
     const project = refreshProject(snapshot.project);
     const session = createProjectSession({
@@ -161,11 +166,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       loadedFonts: snapshot.loadedFonts ?? createInitialFontMetadata(),
       savedMeasurements: snapshot.savedMeasurements as SavedMeasurement[] | undefined ?? []
     });
+    const language = snapshot.language ?? get().language;
+    persistLanguage(language);
     set({
       session,
       project: session.project,
       revision: 0,
-      language: snapshot.language ?? DEFAULT_LANGUAGE,
+      language,
       selectedStateId: project.fsm.stateOrder[0] ?? null,
       selectedScreenId: project.screenOrder[0] ?? null,
       selectedTransitionId: null,
@@ -362,6 +369,24 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       payload: { screenId }
     }));
     const duplicatedId = result?.changes.find((change) => change.entityType === 'screen' && change.kind === 'created')?.entityId;
+    if (duplicatedId) {
+      set({ selectedScreenId: duplicatedId });
+    }
+  },
+  duplicateScreenLayout: (screenId) => {
+    const current = get().project;
+    const source = current?.screens[screenId];
+    if (!current || !source) {
+      return;
+    }
+    const result = commitProjectCommand(set, get, (state) => ({
+      type: 'screen.duplicateLayout',
+      meta: createCommandMeta(state, 'screen.duplicateLayout'),
+      payload: { screenId }
+    }));
+    const duplicatedId = result?.changes.find(
+      (change) => change.entityType === 'screen' && change.kind === 'created'
+    )?.entityId;
     if (duplicatedId) {
       set({ selectedScreenId: duplicatedId });
     }
@@ -607,6 +632,23 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     return { project: { ...state.project, alarms } };
   })
 }));
+
+function readPersistedLanguage(): LanguageCode {
+  try {
+    const value = globalThis.localStorage?.getItem(UI_LANGUAGE_KEY);
+    return value === 'en' || value === 'ru' || value === 'zh' ? value : DEFAULT_LANGUAGE;
+  } catch {
+    return DEFAULT_LANGUAGE;
+  }
+}
+
+function persistLanguage(language: LanguageCode): void {
+  try {
+    globalThis.localStorage?.setItem(UI_LANGUAGE_KEY, language);
+  } catch {
+    // Storage can be unavailable in unit tests or privacy-restricted browser contexts.
+  }
+}
 
 function commitProjectCommand(
   set: (partial: Partial<ProjectStoreState>) => void,

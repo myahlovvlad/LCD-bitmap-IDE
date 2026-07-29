@@ -64,6 +64,8 @@ export function applyProjectCommandMutation(
       return createScreenWithState(workspace, command.payload.name, context);
     case 'screen.duplicate':
       return duplicateScreen(workspace, command.payload.screenId, context);
+    case 'screen.duplicateLayout':
+      return duplicateScreenLayout(workspace, command.payload.screenId, context);
     case 'screen.rename':
       return renameScreen(workspace, command.payload.screenId, command.payload.name, context);
     case 'screen.resize':
@@ -511,6 +513,38 @@ function duplicateScreen(workspace: ApplicationWorkspace, screenId: string, cont
       graphLayout: { ...project.fsm.graphLayout, [stateId]: createGraphPosition(project.fsm.stateOrder.length) }
     }
   }, [created('screen', id, `/screens/${id}`, duplicated), created('fsm-state', stateId, `/fsm/states/${stateId}`, duplicatedState)]);
+}
+
+function duplicateScreenLayout(
+  workspace: ApplicationWorkspace,
+  screenId: string,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const source = project.screens[screenId];
+  if (!source) {
+    return noChange(workspace);
+  }
+  const id = createScreenId(project, `${source.name}-layout-copy`);
+  const duplicated: LcdScreen = {
+    ...clone(source),
+    id,
+    name: `${source.name} Layout Copy`,
+    objects: source.objects.map((object, index) => ({
+      ...clone(object),
+      id: `canvas-${id}-${object.type}-${index + 1}`,
+      zIndex: index
+    })),
+    selectedObjectIds: [],
+    createdAt: context.now(),
+    updatedAt: context.now()
+  };
+  return changedProject(workspace, {
+    ...project,
+    meta: { ...project.meta, updatedAt: context.now() },
+    screens: { ...project.screens, [id]: duplicated },
+    screenOrder: insertAfter(project.screenOrder, screenId, id)
+  }, [created('screen', id, `/screens/${id}`, duplicated)]);
 }
 
 function renameScreen(workspace: ApplicationWorkspace, screenId: string, name: string, context: ApplicationCommandContext): ProjectMutationResult {

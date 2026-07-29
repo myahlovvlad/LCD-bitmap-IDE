@@ -1,4 +1,5 @@
 import type { HmiTag, ValueExpression } from '../../domain/tag';
+import { evaluatePortableFormula } from '../../domain/portableFormula';
 
 export type TagValue = string | number | boolean | null;
 
@@ -44,16 +45,15 @@ export function evaluateExpression(expr: ValueExpression, tags: TagContext): Tag
 }
 
 function evaluateFormula(expression: string, deps: string[], tags: TagContext): TagValue {
-  try {
-    const args = deps.map((dep) => tags.get(dep) ?? 0);
-    const fn = new Function(...deps, `return (${expression});`) as (...args: TagValue[]) => TagValue;
-    const result = fn(...args);
-    return typeof result === 'string' || typeof result === 'number' || typeof result === 'boolean'
-      ? result
-      : null;
-  } catch {
-    return null;
+  const values: Record<string, number> = {};
+  for (const dep of deps) {
+    const value = tags.get(dep);
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return null;
+    }
+    values[dep] = value;
   }
+  return evaluatePortableFormula(expression, values).value;
 }
 
 export function defaultTagValues(tags: Record<string, HmiTag>): Record<string, TagValue> {

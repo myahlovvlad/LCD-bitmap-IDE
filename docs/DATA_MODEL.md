@@ -1,19 +1,18 @@
 # Data Model
 
-Phase 3A adds `FsmInterchangeModelV1` as an authoring interchange contract for
-FSM scripts. It is not a schema-v5 persisted field and it is not compiler IR.
-The persisted `.lcdproj` model remains schema-v5.
+`FsmInterchangeModelV1` is an authoring interchange contract for FSM scripts.
+It is not a schema-6 persisted field and it is not compiler IR. The persisted
+`.lcdproj` model is schema 6.
 
-Phase 4A adds `ScreenInterchangeProjectV1` as an authoring interchange contract
-for LCD screens. It is not a schema-v5 persisted field, not renderer state and
-not compiler IR.
+`ScreenInterchangeProjectV1` is an authoring interchange contract for LCD
+screens. It is not a schema-6 persisted field, not renderer state and not
+compiler IR.
 
-## Native Schema v5
+## Native Schema 6
 
-Schema-v5 contracts are owned by `src/domain/project.ts`. The legacy
-`src/model/project.ts` import path re-exports the same contracts for
-compatibility. Renderer code may import domain contracts, but domain, model,
-services and entities must not import renderer modules.
+Schema-6 contracts are owned by `src/domain/project.ts`. There is no current
+`src/model` compatibility directory. Renderer code may import domain contracts,
+but domain, application, services and entities must not import renderer modules.
 
 ```ts
 interface LcdBitmapProject {
@@ -28,6 +27,12 @@ interface LcdBitmapProject {
   backendProcesses: Record<string, BackendProcess>;
   bindings: ProjectBindings;
   validation: ValidationState;
+  tags?: Record<string, HmiTag>;
+  dataSources?: Record<string, DataSource>;
+  procedures?: Record<string, BackendProcedure>;
+  cliCatalog?: Record<string, CliCommandDefinition>;
+  alarms?: Record<string, AlarmDefinition>;
+  trends?: Record<string, TrendDefinition>;
 }
 ```
 
@@ -50,9 +55,9 @@ interface ProjectSession {
 }
 ```
 
-`revision` is not part of schema v5 and is not persisted in `.lcdproj` files.
+`revision` is not part of schema 6 and is not persisted in `.lcdproj` files.
 It is a local mutation ordering token for command execution, dry-run previews
-and future external adapters.
+and external adapters.
 
 ## Transient Script Documents
 
@@ -61,7 +66,7 @@ session stores current source text, source/FSM fingerprints, preview metadata
 and stale/dirty status in memory only. It is keyed by project ID and format.
 
 Unapplied Mermaid/Python-like DSL drafts are not persisted in `.lcdproj`, do not
-create command history and are not compiler input. The persisted schema-v5
+create command history and are not compiler input. The persisted schema-6
 project continues to contain the canonical FSM graph and behavior fields.
 
 ## Portable `.lcdproj`
@@ -97,7 +102,7 @@ The following structure is accepted only by migration and legacy import tools:
 - `stateOrder: string[]`
 - `transitionOrder: string[]`
 
-It is converted to schema v5 before entering the application store.
+It is converted to schema 6 before entering the application store.
 
 ## Bitmap Packing
 
@@ -107,7 +112,7 @@ Screen firmware export is monochrome 1 bpp, vertical pages, LSB at top. A 128x64
 
 Phase 2A adds `NormalizedCompilerIrV1` as a derived, versioned compiler model.
 It is built from a read-only `CompilerSourceSnapshot` and is not persisted in
-`.lcdproj` files. Schema-v5 remains the source of truth.
+`.lcdproj` files. Schema 6 remains the source of truth.
 
 The compiler snapshot includes project data plus project-associated auxiliary
 font and measurement state. It excludes application revision, command history,
@@ -120,7 +125,7 @@ fingerprints.
 `ScreenInterchangeProjectV1` is a derived package owned by
 `src/screen-interchange`. It contains project metadata, exported screens,
 resource refs, resource payloads and traceability. It preserves current
-schema-v5 screen authoring data while extracting bitmap bytes and inline glyph
+schema-6 screen authoring data while extracting bitmap bytes and inline glyph
 overrides into package resources.
 
 `selectedObjectIds` remains UI state. It is excluded from authoring equality
@@ -138,10 +143,11 @@ and carried only as trace metadata for optional reconstruction.
 - Conditional expressions intentionally use a small safe comparator grammar instead of arbitrary JavaScript execution.
 - `src/renderer/types/domain.ts` remains as a temporary compatibility facade
   for renderer imports. It is not the source of truth for domain contracts.
-- Lowered target IR and backend-specific memory layouts are deferred to Phase
-  2B.
-- Screen Interchange V1 does not define a Screen DSL, user-facing JSON import,
-  C/HTML conversion or live synchronization.
+- Legacy-named public symbols such as `ProjectFileV5` and
+  `createProjectFileV5` can contain current schema-6 data.
+- Legacy renderer export paths coexist with normalized and lowered compiler IR.
+- Screen DSL and interchange are implemented as separate boundary models and
+  must not become competing sources of truth.
 
 ## Changelog
 
