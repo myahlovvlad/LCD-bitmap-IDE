@@ -33,6 +33,11 @@ jobs:
           node-version: 22
           cache: npm
 
+      - uses: actions/setup-python@v5
+        if: runner.os == 'Windows'
+        with:
+          python-version: "3.11"
+
       - name: Системные зависимости Linux
         if: runner.os == 'Linux'
         run: |
