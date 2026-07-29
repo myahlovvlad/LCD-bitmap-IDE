@@ -87,6 +87,7 @@
     "extraMetadata": {
       "main": "dist/main/main.cjs"
     },
+    "npmRebuild": false,
     "asar": true,
     "win": {
       "target": [
