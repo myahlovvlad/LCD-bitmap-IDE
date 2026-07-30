@@ -160,7 +160,7 @@ pub fn serial_command(
 
     let timeout = if matches!(
         request.command_id.as_str(),
-        "rezero" | "resetdark" | "boot"
+        "rezero" | "resetdark" | "swl" | "swm" | "adjustwl" | "boot"
     ) {
         Duration::from_secs(30)
     } else {
@@ -197,7 +197,8 @@ fn command_contract(
     let (kind, lines, requires_connection, accepts_argument) =
         match request.command_id.as_str() {
             "connect" => ("ok", None, false, false),
-            "quit" | "boot" => ("none", None, true, false),
+            "quit" | "wuon" | "wuoff" | "d2on" | "d2off" | "adjustwl" | "udb"
+            | "cap" | "boot" => ("none", None, true, false),
             "rezero" => ("rezero", Some(2), true, false),
             "getdark" | "resetdark" => ("integer-list", Some(8), true, false),
             "ge" => (
@@ -210,11 +211,16 @@ fn command_contract(
                 true,
                 true,
             ),
-            "sa" => ("none", None, true, true),
-            "ga" | "getslit" => ("integer", Some(1), true, false),
-            "gettype" | "getsoftver" | "help" | "company" | "getsample" | "getslip"
-            | "ud" | "getsn" => ("text", None, true, false),
-            "setsn" => ("text", None, true, true),
+            "swl" | "sa" | "sr" | "setlampwl" | "setfilter" | "setlamp" | "swm"
+            | "setslit" | "setsampler" | "setsn" => ("none", None, true, true),
+            "ga" | "gr" | "getd2" | "getwu" | "getsampler" | "getslittype"
+            | "getsamplertype" => ("integer", Some(1), true, false),
+            "getwl" | "getlampwl" | "startwl" | "endwl" | "getslit" => {
+                ("number", Some(1), true, false)
+            }
+            "gettype" | "getsoftver" | "gethardver" | "help" | "company" | "getsn" => {
+                ("text", None, true, false)
+            }
             other => return Err(format!("Unknown ECROS command \"{other}\".")),
         };
     let command = if accepts_argument {
@@ -244,9 +250,6 @@ fn read_response(
     expected_lines: Option<usize>,
     timeout: Duration,
 ) -> Result<String, String> {
-    if response_kind == "none" {
-        return Ok(String::new());
-    }
     let started = Instant::now();
     let mut raw = Vec::new();
     let mut buffer = [0_u8; 1024];
@@ -258,7 +261,9 @@ fn read_response(
                 let count = response_lines(&text).len();
                 let has_line_terminator = text.contains('\r') || text.contains('\n');
                 if (response_kind == "ok" && text.to_ascii_lowercase().contains("ok."))
-                    || (response_kind == "integer" && has_line_terminator)
+                    || ((response_kind == "integer" || response_kind == "number")
+                        && has_line_terminator)
+                    || (response_kind == "none" && has_line_terminator)
                     || expected_lines.is_some_and(|expected| count >= expected)
                 {
                     break;
@@ -296,6 +301,15 @@ fn parse_response(
     raw: &str,
 ) -> Result<Value, String> {
     let lines = response_lines(raw);
+    if let Some(error) = lines.iter().find(|line| {
+        let lower = line.to_ascii_lowercase();
+        lower.starts_with("bad argument")
+            || lower.starts_with("error")
+            || lower.starts_with("failed")
+            || lower.starts_with("invalid")
+    }) {
+        return Err(format!("Command \"{command_id}\" failed: {error}"));
+    }
     match kind {
         "none" => Ok(json!({ "kind": "none" })),
         "ok" if lines.join(" ").to_ascii_lowercase() == "ok." => {
@@ -319,6 +333,10 @@ fn parse_response(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(json!({ "kind": "integer-list", "values": values }))
         }
+        "number" => Ok(json!({
+            "kind": "number",
+            "value": number_at(&lines, 0, command_id)?
+        })),
         "rezero" if lines.len() == 2 => Ok(json!({
             "kind": "rezero",
             "referenceAdc": integer_at(&lines, 0, command_id)?,
@@ -336,4 +354,12 @@ fn integer_at(lines: &[&str], index: usize, command_id: &str) -> Result<i64, Str
         .ok_or_else(|| format!("Command \"{command_id}\" returned too few lines."))?
         .parse::<i64>()
         .map_err(|_| format!("Command \"{command_id}\" returned a non-integer value."))
+}
+
+fn number_at(lines: &[&str], index: usize, command_id: &str) -> Result<f64, String> {
+    lines
+        .get(index)
+        .ok_or_else(|| format!("Command \"{command_id}\" returned too few lines."))?
+        .parse::<f64>()
+        .map_err(|_| format!("Command \"{command_id}\" returned a non-numeric value."))
 }

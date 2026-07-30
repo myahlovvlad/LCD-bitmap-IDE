@@ -114,7 +114,11 @@ The project includes bundled font variants and supports loading additional fonts
 - BDF files
 - Simple app-specific `.fnt` files
 
-The font loader can merge imported glyphs into an existing variant or replace the selected variant. Use the Glyph tool to edit individual glyph pixels.
+The font loader can merge imported glyphs into an existing variant or replace
+the selected variant. Use the Glyph tool to edit individual glyph pixels.
+Frequently used punctuation, including `?` and `!`, is available as a quick
+button. To create any other glyph, enter exactly one Unicode character in
+**Custom character**, choose **Create or edit glyph**, edit its pixels and save.
 
 ## 7. Project Persistence
 

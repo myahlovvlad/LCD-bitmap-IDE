@@ -150,6 +150,9 @@ const RAW_UI_TEXT = {
     noGlyphsSelected: 'No glyphs selected.',
     specialGlyphs: 'Special symbol glyphs',
     editGlyph: 'Edit glyph',
+    customGlyphCharacter: 'Custom character',
+    createCustomGlyph: 'Create or edit glyph',
+    customGlyphHint: 'Enter exactly one Unicode character, for example ?, ! or λ.',
     defaultText: 'Text',
     autosaved: 'Autosaved',
     invalidProjectFile: 'Invalid or unsupported project file'
@@ -733,6 +736,9 @@ const RAW_UI_TEXT = {
     noGlyphsSelected: 'Глифы не выбраны.',
     specialGlyphs: 'Глифы спецсимволов',
     editGlyph: 'Редактировать глиф',
+    customGlyphCharacter: 'Свой символ',
+    createCustomGlyph: 'Создать или изменить глиф',
+    customGlyphHint: 'Введите ровно один Unicode-символ, например ?, ! или λ.',
     defaultText: 'Текст',
     autosaved: 'Автосохранение',
     invalidProjectFile: 'Некорректный или неподдерживаемый файл проекта'
@@ -1316,6 +1322,9 @@ const RAW_UI_TEXT = {
     noGlyphsSelected: '未选择字形。',
     specialGlyphs: '特殊符号字形',
     editGlyph: '编辑字形',
+    customGlyphCharacter: '自定义字符',
+    createCustomGlyph: '创建或编辑字形',
+    customGlyphHint: '请输入一个 Unicode 字符，例如 ?、! 或 λ。',
     defaultText: '文本',
     autosaved: '已自动保存',
     invalidProjectFile: '项目文件无效或不受支持'

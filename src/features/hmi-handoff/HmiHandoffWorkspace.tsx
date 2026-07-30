@@ -8,7 +8,8 @@ import { LCDCanvas } from '../../renderer/components/LCDCanvas';
 import {
   ECROS_5300_DATA_SOURCES,
   ECROS_5300_DYNAMIC_FIELDS,
-  ECROS_5300_HMI_TAGS
+  ECROS_5300_HMI_TAGS,
+  resolveEcrosInstrumentProfile
 } from '../../spectrophotometer';
 import { buildHandoffPackage } from './handoffPackage';
 import { formatHmiValue } from '../../services/runtime/resolveLcdBindings';
@@ -53,6 +54,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
   const [serialStatus, setSerialStatus] = useState<SpectroSerialStatus>({ open: false, protocolConnected: false });
   const [serialBusy, setSerialBusy] = useState(false);
   const [serialLog, setSerialLog] = useState<string[]>([]);
+  const [identifiedProfile, setIdentifiedProfile] = useState<string | null>(null);
   const labels = HANDOFF_TEXT[language];
 
   const screenId = selectedScreenId && project?.screens[selectedScreenId]
@@ -137,12 +139,23 @@ export function HmiHandoffWorkspace(): React.ReactElement {
       await serialApi.open(portPath);
       const connected = await serialApi.command({ commandId: 'connect' });
       const identity = [];
+      let resolvedProfile: string | null = null;
       for (const commandId of ['gettype', 'getsoftver', 'getsn'] as const) {
         const result = await serialApi.command({ commandId });
         identity.push(`${commandId}: ${result.raw.trim()}`);
+        if (commandId === 'gettype' || commandId === 'getsn') {
+          resolvedProfile = resolvedProfile
+            ?? resolveEcrosInstrumentProfile(result.raw)?.id
+            ?? null;
+        }
       }
+      setIdentifiedProfile(resolvedProfile);
       setSerialStatus(await serialApi.status());
-      setSerialLog([`connect: ${connected.raw.trim()}`, ...identity]);
+      setSerialLog([
+        `connect: ${connected.raw.trim()}`,
+        ...identity,
+        resolvedProfile ? `${labels.instrumentModel}: ${resolvedProfile}` : labels.modelNotResolved
+      ]);
     } catch (error) {
       setSerialStatus(await serialApi.status().catch(() => ({ open: false, protocolConnected: false })));
       setSerialLog((lines) => [...lines, error instanceof Error ? error.message : String(error)]);
@@ -159,6 +172,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
         await serialApi.command({ commandId: 'quit' });
       }
       setSerialStatus(await serialApi.close());
+      setIdentifiedProfile(null);
       setSerialLog((lines) => [...lines, labels.disconnected]);
     } finally {
       setSerialBusy(false);
@@ -321,6 +335,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
               <p className={`hmi-serial-state ${serialStatus.protocolConnected ? 'connected' : ''}`}>
                 {serialStatus.protocolConnected ? labels.connected : serialStatus.open ? labels.portOpen : labels.disconnected}
               </p>
+              {identifiedProfile ? <p><strong>{labels.instrumentModel}:</strong> {identifiedProfile}</p> : null}
               <pre aria-label={labels.serialLog}>{serialLog.join('\n') || labels.noSerialData}</pre>
             </>
           )}
@@ -361,6 +376,7 @@ const HANDOFF_TEXT = {
     serialPort: 'COM port', noPorts: 'No serial ports', refreshPorts: 'Refresh ports', connect: 'Connect and identify',
     disconnect: 'Disconnect', connected: 'Instrument connected', portOpen: 'Port open; protocol not connected',
     disconnected: 'Disconnected', serialLog: 'Instrument CLI log', noSerialData: 'No instrument response yet.',
+    instrumentModel: 'Instrument model', modelNotResolved: 'Instrument model was not resolved from gettype/getsn.',
     objectsShort: 'objects', glyphClosure: 'glyph closure', cliContracts: 'CLI contracts', formulas: 'formulas'
   },
   ru: {
@@ -389,6 +405,7 @@ const HANDOFF_TEXT = {
     serialPort: 'COM-порт', noPorts: 'COM-порты не найдены', refreshPorts: 'Обновить список', connect: 'Подключить и определить',
     disconnect: 'Отключить', connected: 'Прибор подключён', portOpen: 'Порт открыт, CLI connect не выполнен',
     disconnected: 'Отключено', serialLog: 'Журнал CLI прибора', noSerialData: 'Ответов прибора пока нет.',
+    instrumentModel: 'Модель прибора', modelNotResolved: 'Модель не определена по ответам gettype/getsn.',
     objectsShort: 'объектов', glyphClosure: 'набор глифов', cliContracts: 'контракты CLI', formulas: 'формулы'
   },
   zh: {
@@ -417,6 +434,7 @@ const HANDOFF_TEXT = {
     serialPort: 'COM 端口', noPorts: '未找到串口', refreshPorts: '刷新端口', connect: '连接并识别',
     disconnect: '断开连接', connected: '仪器已连接', portOpen: '端口已打开，CLI 尚未连接',
     disconnected: '已断开', serialLog: '仪器 CLI 日志', noSerialData: '尚无仪器响应。',
+    instrumentModel: '仪器型号', modelNotResolved: '无法根据 gettype/getsn 确定仪器型号。',
     objectsShort: '个对象', glyphClosure: '字形集合', cliContracts: 'CLI 契约', formulas: '公式'
   }
 } as const;

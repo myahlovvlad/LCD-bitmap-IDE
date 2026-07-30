@@ -34,7 +34,10 @@ describe('ECROS-5300VI/5310 HMI profile', () => {
   it('builds validated synchronous commands and parses response contracts', () => {
     expect(buildEcrosCommand('sa', 5)).toBe('sa 5');
     expect(() => buildEcrosCommand('sa', 9)).toThrow(/<= 8/);
+    expect(buildEcrosCommand('swl', 546.3)).toBe('swl 546.3');
+    expect(() => buildEcrosCommand('swl', 1200)).toThrow(/<= 1100/);
     expect(parseEcrosResponse('connect', 'ok.')).toEqual({ kind: 'ok' });
+    expect(parseEcrosResponse('getwl', '546.3\r\n')).toEqual({ kind: 'number', value: 546.3 });
     expect(parseEcrosResponse('rezero', '30311\r\n2\r\n')).toEqual({
       kind: 'rezero',
       referenceAdc: 30311,
@@ -44,5 +47,6 @@ describe('ECROS-5300VI/5310 HMI profile', () => {
       kind: 'integer-list',
       values: [10, 20, 40, 80, 160, 320, 640, 1280]
     });
+    expect(() => parseEcrosResponse('ge', 'Bad Argument\r\n')).toThrow(/failed: Bad Argument/);
   });
 });

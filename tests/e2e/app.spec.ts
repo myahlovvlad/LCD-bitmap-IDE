@@ -35,7 +35,7 @@ test('opens the linked screen from the FSM workspace', async ({ page }) => {
 });
 
 test('keeps the LCD preview to the right of a scrollable Canvas inspector', async ({ page }) => {
-  await page.setViewportSize({ width: 1536, height: 864 });
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();
 
   const controls = page.locator('.lcd-editor > .flex-1');
@@ -127,6 +127,29 @@ test('edits localized text and pins its LCD language independently of the interf
   await expect(properties.getByRole('textbox', { name: 'Текст EN' })).toHaveValue('Pinned English');
   await expect(properties.getByRole('textbox', { name: 'Текст RU' })).toHaveValue('Русский текст');
   await expect(properties.getByRole('checkbox', { name: 'Закрепить: Текст EN' })).toBeChecked();
+});
+
+test('adds requested punctuation and creates an arbitrary custom glyph', async ({ page }) => {
+  await page.getByTestId('workspace-lcd').click();
+  await page.getByRole('button', { name: 'Add text' }).click();
+  await page.locator('.lcd-canvas').click({ position: { x: 160, y: 80 } });
+
+  const properties = page.locator('.object-properties');
+  const textEn = properties.getByRole('textbox', { name: 'Text EN' });
+  await textEn.fill('Ready');
+  await properties.getByRole('button', { name: '?' }).click();
+  await properties.getByRole('button', { name: '!' }).click();
+  await expect(textEn).toHaveValue('Ready?!');
+
+  await page.getByRole('button', { name: 'Glyph editor', exact: true }).click();
+  const customCharacter = page.getByRole('textbox', { name: 'Custom character' });
+  await customCharacter.fill('?');
+  await page.getByRole('button', { name: 'Create or edit glyph' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: /Toggle glyph pixel/ }).first().click();
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toHaveCount(0);
 });
 
 test('creates a panel button and binds it to an FSM event', async ({ page }) => {

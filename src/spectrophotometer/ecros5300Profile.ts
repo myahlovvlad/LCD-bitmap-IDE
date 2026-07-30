@@ -60,7 +60,14 @@ const RAW_SIGNAL_TAGS: HmiTag[] = [
   { id: 'instrument.signal.reference_adc', name: { en: '100% reference ADC', ru: 'АЦП 100%', zh: '100%参考 ADC' }, dataType: 'float' },
   { id: 'instrument.signal.sample_adc', name: { en: 'Sample ADC', ru: 'АЦП образца', zh: '样品 ADC' }, dataType: 'float' },
   { id: 'instrument.signal.dark_adc', name: { en: 'Dark current ADC', ru: 'АЦП темнового тока', zh: '暗电流 ADC' }, dataType: 'float' },
-  { id: 'instrument.gain', name: { en: 'Gain', ru: 'Ступень усиления', zh: '增益档位' }, dataType: 'int', minValue: 1, maxValue: 8 }
+  { id: 'instrument.gain', name: { en: 'Gain', ru: 'Ступень усиления', zh: '增益档位' }, dataType: 'int', minValue: 1, maxValue: 8 },
+  { id: 'instrument.wavelength_nm', name: { en: 'Wavelength', ru: 'Длина волны', zh: '波长' }, dataType: 'float', unit: 'nm', minValue: 190, maxValue: 1100 },
+  { id: 'instrument.filter_id', name: { en: 'Filter position', ru: 'Позиция светофильтра', zh: '滤光片位置' }, dataType: 'int', minValue: 1, maxValue: 8 },
+  { id: 'instrument.lamp_id', name: { en: 'Optical-path lamp', ru: 'Лампа оптического тракта', zh: '光路灯源' }, dataType: 'int', minValue: 1, maxValue: 2 },
+  { id: 'instrument.tungsten_on', name: { en: 'Tungsten lamp on', ru: 'Галогенная лампа включена', zh: '钨灯开启' }, dataType: 'bool' },
+  { id: 'instrument.deuterium_on', name: { en: 'Deuterium lamp on', ru: 'Дейтериевая лампа включена', zh: '氘灯开启' }, dataType: 'bool' },
+  { id: 'instrument.slit_width_nm', name: { en: 'Slit width', ru: 'Ширина щели', zh: '狭缝宽度' }, dataType: 'float', unit: 'nm' },
+  { id: 'instrument.sampler_position', name: { en: 'Cuvette position', ru: 'Позиция кюветодержателя', zh: '比色皿位置' }, dataType: 'int', minValue: 1, maxValue: 8 }
 ];
 
 export const ECROS_5300_DYNAMIC_FIELDS: readonly DynamicLcdFieldDefinition[] = DEFINITIONS.map((item) => item.field);

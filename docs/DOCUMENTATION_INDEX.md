@@ -28,7 +28,7 @@ Use this page instead of scanning the `docs/` directory alphabetically.
 - [LLM-native interface](LLM_NATIVE_INTERFACE.md)
 - [Application command model](APPLICATION_COMMAND_MODEL.md)
 - [HMI handoff guide](HMI_HANDOFF_GUIDE.md)
-- [ECROS CLI protocol notes](ECROS_CLI_PROTOCOL_NOTES.md)
+- [ECROS CLI and HMI operational contract](ECROS_CLI_PROTOCOL_NOTES.md)
 
 ## Specialized Design Documents
 

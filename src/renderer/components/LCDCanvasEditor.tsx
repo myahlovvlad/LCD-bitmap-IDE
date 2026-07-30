@@ -82,8 +82,8 @@ interface LCDCanvasEditorProps {
   onOpenImageGlyphImport?: () => void;
 }
 
-const specialChars = ['#', '%', '/', '+', '-', '=', '.', ',', ':'];
-const specialGlyphChars = ['#', '%', '/', '+', '-', '=', '.', ',', ':', '☐', '☑', '✓', '×', '№', 'λ'];
+const specialChars = ['?', '!', '#', '%', '/', '+', '-', '=', '.', ',', ':'];
+const specialGlyphChars = ['?', '!', '#', '%', '/', '+', '-', '=', '.', ',', ':', '☐', '☑', '✓', '×', '№', 'λ'];
 const specialElementKinds: SpecialElementKind[] = ['checkbox', 'radio', 'progress', 'battery', 'signal', 'scrollbar'];
 type GlyphEditScope = 'global' | 'local';
 
@@ -893,6 +893,9 @@ function SpecialGlyphPanel({
   onScopeChange: (scope: GlyphEditScope) => void;
   onEdit: (char: string) => void;
 }): React.ReactElement {
+  const [customCharacter, setCustomCharacter] = useState('');
+  const normalizedCustomCharacter = normalizeCustomGlyphCharacter(customCharacter);
+
   return (
     <section className="editor-tools-card special-glyph-panel">
       <h3>{labels.specialGlyphs}</h3>
@@ -925,8 +928,36 @@ function SpecialGlyphPanel({
           </button>
         ))}
       </div>
+      <div className="custom-glyph-control">
+        <label>
+          {labels.customGlyphCharacter}
+          <input
+            value={customCharacter}
+            onChange={(event) => setCustomCharacter(event.target.value)}
+            placeholder="?!…"
+            aria-label={labels.customGlyphCharacter}
+          />
+        </label>
+        <button
+          type="button"
+          disabled={!normalizedCustomCharacter}
+          onClick={() => {
+            if (!normalizedCustomCharacter) return;
+            onEdit(normalizedCustomCharacter);
+            setCustomCharacter('');
+          }}
+        >
+          {labels.createCustomGlyph}
+        </button>
+        <small>{labels.customGlyphHint}</small>
+      </div>
     </section>
   );
+}
+
+export function normalizeCustomGlyphCharacter(value: string): string | null {
+  const characters = Array.from(value.trim());
+  return characters.length === 1 ? characters[0] : null;
 }
 
 function SavedMeasurementsPanel({

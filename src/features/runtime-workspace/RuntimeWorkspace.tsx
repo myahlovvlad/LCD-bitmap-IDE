@@ -23,6 +23,7 @@ import { useProjectStore } from '../../renderer/store/projectStore';
 import { UI_TEXT } from '../../renderer/config/i18n';
 import { OrchestratedRuntimeEngine } from '../../services/runtime/orchestratedRuntimeEngine';
 import { SimulationTransport } from '../../services/runtime/SimulationTransport';
+import { Ecros5501SimulationTransport } from '../../spectrophotometer';
 import type { OrchestratedTransitionState } from '../../services/runtime/orchestratedRuntimeEngine';
 import type { RuntimeEvent } from '../../services/runtimeEngine';
 import type { ControlPanelButton } from '../../domain/project';
@@ -50,7 +51,9 @@ export function RuntimeWorkspace(): React.ReactElement {
 
   const buildEngine = useCallback(() => {
     if (!project) return null;
-    const transport = new SimulationTransport(project.cliCatalog ?? {}, { timeScale: 1 });
+    const transport = project.dataSources?.['ecros.cli']
+      ? new Ecros5501SimulationTransport({ startConnected: true })
+      : new SimulationTransport(project.cliCatalog ?? {}, { timeScale: 1 });
     return new OrchestratedRuntimeEngine(project, { transport, bypassProcedures: bypass });
   }, [project, bypass]);
 

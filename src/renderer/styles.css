@@ -1681,6 +1681,8 @@ button:disabled {
 
 .lcd-editor > .flex-1 {
   display: flex;
+  position: relative;
+  z-index: 2;
   flex-direction: column;
   gap: 20px;
   min-width: min(320px, 100%);
@@ -1774,6 +1776,7 @@ button:disabled {
 .lcd-display-column {
   display: flex;
   position: sticky;
+  z-index: 1;
   top: 0;
   flex-direction: column;
   align-items: center;
@@ -2326,6 +2329,31 @@ button:disabled {
 .special-glyph-grid button:hover {
   border-color: #16a34a;
   background: #1f2937;
+}
+
+.custom-glyph-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.custom-glyph-control label {
+  display: grid;
+  gap: 4px;
+}
+
+.custom-glyph-control input {
+  min-width: 0;
+}
+
+.custom-glyph-control button {
+  min-height: 36px;
+}
+
+.custom-glyph-control small {
+  grid-column: 1 / -1;
+  color: #9ca3af;
 }
 
 .export-import-panel small,
@@ -2884,6 +2912,28 @@ button:disabled {
 
   .command-search {
     flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 1599px) {
+  .lcd-workspace .workspace-canvas-column {
+    overflow-y: auto;
+  }
+
+  .lcd-editor {
+    grid-template-columns: minmax(0, 1fr);
+    flex: 0 0 auto;
+    overflow-y: auto;
+  }
+
+  .lcd-editor > .flex-1 {
+    height: auto;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .lcd-display-column {
+    position: static;
   }
 }
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Added custom Unicode glyph authoring and quick `?`/`!` insertion in the LCD
+  editor.
+- Added a stateful ECROS-5501 HMI simulator covering wavelength/filter
+  coupling, grating-only movement, dark-current shutter restoration, lamps,
+  calibration, fixed-slit and autosampler capability gates.
+- Expanded Electron and Tauri ECROS command contracts and kept serial command
+  execution synchronous.
+- Added serial/model resolution, runtime and browser acceptance tests.
+- Pinned intact `fflate` and `elkjs` packages and updated the desktop build
+  toolchain to remove known critical dependency findings.
+
 ## 0.1.2
 
 - Added the Tauri 2 desktop shell with native Windows, Linux and macOS release

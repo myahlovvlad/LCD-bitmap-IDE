@@ -26,7 +26,7 @@ interface PendingResponse {
 
 const QUIET_RESPONSE_MS = 120;
 const DEFAULT_TIMEOUT_MS = 5_000;
-const LONG_TIMEOUT_COMMANDS = new Set(['rezero', 'resetdark', 'boot']);
+const LONG_TIMEOUT_COMMANDS = new Set(['rezero', 'resetdark', 'swl', 'swm', 'adjustwl', 'boot']);
 
 export class EcrosSerialService {
   private port: SerialPort | null = null;
@@ -151,9 +151,10 @@ export class EcrosSerialService {
             this.rejectPending(drainError);
             return;
           }
-          if (contract.response === 'none') {
-            pending.quietTimer = setTimeout(() => this.finishPending(), QUIET_RESPONSE_MS);
-          }
+          // ECROS commands are synchronous. Even response-less motor/lamp commands
+          // emit their terminating CR/LF only after the physical operation ends.
+          // Waiting for the first received byte prevents a following command from
+          // being sent while the instrument is still moving.
         });
       });
     });
@@ -176,6 +177,7 @@ export class EcrosSerialService {
     const canFinishImmediately =
       pending.responseKind === 'ok'
       || pending.responseKind === 'integer'
+      || pending.responseKind === 'number'
       || pending.responseKind === 'rezero'
       || (
         pending.responseKind === 'integer-list'
