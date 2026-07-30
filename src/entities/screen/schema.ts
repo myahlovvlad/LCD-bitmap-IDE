@@ -28,7 +28,8 @@ export const displayObjectSchema = z.discriminatedUnion('type', [
     x: z.number().int(),
     y: z.number().int(),
     fontVariant: z.enum(['1', '2']),
-    pendingTranslation: z.boolean()
+    pendingTranslation: z.boolean(),
+    displayLanguage: z.enum(['en', 'ru', 'zh']).nullable().optional()
   }),
   objectBaseSchema.extend({
     type: z.literal('line'),

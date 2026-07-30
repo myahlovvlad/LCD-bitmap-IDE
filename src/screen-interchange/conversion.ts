@@ -182,7 +182,16 @@ function objectToInterchange(
 
   if (object.type === 'text') {
     addFontRef(object.fontVariant);
-    return finish({ ...base, type: 'text', text: { ...object.text }, x: object.x, y: object.y, fontVariant: object.fontVariant, pendingTranslation: object.pendingTranslation });
+    return finish({
+      ...base,
+      type: 'text',
+      text: { ...object.text },
+      x: object.x,
+      y: object.y,
+      fontVariant: object.fontVariant,
+      pendingTranslation: object.pendingTranslation,
+      ...(object.displayLanguage ? { displayLanguage: object.displayLanguage } : {})
+    });
   }
   if (object.type === 'line') {
     return finish({ ...base, type: 'line', x0: object.x0, y0: object.y0, x1: object.x1, y1: object.y1 });
@@ -271,7 +280,16 @@ function reconstructObject(object: ScreenInterchangeObjectV1, resources: ScreenI
     source: object.source
   };
   if (object.type === 'text') {
-    return { ...base, type: 'text', text: { ...object.text }, x: object.x, y: object.y, fontVariant: object.fontVariant, pendingTranslation: object.pendingTranslation };
+    return {
+      ...base,
+      type: 'text',
+      text: { ...object.text },
+      x: object.x,
+      y: object.y,
+      fontVariant: object.fontVariant,
+      pendingTranslation: object.pendingTranslation,
+      ...(object.displayLanguage ? { displayLanguage: object.displayLanguage } : {})
+    };
   }
   if (object.type === 'line') {
     return { ...base, type: 'line', x0: object.x0, y0: object.y0, x1: object.x1, y1: object.y1 };

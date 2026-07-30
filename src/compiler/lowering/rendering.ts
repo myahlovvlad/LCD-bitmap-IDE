@@ -38,7 +38,7 @@ export function renderLoweredScreenObjects(
         frameBuffer,
         object.x,
         object.y,
-        resolveLocalizedBitmapText(object.text, options.language, fontRenderer, object.fontVariant as FontVariantKey),
+        resolveLocalizedBitmapText(object.text, object.displayLanguage ?? options.language, fontRenderer, object.fontVariant as FontVariantKey),
         object.fontVariant as FontVariantKey,
         fontRenderer
       );

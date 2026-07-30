@@ -172,7 +172,7 @@ export function getObjectBounds(
   fontRenderer: FontRenderer = defaultFontRenderer
 ): { x: number; y: number; width: number; height: number } {
   if (object.type === 'text') {
-    const text = resolveLocalizedBitmapText(object.text, language, fontRenderer, object.fontVariant);
+    const text = resolveLocalizedBitmapText(object.text, object.displayLanguage ?? language, fontRenderer, object.fontVariant);
     const bitmask = fontRenderer.renderTextBitmask(text, object.fontVariant);
     return {
       x: object.x,

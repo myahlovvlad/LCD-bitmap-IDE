@@ -1945,6 +1945,27 @@ button:disabled {
   align-items: center;
 }
 
+.localized-text-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.object-properties .language-pin-control {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 34px;
+  white-space: nowrap;
+}
+
+.object-properties .language-pin-control input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
 .special-char-row {
   display: flex;
   flex-wrap: wrap;

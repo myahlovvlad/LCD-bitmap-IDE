@@ -7,6 +7,7 @@ import {
   type ProjectCommand
 } from '../../src/application';
 import { createBlankProject } from '../../src/entities/project/factory';
+import { createDemoProject } from '../../src/entities/project/demo';
 import { migrateLegacySnapshot } from '../../src/services/projectMigrationService';
 import type { LcdBitmapProject } from '../../src/domain/project';
 
@@ -37,6 +38,56 @@ describe('application command bus', () => {
     ]);
   });
 
+  it('stores multiline backend process documentation through the command bus', () => {
+    const project = migrateLegacySnapshot(createDemoProject()).project;
+    const processId = 'measure-process';
+    project.backendProcesses[processId] = {
+      id: processId,
+      name: 'Measure sample',
+      commands: ['measure']
+    };
+    const session = createProjectSession(project, 0);
+    const description = 'Read sensor data.\nValidate the sample.\nPublish the result.';
+
+    const result = executeProjectCommand(
+      session,
+      commandFor(project, 0, 'backendProcess.update', {
+        processId,
+        updates: { description }
+      }),
+      createFixedApplicationCommandContext(timestamp)
+    );
+
+    expect(result.status).toBe('applied');
+    expect(result.session.project.backendProcesses[processId].description).toBe(description);
+    expect(result.changes).toEqual([
+      expect.objectContaining({ entityType: 'backend-process', entityId: processId })
+    ]);
+  });
+
+  it('creates a state-local event with an explicit owner state', () => {
+    const session = createProjectSession(createProject(), 0);
+    const sourceStateId = session.project.fsm.stateOrder[0];
+
+    const result = executeProjectCommand(
+      session,
+      commandFor(session.project, 0, 'fsm.event.add', {
+        name: 'LOCAL_CONFIRM',
+        scope: 'state',
+        sourceStateId
+      }),
+      createFixedApplicationCommandContext(timestamp)
+    );
+
+    expect(result.status).toBe('applied');
+    const createdEvent = result.session.project.fsm.events[result.session.project.fsm.eventOrder.at(-1)!];
+    expect(createdEvent).toEqual(expect.objectContaining({
+      name: 'LOCAL_CONFIRM',
+      scope: 'state',
+      sourceStateId
+    }));
+  });
+
   it('dry-runs without changing the input session revision', () => {
     const session = createProjectSession(createProject(), 3);
     const command = commandFor(session.project, 3, 'screen.create', { name: 'Preview Screen' });
@@ -62,23 +113,27 @@ describe('application command bus', () => {
     expect(result.diagnostics[0]).toEqual(expect.objectContaining({ code: 'command.revision-conflict' }));
   });
 
-  it('blocks new validation errors but allows existing unrelated validation debt', () => {
+  it('deletes the initial screen without deleting its FSM state or introducing validation errors', () => {
     const validSession = createProjectSession(createProject(), 0);
     const deleteInitialScreen = commandFor(validSession.project, 0, 'screen.delete', {
       screenId: validSession.project.screenOrder[0]
     });
 
-    const rejected = executeProjectCommand(
+    const applied = executeProjectCommand(
       validSession,
       deleteInitialScreen,
       createFixedApplicationCommandContext(timestamp)
     );
 
-    expect(rejected.status).toBe('rejected');
-    expect(rejected.diagnostics).toEqual([
-      expect.objectContaining({ code: 'validation.blocking-error', issueId: 'fsm:initial-missing:0' })
-    ]);
+    expect(applied.status).toBe('applied');
+    expect(applied.session.project.screenOrder).toHaveLength(0);
+    expect(applied.session.project.fsm.stateOrder).toHaveLength(1);
+    expect(applied.session.project.fsm.states[applied.session.project.fsm.stateOrder[0]].initial).toBe(true);
+    expect(applied.session.project.fsm.states[applied.session.project.fsm.stateOrder[0]].screenId).toBeNull();
+  });
 
+  it('allows existing unrelated validation debt', () => {
+    const validSession = createProjectSession(createProject(), 0);
     const invalidProject = {
       ...validSession.project,
       fsm: {
@@ -101,7 +156,7 @@ describe('application command bus', () => {
     expect(accepted.session.project.meta.name).toBe('Still Editable');
   });
 
-  it('creates and deletes linked FSM state and screen as one semantic operation', () => {
+  it('creates a linked FSM state and screen as one semantic operation', () => {
     const session = createProjectSession(createProject(), 0);
     const add = commandFor(session.project, 0, 'fsm.state.add', {});
     const added = executeProjectCommand(session, add, createFixedApplicationCommandContext(timestamp));

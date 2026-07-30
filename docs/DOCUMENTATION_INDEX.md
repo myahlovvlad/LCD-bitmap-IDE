@@ -14,6 +14,7 @@ Use this page instead of scanning the `docs/` directory alphabetically.
 
 - [Conceptual model](CONCEPTUAL_MODEL.md)
 - [Architecture](ARCHITECTURE.md)
+- [FSM event scope audit](FSM_EVENT_SCOPE_AUDIT.md)
 - [Data model](DATA_MODEL.md)
 - [Testing](TESTING.md)
 - [Security](SECURITY.md)

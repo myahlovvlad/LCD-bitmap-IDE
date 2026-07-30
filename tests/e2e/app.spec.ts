@@ -94,6 +94,41 @@ test('edits screen dimensions and copies a screen from properties', async ({ pag
   await expect(inspector.getByLabel('Name')).toHaveValue(/Copy$/);
 });
 
+test('renames and deletes the first screen without deleting its FSM state', async ({ page }) => {
+  await page.getByTestId('workspace-lcd').click();
+  const screens = page.locator('.lcd-workspace .entity-card');
+  await expect(screens.first()).toBeVisible();
+  const initialCount = await screens.count();
+  const inspector = page.locator('.lcd-workspace > .workspace-inspector');
+
+  await inspector.getByLabel('Name').fill('Renamed first screen');
+  await inspector.getByLabel('Name').press('Enter');
+  await expect(screens.first()).toContainText('Renamed first screen');
+
+  await screens.first().getByRole('button', { name: 'Delete' }).click();
+  await expect(screens).toHaveCount(initialCount - 1);
+  await expect(page.locator('.lcd-workspace')).not.toContainText('Renamed first screen');
+
+  await page.getByTestId('workspace-fsm').click();
+  await expect(page.locator('.fsm-workspace .entity-card').filter({ hasText: 'Renamed first screen' })).toHaveCount(1);
+});
+
+test('edits localized text and pins its LCD language independently of the interface', async ({ page }) => {
+  await page.getByTestId('workspace-lcd').click();
+  await page.getByRole('button', { name: 'Add text' }).click();
+  await page.locator('.lcd-canvas').click({ position: { x: 160, y: 80 } });
+
+  const properties = page.locator('.object-properties');
+  await properties.getByRole('textbox', { name: 'Text EN' }).fill('Pinned English');
+  await properties.getByRole('textbox', { name: 'Text RU' }).fill('Русский текст');
+  await properties.getByRole('checkbox', { name: 'Pin: Text EN' }).check();
+  await page.getByTestId('interface-language-cycle').click();
+
+  await expect(properties.getByRole('textbox', { name: 'Текст EN' })).toHaveValue('Pinned English');
+  await expect(properties.getByRole('textbox', { name: 'Текст RU' })).toHaveValue('Русский текст');
+  await expect(properties.getByRole('checkbox', { name: 'Закрепить: Текст EN' })).toBeChecked();
+});
+
 test('creates a panel button and binds it to an FSM event', async ({ page }) => {
   await page.getByRole('button', { name: 'Demo' }).click();
   await page.locator('.workspace-navigation button[data-workspace="control-panel"]').click();

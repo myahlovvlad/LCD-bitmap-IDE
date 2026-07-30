@@ -1071,33 +1071,34 @@ function ObjectProperties({
 
       {firstSelected.type === 'text' && selectedObjects.length === 1 ? (
         <>
-          <label>
-            {labels.textEn}
-            <input
-              value={firstSelected.text.en}
-              onChange={(event) =>
-                onUpdateText({ text: { ...firstSelected.text, en: event.target.value } })
-              }
-            />
-          </label>
-          <label>
-            {labels.textRu}
-            <input
-              value={firstSelected.text.ru}
-              onChange={(event) =>
-                onUpdateText({ text: { ...firstSelected.text, ru: event.target.value } })
-              }
-            />
-          </label>
-          <label>
-            {labels.textZh}
-            <input
-              value={firstSelected.text.zh ?? ''}
-              onChange={(event) =>
-                onUpdateText({ text: { ...firstSelected.text, zh: event.target.value } })
-              }
-            />
-          </label>
+          {([
+            ['en', labels.textEn],
+            ['ru', labels.textRu],
+            ['zh', labels.textZh]
+          ] as const).map(([textLanguage, textLabel]) => (
+            <div className="localized-text-field" key={textLanguage}>
+              <label>
+                {textLabel}
+                <input
+                  value={firstSelected.text[textLanguage] ?? ''}
+                  onChange={(event) =>
+                    onUpdateText({ text: { ...firstSelected.text, [textLanguage]: event.target.value } })
+                  }
+                />
+              </label>
+              <label className="checkbox-line language-pin-control" title={labels.pinLcdLanguageHint}>
+                <input
+                  type="checkbox"
+                  checked={firstSelected.displayLanguage === textLanguage}
+                  aria-label={`${labels.pinLcdLanguage}: ${textLabel}`}
+                  onChange={(event) => onUpdateText({
+                    displayLanguage: event.target.checked ? textLanguage : null
+                  })}
+                />
+                {labels.pinLcdLanguage}
+              </label>
+            </div>
+          ))}
           <div className="special-char-row">
             {specialChars.map((char) => (
               <button
@@ -1107,7 +1108,7 @@ function ObjectProperties({
                   onUpdateText({
                     text: {
                       ...firstSelected.text,
-                      [language]: `${firstSelected.text[language] ?? firstSelected.text.ru ?? firstSelected.text.en}${char}`
+                      [firstSelected.displayLanguage ?? language]: `${firstSelected.text[firstSelected.displayLanguage ?? language] ?? firstSelected.text.ru ?? firstSelected.text.en}${char}`
                     }
                   })
                 }
@@ -1486,7 +1487,7 @@ function getMeasurementValue(
   return canvasData.objects
     .filter((object): object is TextCanvasObject => object.type === 'text')
     .sort((a, b) => a.y - b.y || a.x - b.x)
-    .map((object) => resolveLocalizedBitmapText(object.text, language, fontRenderer, object.fontVariant as FontVariantKey))
+    .map((object) => resolveLocalizedBitmapText(object.text, object.displayLanguage ?? language, fontRenderer, object.fontVariant as FontVariantKey))
     .find((text) => /\d/.test(text)) ??
     `${fontRenderer.measureText(canvasData.stateId, '1')}px`;
 }
@@ -1529,7 +1530,7 @@ function findCharacterAtPoint(
   language: LanguageCode,
   fontRenderer: FontRenderer
 ): string | null {
-  const text = resolveLocalizedBitmapText(object.text, language, fontRenderer, object.fontVariant as FontVariantKey);
+  const text = resolveLocalizedBitmapText(object.text, object.displayLanguage ?? language, fontRenderer, object.fontVariant as FontVariantKey);
   let cursorX = object.x;
   for (const char of text) {
     const glyph = fontRenderer.getGlyph(char, object.fontVariant as FontVariantKey);

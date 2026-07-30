@@ -45,14 +45,14 @@ describe('project store command adapter', () => {
     expect(state.project?.fsm.states.diagnostics?.title).toBe('Diagnostics Menu');
   });
 
-  it('deletes a screen with its linked FSM state and preserves first selection', () => {
+  it('deletes a screen, detaches its FSM state, and preserves first selection', () => {
     useProjectStore.getState().createScreen('Diagnostics');
     useProjectStore.getState().deleteScreen('diagnostics');
     const state = useProjectStore.getState();
 
     expect(state.revision).toBe(2);
     expect(state.project?.screens.diagnostics).toBeUndefined();
-    expect(state.project?.fsm.states.diagnostics).toBeUndefined();
+    expect(state.project?.fsm.states.diagnostics?.screenId).toBeNull();
     expect(state.selectedScreenId).toBe(state.project?.screenOrder[0]);
     expect(state.selectedStateId).toBe(state.project?.fsm.stateOrder[0]);
   });

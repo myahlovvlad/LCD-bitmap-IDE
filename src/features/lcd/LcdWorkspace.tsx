@@ -308,7 +308,12 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
           <h3>{labels.screenLabel}</h3>
           {screen ? (
             <>
-              <label>{labels.nameLabel}<input value={screen.name} onChange={(event) => renameScreen(screen.id, event.target.value)} /></label>
+              <ScreenNameInput
+                key={screen.id}
+                label={labels.nameLabel}
+                value={screen.name}
+                onCommit={(name) => renameScreen(screen.id, name)}
+              />
               <div className="screen-property-actions">
                 <small>ID: {screen.id}</small>
                 <button type="button" onClick={() => duplicateScreen(screen.id)}><Copy size={14} />{labels.copy}</button>
@@ -356,6 +361,50 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
         <TutorialOverlay workspace="lcd" language={language} onClose={() => setShowTutorial(false)} />
       ) : null}
     </section>
+  );
+}
+
+function ScreenNameInput({
+  label,
+  value,
+  onCommit
+}: {
+  label: string;
+  value: string;
+  onCommit: (name: string) => void;
+}): React.ReactElement {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => setDraft(value), [value]);
+
+  const commit = (): void => {
+    const next = draft.trim().slice(0, 160);
+    if (!next) {
+      setDraft(value);
+      return;
+    }
+    if (next !== value) {
+      onCommit(next);
+    }
+  };
+
+  return (
+    <label>
+      {label}
+      <input
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.currentTarget.blur();
+          } else if (event.key === 'Escape') {
+            setDraft(value);
+            event.currentTarget.blur();
+          }
+        }}
+      />
+    </label>
   );
 }
 

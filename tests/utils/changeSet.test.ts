@@ -60,7 +60,7 @@ describe('application ChangeSet execution', () => {
     expect(result.candidate?.project.meta.name).toBe('Dry Run Name');
   });
 
-  it('rejects the full ChangeSet when the final candidate introduces a blocking validation error', () => {
+  it('allows deleting the only screen because its initial FSM state is preserved', () => {
     const session = createProjectSession(createProject(), 0);
     const changeSet: ProjectChangeSet = {
       changeSetId: 'changeset-delete-only-state',
@@ -73,10 +73,10 @@ describe('application ChangeSet execution', () => {
 
     const result = executeProjectChangeSet(session, changeSet, createFixedApplicationCommandContext(timestamp));
 
-    expect(result.status).toBe('rejected');
-    expect(result.session).toBe(session);
-    expect(result.session.project.screenOrder).toHaveLength(1);
-    expect(result.diagnostics[0]).toEqual(expect.objectContaining({ code: 'validation.blocking-error' }));
+    expect(result.status).toBe('applied');
+    expect(result.session.project.screenOrder).toHaveLength(0);
+    expect(result.session.project.fsm.stateOrder).toHaveLength(1);
+    expect(result.session.project.fsm.states[result.session.project.fsm.stateOrder[0]].screenId).toBeNull();
   });
 });
 

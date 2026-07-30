@@ -1,5 +1,5 @@
 import type { FontVariant } from './fonts';
-import type { LocalizedText } from './localization';
+import type { LanguageCode, LocalizedText } from './localization';
 import type { HmiBindings } from './tag';
 
 export interface DisplayConfig {
@@ -36,6 +36,8 @@ export interface TextCanvasObject extends CanvasObjectBase {
   y: number;
   fontVariant: FontVariant;
   pendingTranslation: boolean;
+  /** Fixed LCD content language. Null/undefined follows the editor interface language. */
+  displayLanguage?: LanguageCode | null;
 }
 
 export interface LineCanvasObject extends CanvasObjectBase {

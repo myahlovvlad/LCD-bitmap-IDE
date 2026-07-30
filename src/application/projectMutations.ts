@@ -5,6 +5,7 @@ import type {
   GraphPosition
 } from '../domain';
 import type {
+  BackendProcess,
   ControlPanelElement,
   FsmEvent,
   FsmState,
@@ -49,11 +50,13 @@ export function applyProjectCommandMutation(
     case 'fsm.transition.delete':
       return deleteFsmTransition(workspace, command.payload.transitionId, context);
     case 'fsm.event.add':
-      return addFsmEvent(workspace, command.payload.name, context);
+      return addFsmEvent(workspace, command.payload, context);
     case 'fsm.event.update':
       return updateFsmEvent(workspace, command.payload.eventId, command.payload.updates, context);
     case 'fsm.event.delete':
       return deleteFsmEvent(workspace, command.payload.eventId, context);
+    case 'backendProcess.update':
+      return updateBackendProcess(workspace, command.payload.processId, command.payload.updates, context);
     case 'fsm.graphPosition.update':
       return updateGraphPosition(workspace, command.payload.stateId, command.payload.position, context);
     case 'fsm.graphPositions.update':
@@ -379,12 +382,17 @@ function deleteFsmTransition(workspace: ApplicationWorkspace, transitionId: stri
 
 function addFsmEvent(
   workspace: ApplicationWorkspace,
-  name: string | undefined,
+  payload: { name?: string; scope?: FsmEvent['scope']; sourceStateId?: string | null },
   context: ApplicationCommandContext
 ): ProjectMutationResult {
   const project = workspace.project;
   const id = context.createId(project.fsm.events, 'EVENT').toUpperCase();
-  const event: FsmEvent = { id, name: name?.trim() || id };
+  const event: FsmEvent = {
+    id,
+    name: payload.name?.trim() || id,
+    scope: payload.scope ?? 'global',
+    sourceStateId: payload.scope === 'state' ? payload.sourceStateId ?? null : null
+  };
   return changedProject(workspace, {
     ...project,
     meta: { ...project.meta, updatedAt: context.now() },
@@ -399,7 +407,7 @@ function addFsmEvent(
 function updateFsmEvent(
   workspace: ApplicationWorkspace,
   eventId: string,
-  updates: Partial<Pick<FsmEvent, 'name' | 'description'>>,
+  updates: Partial<Pick<FsmEvent, 'name' | 'description' | 'scope' | 'sourceStateId'>>,
   context: ApplicationCommandContext
 ): ProjectMutationResult {
   const project = workspace.project;
@@ -407,7 +415,13 @@ function updateFsmEvent(
   if (!event) {
     return noChange(workspace);
   }
-  const nextEvent = { ...event, ...updates };
+  const nextEvent = {
+    ...event,
+    ...updates,
+    sourceStateId: (updates.scope ?? event.scope ?? 'global') === 'state'
+      ? updates.sourceStateId ?? event.sourceStateId ?? null
+      : null
+  };
   if (sameJson(event, nextEvent)) {
     return noChange(workspace);
   }
@@ -416,6 +430,35 @@ function updateFsmEvent(
     meta: { ...project.meta, updatedAt: context.now() },
     fsm: { ...project.fsm, events: { ...project.fsm.events, [eventId]: nextEvent } }
   }, [{ kind: 'updated', entityType: 'fsm-event', entityId: eventId, path: `/fsm/events/${eventId}`, before: event, after: nextEvent }]);
+}
+
+function updateBackendProcess(
+  workspace: ApplicationWorkspace,
+  processId: string,
+  updates: Partial<Pick<BackendProcess, 'name' | 'description' | 'commands'>>,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const process = project.backendProcesses[processId];
+  if (!process) {
+    return noChange(workspace);
+  }
+  const nextProcess = { ...process, ...updates };
+  if (sameJson(process, nextProcess)) {
+    return noChange(workspace);
+  }
+  return changedProject(workspace, {
+    ...project,
+    meta: { ...project.meta, updatedAt: context.now() },
+    backendProcesses: { ...project.backendProcesses, [processId]: nextProcess }
+  }, [{
+    kind: 'updated',
+    entityType: 'backend-process',
+    entityId: processId,
+    path: `/backendProcesses/${processId}`,
+    before: process,
+    after: nextProcess
+  }]);
 }
 
 function deleteFsmEvent(workspace: ApplicationWorkspace, eventId: string, context: ApplicationCommandContext): ProjectMutationResult {
@@ -586,12 +629,11 @@ function deleteScreen(workspace: ApplicationWorkspace, screenId: string, context
   if (!screen) {
     return noChange(workspace);
   }
-  const linkedStateIds = new Set(Object.values(project.fsm.states).filter((state) => state.screenId === screenId).map((state) => state.id));
-  const transitionOrder = project.fsm.transitionOrder.filter((id) => {
-    const transition = project.fsm.transitions[id];
-    return transition && !linkedStateIds.has(transition.from) && !linkedStateIds.has(transition.to);
-  });
-  const removedTransitionIds = project.fsm.transitionOrder.filter((id) => !transitionOrder.includes(id));
+  const linkedStates = Object.values(project.fsm.states).filter((state) => state.screenId === screenId);
+  const nextStates = {
+    ...project.fsm.states,
+    ...Object.fromEntries(linkedStates.map((state) => [state.id, { ...state, screenId: null }]))
+  };
   return changedProject(workspace, {
     ...project,
     meta: { ...project.meta, updatedAt: context.now() },
@@ -599,16 +641,18 @@ function deleteScreen(workspace: ApplicationWorkspace, screenId: string, context
     screenOrder: project.screenOrder.filter((id) => id !== screenId),
     fsm: {
       ...project.fsm,
-      states: Object.fromEntries(Object.entries(project.fsm.states).filter(([id]) => !linkedStateIds.has(id))),
-      stateOrder: project.fsm.stateOrder.filter((id) => !linkedStateIds.has(id)),
-      transitions: Object.fromEntries(transitionOrder.map((id) => [id, project.fsm.transitions[id]])),
-      transitionOrder,
-      graphLayout: Object.fromEntries(Object.entries(project.fsm.graphLayout).filter(([id]) => !linkedStateIds.has(id)))
+      states: nextStates
     }
   }, [
     deleted('screen', screenId, `/screens/${screenId}`, screen),
-    ...Array.from(linkedStateIds).map((id) => deleted('fsm-state', id, `/fsm/states/${id}`, project.fsm.states[id])),
-    ...removedTransitionIds.map((id) => deleted('fsm-transition', id, `/fsm/transitions/${id}`, project.fsm.transitions[id]))
+    ...linkedStates.map((state) => ({
+      kind: 'updated' as const,
+      entityType: 'fsm-state' as const,
+      entityId: state.id,
+      path: `/fsm/states/${state.id}/screenId`,
+      before: screenId,
+      after: null
+    }))
   ]);
 }
 

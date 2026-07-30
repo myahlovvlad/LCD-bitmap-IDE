@@ -39,7 +39,7 @@ export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
   const linkedScreens = new Set<string>();
   for (const state of Object.values(project.fsm.states)) {
     if (!state.screenId) {
-      add('error', 'fsm', 'state-screen-missing', `State "${state.id}" has no LCD screen.`, 'state', state.id, 'Bind or create an LCD screen.');
+      add('warning', 'fsm', 'state-screen-missing', `State "${state.id}" has no LCD screen.`, 'state', state.id, 'Bind or create an LCD screen.');
     } else if (!project.screens[state.screenId]) {
       add('error', 'fsm', 'state-screen-invalid', `State "${state.id}" references missing screen "${state.screenId}".`, 'state', state.id);
     } else {
@@ -76,8 +76,21 @@ export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
     } else {
       incoming.set(transition.to, (incoming.get(transition.to) ?? 0) + 1);
     }
-    if (!project.fsm.events[transition.trigger.eventId]) {
+    const transitionEvent = project.fsm.events[transition.trigger.eventId];
+    if (!transitionEvent) {
       add('error', 'fsm', 'transition-event-invalid', `Transition "${transition.id}" references missing event "${transition.trigger.eventId}".`, 'transition', transition.id);
+    } else if (
+      transitionEvent.scope === 'state' &&
+      transitionEvent.sourceStateId !== transition.from
+    ) {
+      add(
+        'error',
+        'fsm',
+        'transition-event-scope-invalid',
+        `Transition "${transition.id}" uses local event "${transitionEvent.id}" outside its source state "${transitionEvent.sourceStateId ?? 'missing'}".`,
+        'transition',
+        transition.id
+      );
     }
     if (transition.trigger.mechanism === 'button' && transition.trigger.buttonId) {
       const button = project.controlPanel.elements[transition.trigger.buttonId];

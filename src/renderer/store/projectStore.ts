@@ -20,6 +20,7 @@ import type { AlarmDefinition } from '../../domain/alarm';
 import {
   rebuildProjectBindings,
   type ControlPanelElement,
+  type BackendProcess,
   type FsmEvent,
   type FsmState,
   type FsmTransition,
@@ -83,9 +84,10 @@ interface ProjectStoreState {
   addFsmTransition: (from: string, to: string, eventId?: string, handles?: { sourceHandle?: string | null; targetHandle?: string | null }) => void;
   updateFsmTransition: (transitionId: string, updates: Partial<FsmTransition>) => void;
   deleteFsmTransition: (transitionId: string) => void;
-  addFsmEvent: (name?: string) => void;
-  updateFsmEvent: (eventId: string, updates: Partial<Pick<FsmEvent, 'name' | 'description'>>) => void;
+  addFsmEvent: (name?: string, options?: { scope?: FsmEvent['scope']; sourceStateId?: string | null }) => void;
+  updateFsmEvent: (eventId: string, updates: Partial<Pick<FsmEvent, 'name' | 'description' | 'scope' | 'sourceStateId'>>) => void;
   deleteFsmEvent: (eventId: string) => void;
+  updateBackendProcess: (processId: string, updates: Partial<Pick<BackendProcess, 'name' | 'description' | 'commands'>>) => void;
   updateGraphPosition: (stateId: string, position: LcdBitmapProject['fsm']['graphLayout'][string]) => void;
   updateGraphPositions: (positions: LcdBitmapProject['fsm']['graphLayout']) => void;
   applyFsmScriptPreview: (preview: FsmScriptPreview) => ProjectCommandResult | null;
@@ -251,10 +253,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     meta: createCommandMeta(state, 'fsm.transition.delete'),
     payload: { transitionId }
   }), { selectedTransitionId: null }),
-  addFsmEvent: (name) => commitProjectCommand(set, get, (state) => ({
+  addFsmEvent: (name, options) => commitProjectCommand(set, get, (state) => ({
     type: 'fsm.event.add',
     meta: createCommandMeta(state, 'fsm.event.add'),
-    payload: { name }
+    payload: { name, ...options }
   })),
   updateFsmEvent: (eventId, updates) => commitProjectCommand(set, get, (state) => ({
     type: 'fsm.event.update',
@@ -265,6 +267,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     type: 'fsm.event.delete',
     meta: createCommandMeta(state, 'fsm.event.delete'),
     payload: { eventId }
+  })),
+  updateBackendProcess: (processId, updates) => commitProjectCommand(set, get, (state) => ({
+    type: 'backendProcess.update',
+    meta: createCommandMeta(state, 'backendProcess.update'),
+    payload: { processId, updates }
   })),
   updateGraphPosition: (stateId, position) => commitProjectCommand(set, get, (state) => ({
     type: 'fsm.graphPosition.update',

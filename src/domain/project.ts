@@ -81,6 +81,9 @@ export interface FsmEvent {
   name: string;
   description?: string;
   legacyTrigger?: string;
+  /** Global events are reusable; state events are valid only for transitions from sourceStateId. */
+  scope?: 'global' | 'state';
+  sourceStateId?: string | null;
 }
 
 export interface FsmState {

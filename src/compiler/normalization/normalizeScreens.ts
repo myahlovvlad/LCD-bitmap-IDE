@@ -35,7 +35,7 @@ function normalizeObject(screenId: string, object: CanvasObject, order: number):
     sourcePath: `/screens/${screenId}/objects/${object.id}`
   };
   if (object.type === 'text') {
-    return { ...base, type: 'text', text: { ...object.text }, x: object.x, y: object.y, fontVariant: object.fontVariant, pendingTranslation: object.pendingTranslation };
+    return { ...base, type: 'text', text: { ...object.text }, x: object.x, y: object.y, fontVariant: object.fontVariant, pendingTranslation: object.pendingTranslation, displayLanguage: object.displayLanguage ?? null };
   }
   if (object.type === 'line') {
     return { ...base, type: 'line', x0: object.x0, y0: object.y0, x1: object.x1, y1: object.y1 };

@@ -43,7 +43,7 @@ generated binary bytes, packing, symbols, or schema-v5 project files.
 | State ordering | Runtime/FSM paths use `project.fsm.stateOrder`; C all-screen table stores state IDs from canvases. |
 | Event ordering | Runtime and FSM UI use `project.fsm.eventOrder`; current C screen export does not emit events. |
 | Transition ordering | Runtime uses `project.fsm.transitionOrder`; current C screen export does not emit transitions. |
-| Locale selection | Text rendering chooses `object.text[language] || object.text.ru || object.text.en`. |
+| Locale selection | Text rendering chooses `object.displayLanguage ?? language`, then applies the localized glyph-coverage fallback. |
 | Font source | Default bundled font unless caller passes a `FontRenderer` created from project-associated `fontGlyphs`. |
 | Unsupported object behavior | Unknown object kinds are ignored by `renderCanvasObjects`; current known kinds are text, line, rect, icon, bitmap, special, invert. |
 | Symbol collisions | `sanitizeSymbolName` normalizes identifiers but does not de-duplicate collisions. |

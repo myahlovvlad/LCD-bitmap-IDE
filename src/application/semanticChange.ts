@@ -8,6 +8,7 @@ export type SemanticEntityType =
   | 'fsm-state'
   | 'fsm-transition'
   | 'fsm-event'
+  | 'backend-process'
   | 'graph-position'
   | 'control-panel'
   | 'control-panel-element'

@@ -9,6 +9,7 @@ import type {
   SavedMeasurement
 } from '../domain';
 import type {
+  BackendProcess,
   ControlPanelElement,
   FsmEvent,
   FsmState,
@@ -71,12 +72,19 @@ export type FsmTransitionUpdateCommand = BaseProjectCommand<
   { transitionId: string; updates: Partial<FsmTransition> }
 >;
 export type FsmTransitionDeleteCommand = BaseProjectCommand<'fsm.transition.delete', { transitionId: string }>;
-export type FsmEventAddCommand = BaseProjectCommand<'fsm.event.add', { name?: string }>;
+export type FsmEventAddCommand = BaseProjectCommand<
+  'fsm.event.add',
+  { name?: string; scope?: FsmEvent['scope']; sourceStateId?: string | null }
+>;
 export type FsmEventUpdateCommand = BaseProjectCommand<
   'fsm.event.update',
-  { eventId: string; updates: Partial<Pick<FsmEvent, 'name' | 'description'>> }
+  { eventId: string; updates: Partial<Pick<FsmEvent, 'name' | 'description' | 'scope' | 'sourceStateId'>> }
 >;
 export type FsmEventDeleteCommand = BaseProjectCommand<'fsm.event.delete', { eventId: string }>;
+export type BackendProcessUpdateCommand = BaseProjectCommand<
+  'backendProcess.update',
+  { processId: string; updates: Partial<Pick<BackendProcess, 'name' | 'description' | 'commands'>> }
+>;
 export type FsmGraphPositionUpdateCommand = BaseProjectCommand<
   'fsm.graphPosition.update',
   { stateId: string; position: GraphPosition }
@@ -192,6 +200,7 @@ export type ProjectCommand =
   | FsmEventAddCommand
   | FsmEventUpdateCommand
   | FsmEventDeleteCommand
+  | BackendProcessUpdateCommand
   | FsmGraphPositionUpdateCommand
   | FsmGraphPositionsUpdateCommand
   | FsmSemanticRoundTripApplyCommand

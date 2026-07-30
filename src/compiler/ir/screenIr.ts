@@ -1,4 +1,4 @@
-import type { FontVariant, Glyph, LocalizedText, SpecialElementKind } from '../../domain';
+import type { FontVariant, Glyph, LanguageCode, LocalizedText, SpecialElementKind } from '../../domain';
 
 export type NormalizedCanvasObjectIr =
   | NormalizedTextObjectIr
@@ -27,6 +27,7 @@ export interface NormalizedTextObjectIr extends NormalizedCanvasObjectBaseIr {
   readonly y: number;
   readonly fontVariant: FontVariant;
   readonly pendingTranslation: boolean;
+  readonly displayLanguage?: LanguageCode | null;
 }
 
 export interface NormalizedLineObjectIr extends NormalizedCanvasObjectBaseIr {

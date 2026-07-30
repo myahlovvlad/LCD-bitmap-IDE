@@ -40,4 +40,27 @@ describe('project validation service', () => {
     const issues = validateProject(project);
     expect(issues.some((issue) => issue.id.includes('button-state-conflict'))).toBe(true);
   });
+
+  it('rejects a state-local event used by a transition from another state', () => {
+    const project = migrateLegacySnapshot(createDemoProject()).project;
+    project.fsm.events.START = {
+      ...project.fsm.events.START,
+      scope: 'state',
+      sourceStateId: 'measure'
+    };
+
+    const issues = validateProject(project);
+    expect(issues.some((issue) => issue.id.includes('transition-event-scope-invalid'))).toBe(true);
+    expect(hasBlockingValidationIssues(issues)).toBe(true);
+  });
+
+  it('treats an FSM state without an LCD screen as editable warning debt', () => {
+    const project = migrateLegacySnapshot(createDemoProject()).project;
+    project.fsm.states['main-menu'].screenId = null;
+
+    const issues = validateProject(project);
+    const issue = issues.find((candidate) => candidate.id.includes('state-screen-missing'));
+    expect(issue?.severity).toBe('warning');
+    expect(hasBlockingValidationIssues(issues)).toBe(false);
+  });
 });

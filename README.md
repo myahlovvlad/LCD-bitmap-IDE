@@ -34,9 +34,9 @@ Desktop builds are published from [GitHub Releases](https://github.com/myahlovvl
 
 | Platform | Stable artifacts |
 |---|---|
-| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Portable-x64.exe) |
-| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-x86_64.AppImage) |
-| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.2-Tauri-macOS-x64.dmg) |
+| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.3-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.3-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.3-Portable-x64.exe) |
+| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.3-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.3-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.3-x86_64.AppImage) |
+| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.3-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.3-Tauri-macOS-x64.dmg) |
 | Developers | Source checkout with `npm ci` and `npm run electron:dev` |
 
 If a direct asset link is not available yet, open the [latest Release page](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest) and download the matching file from the asset list.
@@ -94,8 +94,9 @@ Manual index: [docs/user-manuals/index.html](docs/user-manuals/index.html)
 
 ## Core Capabilities
 
-- **LCD authoring:** text, lines, rectangles, bitmap layers, glyph editing and special UI elements under strict monochrome display bounds.
-- **FSM modeling:** draggable states, event-labeled transitions, validation and automatic graph layout.
+- **LCD authoring:** text, lines, rectangles, bitmap layers, glyph editing, special UI elements and per-object LCD language pinning under strict monochrome display bounds.
+- **FSM modeling:** draggable states, explicit global/state-local events, event-labeled transitions, validation and automatic graph layout.
+- **Backend process documentation:** multiline engineering notes are stored with legacy backend processes and edited from the transition inspector.
 - **Control-panel binding:** connect physical button events to the screen workflow.
 - **Runtime preview:** step through state flows and validate operator paths before hardware handoff.
 - **Text registry:** maintain multilingual screen copy and CSV handoff.

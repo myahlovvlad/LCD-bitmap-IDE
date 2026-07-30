@@ -1,6 +1,6 @@
 {
   "name": "lcd-bitmap-ide-tauri",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "Independent Tauri/Rust desktop shell for LCD-bitmap IDE",
   "scripts": {

@@ -5,6 +5,7 @@ import type {
   DisplayConfig,
   FontVariant,
   Glyph,
+  LanguageCode,
   LcdBitmapProject,
   LocalizedText,
   ProjectGlyph,
@@ -118,6 +119,7 @@ export interface ScreenInterchangeTextObjectV1 extends ScreenInterchangeObjectBa
   y: number;
   fontVariant: FontVariant;
   pendingTranslation: boolean;
+  displayLanguage?: LanguageCode | null;
 }
 
 export interface ScreenInterchangeLineObjectV1 extends ScreenInterchangeObjectBaseV1 {

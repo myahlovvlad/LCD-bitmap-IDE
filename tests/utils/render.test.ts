@@ -79,6 +79,26 @@ describe('render utils', () => {
       .toEqual(renderCanvasObjects(objects, { language: 'ru' }));
   });
 
+  it('keeps a pinned LCD text language when the interface language changes', () => {
+    const pinned: CanvasObject[] = [{
+      id: 'pinned-text',
+      type: 'text',
+      text: { en: 'OK', ru: 'НЕТ', zh: '测试' },
+      displayLanguage: 'en',
+      x: 0,
+      y: 0,
+      zIndex: 0,
+      visible: true,
+      locked: false,
+      source: 'user',
+      fontVariant: '1',
+      pendingTranslation: false
+    }];
+
+    expect(renderCanvasObjects(pinned, { language: 'ru' }))
+      .toEqual(renderCanvasObjects(pinned, { language: 'en' }));
+  });
+
   it('uses active localized text when custom glyphs cover that language', () => {
     const fontGlyphs = createMutableFontGlyphs();
     fontGlyphs['1']['测'] = { width: 3, data: ['#..', '.#.', '..#'] };

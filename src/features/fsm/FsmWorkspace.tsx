@@ -28,7 +28,7 @@ import { computeElkLayout, computeSwimlaneBounds, getSubsystemColor, getSubsyste
 import { UI_TEXT, type UiText } from '../../renderer/config/i18n';
 import { copyToClipboard } from '../../renderer/utils/clipboard';
 import { useProjectStore } from '../../renderer/store/projectStore';
-import type { ControlPanelButton, FsmState, FsmTransition } from '../../domain/project';
+import type { ControlPanelButton, FsmEvent, FsmState, FsmTransition } from '../../domain/project';
 import { ValidationPanel } from '../validation/ValidationPanel';
 import { FsmScriptStudio } from '../fsm-script/FsmScriptStudio';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
@@ -105,6 +105,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
     deleteFsmTransition,
     addFsmEvent,
     updateFsmEvent,
+    updateBackendProcess,
     updateGraphPosition,
     updateGraphPositions,
     ensureStateScreen,
@@ -269,7 +270,11 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
 
   const handleConnect = (connection: Connection): void => {
     if (connection.source && connection.target) {
-      addFsmTransition(connection.source, connection.target, project.fsm.eventOrder[0], {
+      const eventId = project.fsm.eventOrder.find((id) => {
+        const candidate = project.fsm.events[id];
+        return candidate?.scope !== 'state' || candidate.sourceStateId === connection.source;
+      });
+      addFsmTransition(connection.source, connection.target, eventId, {
         sourceHandle: connection.sourceHandle,
         targetHandle: connection.targetHandle
       });
@@ -460,13 +465,15 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
             onUpdate={(updates) => updateFsmTransition(selectedTransition.id, updates)}
             onDelete={() => deleteFsmTransition(selectedTransition.id)}
             onCreateEvent={(name) => {
-              addFsmEvent(name);
+              addFsmEvent(name, { scope: 'state', sourceStateId: selectedTransition.from });
               const newEventId = useProjectStore.getState().project?.fsm.eventOrder.at(-1);
               if (newEventId) {
                 updateFsmTransition(selectedTransition.id, { trigger: { ...selectedTransition.trigger, eventId: newEventId } });
               }
             }}
             onRenameEvent={(eventId, name) => updateFsmEvent(eventId, { name })}
+            onUpdateEvent={(eventId, updates) => updateFsmEvent(eventId, updates)}
+            onUpdateBackendDescription={(processId, description) => updateBackendProcess(processId, { description })}
           />
         ) : selectedState ? (
           <>
@@ -481,7 +488,10 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
               currentStateId={selectedState.id}
               states={project.fsm.states}
               stateOrder={project.fsm.stateOrder}
-              eventOrder={project.fsm.eventOrder}
+              eventOrder={project.fsm.eventOrder.filter((eventId) => {
+                const event = project.fsm.events[eventId];
+                return event?.scope !== 'state' || event.sourceStateId === selectedState.id;
+              })}
               eventNames={Object.fromEntries(project.fsm.eventOrder.map((eventId) => [
                 eventId,
                 project.fsm.events[eventId]?.name ?? eventId
@@ -719,7 +729,9 @@ function TransitionInspector({
   onUpdate,
   onDelete,
   onCreateEvent,
-  onRenameEvent
+  onRenameEvent,
+  onUpdateEvent,
+  onUpdateBackendDescription
 }: {
   transition: FsmTransition;
   labels: UiText;
@@ -727,12 +739,28 @@ function TransitionInspector({
   onDelete: () => void;
   onCreateEvent: (name?: string) => void;
   onRenameEvent: (eventId: string, name: string) => void;
+  onUpdateEvent: (eventId: string, updates: Partial<Pick<FsmEvent, 'scope' | 'sourceStateId'>>) => void;
+  onUpdateBackendDescription: (processId: string, description: string) => void;
 }): React.ReactElement {
   const project = useProjectStore((state) => state.project)!;
   const panelButtons = Object.values(project.controlPanel.elements)
     .filter((element): element is ControlPanelButton => element.type === 'button');
   const mechanism = transition.trigger.mechanism ?? 'event';
   const currentEvent = project.fsm.events[transition.trigger.eventId];
+  const currentBackendProcess = transition.backendProcessId
+    ? project.backendProcesses[transition.backendProcessId]
+    : null;
+  const availableEventIds = project.fsm.eventOrder.filter((eventId) => {
+    const event = project.fsm.events[eventId];
+    return event?.scope !== 'state' || event.sourceStateId === transition.from || eventId === transition.trigger.eventId;
+  });
+  const currentEventUsedByOtherSource = currentEvent
+    ? Object.values(project.fsm.transitions).some((candidate) => (
+        candidate.id !== transition.id &&
+        candidate.trigger.eventId === currentEvent.id &&
+        candidate.from !== transition.from
+      ))
+    : false;
   return (
     <section className="inspector-card">
       <h3>{labels.transitionProperties}</h3>
@@ -751,18 +779,47 @@ function TransitionInspector({
             onUpdate({ trigger: { ...transition.trigger, eventId: event.target.value } });
           }}
         >
-          {project.fsm.eventOrder.map((eventId) => <option key={eventId} value={eventId}>{project.fsm.events[eventId].name}</option>)}
+          {availableEventIds.map((eventId) => (
+            <option key={eventId} value={eventId}>
+              {project.fsm.events[eventId].name} · {project.fsm.events[eventId].scope === 'state' ? labels.localEvent : labels.globalEvent}
+            </option>
+          ))}
           <option value={NEW_EVENT_SENTINEL}>{labels.newEventOption}</option>
         </select>
       </label>
       {currentEvent ? (
-        <label>
-          {labels.eventNameLabel}
-          <input
-            value={currentEvent.name}
-            onChange={(event) => onRenameEvent(currentEvent.id, event.target.value)}
-          />
-        </label>
+        <>
+          <label>
+            {labels.eventNameLabel}
+            <input
+              value={currentEvent.name}
+              onChange={(event) => onRenameEvent(currentEvent.id, event.target.value)}
+            />
+          </label>
+          <label>
+            {labels.eventScope}
+            <select
+              value={currentEvent.scope ?? 'global'}
+              onChange={(event) => {
+                const scope = event.target.value as 'global' | 'state';
+                onUpdateEvent(currentEvent.id, {
+                  scope,
+                  sourceStateId: scope === 'state' ? transition.from : null
+                });
+              }}
+            >
+              <option value="global">{labels.globalEvent}</option>
+              <option value="state" disabled={currentEventUsedByOtherSource}>{labels.localEvent}</option>
+            </select>
+          </label>
+          <small>
+            {currentEventUsedByOtherSource
+              ? labels.sharedEventScopeHint
+              : currentEvent.scope === 'state'
+                ? labels.localEventHint
+                : labels.globalEventHint}
+          </small>
+        </>
       ) : null}
       <label>
         {labels.transitionMechanism}
@@ -870,8 +927,50 @@ function TransitionInspector({
           {Object.values(project.backendProcesses).map((process) => <option key={process.id} value={process.id}>{process.name}</option>)}
         </select>
       </label>
+      {currentBackendProcess ? (
+        <BackendDescriptionInput
+          key={currentBackendProcess.id}
+          label={labels.backendProcessDescription}
+          placeholder={labels.backendProcessDescriptionPlaceholder}
+          value={currentBackendProcess.description ?? ''}
+          onCommit={(description) => onUpdateBackendDescription(currentBackendProcess.id, description)}
+        />
+      ) : null}
       <button type="button" className="delete-button" onClick={onDelete}><Trash2 size={15} />{labels.deleteTransition}</button>
     </section>
+  );
+}
+
+function BackendDescriptionInput({
+  label,
+  placeholder,
+  value,
+  onCommit
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onCommit: (description: string) => void;
+}): React.ReactElement {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => setDraft(value), [value]);
+
+  return (
+    <label>
+      {label}
+      <textarea
+        rows={5}
+        value={draft}
+        placeholder={placeholder}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={() => {
+          if (draft !== value) {
+            onCommit(draft);
+          }
+        }}
+      />
+    </label>
   );
 }
 
