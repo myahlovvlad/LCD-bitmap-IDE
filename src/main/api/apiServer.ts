@@ -12,6 +12,10 @@
  *   /api/project/meta         — project metadata
  *   /api/fsm/states           — FSM states record
  *   /api/fsm/transitions      — FSM transitions record
+ *   /api/fsm/events           — FSM event record
+ *   /api/screens               — LCD screens record
+ *   /api/control-panel         — control-panel configuration and elements
+ *   /api/validation            — last validation result from the normalized project
  *   /api/tags                 — HMI tags record
  *   /api/procedures           — backend procedures record
  *   /api/alarms               — alarm definitions record
@@ -25,6 +29,10 @@
  *   POST   /api/fsm/transitions         — { from, to, eventId? } → add transition
  *   PUT    /api/fsm/transitions/:id     — partial FsmTransition → update
  *   DELETE /api/fsm/transitions/:id     — delete transition
+ *   POST   /api/fsm/events              — { name, scope?, sourceStateId? } → add event
+ *   PUT    /api/fsm/events/:id          — partial FsmEvent → update event
+ *   DELETE /api/fsm/events/:id          — delete event when it is not referenced
+ *   PUT    /api/control-panel/elements/:id — partial control-panel element → update
  *   PUT    /api/tags/:id                — HmiTag (upsert)
  *   DELETE /api/tags/:id                — delete tag
  *   PUT    /api/procedures/:id          — BackendProcedure (upsert)
@@ -118,6 +126,15 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     if (url === '/api/project/meta') return json(res, { meta: proj()?.['meta'] ?? null });
     if (url === '/api/fsm/states') return json(res, { states: proj()?.['fsm'] ? (proj() as any).fsm.states : null });
     if (url === '/api/fsm/transitions') return json(res, { transitions: proj()?.['fsm'] ? (proj() as any).fsm.transitions : null });
+    if (url === '/api/fsm/events') return json(res, { events: proj()?.['fsm'] ? (proj() as any).fsm.events : null });
+    if (url === '/api/screens') return json(res, { screens: proj()?.['screens'] ?? {}, screenOrder: proj()?.['screenOrder'] ?? [] });
+    if (url.startsWith('/api/screens/')) {
+      const screenId = decodeURIComponent(url.slice('/api/screens/'.length));
+      const screen = (proj()?.['screens'] as Record<string, unknown> | undefined)?.[screenId];
+      return screen ? json(res, { screen }) : json(res, { error: 'Screen not found', screenId }, 404);
+    }
+    if (url === '/api/control-panel') return json(res, { controlPanel: proj()?.['controlPanel'] ?? null });
+    if (url === '/api/validation') return json(res, { validation: proj()?.['validation'] ?? { issues: [], validatedAt: null } });
     if (url === '/api/tags') return json(res, { tags: proj()?.['tags'] ?? {} });
     if (url === '/api/procedures') return json(res, { procedures: proj()?.['procedures'] ?? {} });
     if (url === '/api/alarms') return json(res, { alarms: proj()?.['alarms'] ?? {} });
@@ -161,6 +178,22 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   if (transId) {
     if (method === 'PUT') { postBody().then((b) => mutate('updateFsmTransition', { transitionId: transId, updates: b }).then((r) => json(res, { ok: true, result: r }))).catch((e) => json(res, { error: String(e) }, 400)); return; }
     if (method === 'DELETE') { mutate('deleteFsmTransition', { transitionId: transId }).then((r) => json(res, { ok: true, result: r })).catch((e) => json(res, { error: String(e) }, 500)); return; }
+  }
+
+  // FSM event mutations
+  if (method === 'POST' && url === '/api/fsm/events') {
+    postBody().then((body) => mutate('addFsmEvent', body)).then((r) => json(res, { ok: true, result: r })).catch((e) => json(res, { error: String(e) }, 400)); return;
+  }
+  const eventId = idParam('/api/fsm/events');
+  if (eventId) {
+    if (method === 'PUT') { postBody().then((b) => mutate('updateFsmEvent', { eventId, updates: b }).then((r) => json(res, { ok: true, result: r }))).catch((e) => json(res, { error: String(e) }, 400)); return; }
+    if (method === 'DELETE') { mutate('deleteFsmEvent', { eventId }).then((r) => json(res, { ok: true, result: r })).catch((e) => json(res, { error: String(e) }, 500)); return; }
+  }
+
+  // Control-panel mutations
+  const controlElementId = idParam('/api/control-panel/elements');
+  if (controlElementId && method === 'PUT') {
+    postBody().then((b) => mutate('updateControlElement', { elementId: controlElementId, updates: b }).then((r) => json(res, { ok: true, result: r }))).catch((e) => json(res, { error: String(e) }, 400)); return;
   }
 
   // Tag mutations

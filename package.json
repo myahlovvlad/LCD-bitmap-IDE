@@ -63,6 +63,7 @@
     "test:screen-dsl:performance": "vitest run tests/utils/screenDslPerformance.test.ts tests/utils/screenDslTransactionPerformance.test.ts",
     "test:screen-dsl:acceptance": "npm run test:screen-dsl && npm run test:screen-dsl:security && npm run test:screen-dsl:application && npm run test:screen-dsl:atomicity && npm run test:screen-dsl:session && npm run test:screen-dsl:ui && npm run test:screen-dsl:ui-integration && npm run test:screen-dsl:file && npm run test:screen-dsl:performance && npm run test:screen-interchange:acceptance && npx vitest run tests/utils/architectureBoundary.test.ts",
     "test:importer": "tsx scripts/verify-importer.ts",
+    "repair:ecros": "tsx scripts/repair-ecros-project.ts",
     "test:renderer": "tsx scripts/verify-renderer.ts",
     "test:e2e": "npm run build && npm run test:e2e:prepared",
     "test:e2e:prepared": "playwright test --config playwright.config.ts",

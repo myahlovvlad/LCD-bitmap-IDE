@@ -24,7 +24,7 @@ import {
   Workflow
 } from 'lucide-react';
 import { WorkspaceRouterProvider, useWorkspaceRouter } from '../app/WorkspaceRouter';
-import type { WorkspaceLocation, WorkspaceMode, FsmState, FsmTransition } from '../domain/project';
+import type { WorkspaceLocation, WorkspaceMode, ControlPanelElement, FsmEvent, FsmState, FsmTransition } from '../domain/project';
 import { createBlankProject } from '../entities/project/factory';
 import { createDemoProject } from '../entities/project/demo';
 import { PRODUCT_IDENTITY, SUPPORTED_LANGUAGES } from './config/constants';
@@ -141,6 +141,20 @@ function AppShell(): React.ReactElement {
         );
     });
   }, []);
+
+  useEffect(() => {
+    window.spectroDesigner?.onStartupProject?.(({ filename, content }) => {
+      try {
+        const migrated = migrateProject(JSON.parse(content));
+        loadProjectSnapshot(migrated);
+        setLastSavedAt(migrated.project.meta.updatedAt);
+        navigate({ mode: 'fsm', stateId: migrated.project.fsm.stateOrder[0] });
+        pushToast(`${labels.openProject}: ${filename}`, 'success');
+      } catch (error) {
+        pushToast(error instanceof Error ? error.message : labels.invalidProjectFile, 'danger');
+      }
+    });
+  }, [labels.invalidProjectFile, labels.openProject, loadProjectSnapshot, navigate]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
@@ -559,6 +573,22 @@ async function runMutationAction(action: string, payload: unknown): Promise<unkn
     case 'deleteFsmTransition':
       store.deleteFsmTransition(body['transitionId'] as string);
       return { transitionId: body['transitionId'] };
+    case 'addFsmEvent': {
+      store.addFsmEvent(body['name'] as string | undefined, {
+        scope: body['scope'] as FsmEvent['scope'] | undefined,
+        sourceStateId: body['sourceStateId'] as string | null | undefined
+      });
+      return { eventId: useProjectStore.getState().project?.fsm.eventOrder.at(-1) ?? null };
+    }
+    case 'updateFsmEvent':
+      store.updateFsmEvent(body['eventId'] as string, body['updates'] as Partial<Pick<FsmEvent, 'name' | 'description' | 'scope' | 'sourceStateId'>>);
+      return { eventId: body['eventId'] };
+    case 'deleteFsmEvent':
+      store.deleteFsmEvent(body['eventId'] as string);
+      return { eventId: body['eventId'] };
+    case 'updateControlElement':
+      store.updateControlElement(body['elementId'] as string, body['updates'] as Partial<ControlPanelElement>);
+      return { elementId: body['elementId'] };
 
     case 'upsertHmiTag':
       store.upsertHmiTag(body as unknown as HmiTag);

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron';
-import { writeFile } from 'node:fs/promises';
+import { readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { handleScreenDslFileOpen } from './screenDslFiles/openHandler.js';
 import { handleScreenDslFileSave } from './screenDslFiles/saveHandler.js';
@@ -11,6 +11,7 @@ import { registerSpectrophotometerSerialHandlers } from './spectrophotometerSeri
 // The Electron entry point is emitted as CommonJS, where __dirname is native.
 const _dirname = __dirname;
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
+const STARTUP_PROJECT_MAX_BYTES = 25 * 1024 * 1024;
 
 // Screen DSL file handlers — narrow, feature-specific (no generic filesystem bridge)
 ipcMain.handle(SCREEN_DSL_FILE_OPEN_CHANNEL, () => handleScreenDslFileOpen(dialog));
@@ -112,6 +113,13 @@ async function createWindow(): Promise<void> {
     }
   });
 
+  const startupProjectPath = readStartupProjectPath(process.argv);
+  if (startupProjectPath) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      void sendStartupProject(mainWindow, startupProjectPath);
+    });
+  }
+
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     mainWindow.webContents.openDevTools({ mode: 'detach' });
@@ -119,6 +127,30 @@ async function createWindow(): Promise<void> {
   }
 
   await mainWindow.loadFile(path.join(_dirname, '../renderer/index.html'));
+}
+
+function readStartupProjectPath(args: readonly string[]): string | null {
+  const namedArgument = args.find((arg) => arg.startsWith('--open-project='));
+  const candidate = namedArgument
+    ? namedArgument.slice('--open-project='.length)
+    : args.find((arg) => !arg.startsWith('-') && /\.lcdproj$|\.json$/i.test(arg));
+  return candidate ? path.resolve(candidate) : null;
+}
+
+async function sendStartupProject(mainWindow: BrowserWindow, projectPath: string): Promise<void> {
+  try {
+    const info = await stat(projectPath);
+    if (!info.isFile() || info.size > STARTUP_PROJECT_MAX_BYTES) {
+      throw new Error('Project file is missing or exceeds the 25 MB startup limit.');
+    }
+    const content = await readFile(projectPath, 'utf8');
+    mainWindow.webContents.send('project:startup-open', {
+      filename: path.basename(projectPath),
+      content
+    });
+  } catch (error) {
+    console.error(`[project] startup open failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 app.whenReady().then(async () => {

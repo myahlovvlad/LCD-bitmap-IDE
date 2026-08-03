@@ -33,6 +33,12 @@ contextBridge.exposeInMainWorld('spectroDesigner', {
     });
   },
 
+  // One-way startup project payload. The main process only sends a project file
+  // explicitly supplied on the Electron command line; no filesystem API is exposed.
+  onStartupProject: (handler: (payload: { filename: string; content: string }) => void) => {
+    ipcRenderer.on('project:startup-open', (_event, payload: { filename: string; content: string }) => handler(payload));
+  },
+
   // Narrow Screen DSL file API — no generic invoke, no arbitrary path, no raw ipcRenderer
   screenDslFiles: {
     open: () => ipcRenderer.invoke(SCREEN_DSL_FILE_OPEN_CHANNEL),

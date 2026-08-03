@@ -33,6 +33,11 @@ curl http://127.0.0.1:8766/api/project
 curl http://127.0.0.1:8766/api/project/meta
 curl http://127.0.0.1:8766/api/fsm/states
 curl http://127.0.0.1:8766/api/fsm/transitions
+curl http://127.0.0.1:8766/api/fsm/events
+curl http://127.0.0.1:8766/api/screens
+curl http://127.0.0.1:8766/api/screens/main-screen
+curl http://127.0.0.1:8766/api/control-panel
+curl http://127.0.0.1:8766/api/validation
 curl http://127.0.0.1:8766/api/tags
 curl http://127.0.0.1:8766/api/procedures
 curl http://127.0.0.1:8766/api/alarms
@@ -92,15 +97,23 @@ Resources:
 
 - `project://current`
 - `project://fsm`
+- `project://screens`
+- `project://control-panel`
 - `project://tags`
 - `project://procedures`
 - `project://alarms`
+- `project://validation`
 
 Read tools:
 
 - `get_project_summary`
 - `list_fsm_states`
 - `list_fsm_transitions`
+- `list_fsm_events`
+- `list_screens`
+- `get_screen`
+- `list_control_panel_elements`
+- `get_validation_report`
 - `list_tags`
 - `list_procedures`
 - `list_alarms`
@@ -113,7 +126,12 @@ Write tools:
 - `update_fsm_state`
 - `delete_fsm_state`
 - `create_fsm_transition`
+- `update_fsm_transition`
 - `delete_fsm_transition`
+- `create_fsm_event`
+- `update_fsm_event`
+- `delete_fsm_event`
+- `update_control_panel_element`
 - `upsert_tag`
 - `delete_tag`
 - `upsert_procedure`
@@ -166,7 +184,9 @@ Wrapper rules:
 
 ### Scripted Batch Edits
 
-For deterministic edits, prefer REST plus small JSON payloads. For broad structural changes, generate a `.lcdproj` file in a separate branch, open it in the app, then validate through the UI.
+For deterministic edits, prefer REST plus small JSON payloads. Read `project://validation` / `/api/validation` after every conceptual batch: this report is generated from the same normalized project snapshot that the editor displays.
+
+For ECROS-5300VI/5310 projects, `npm run repair:ecros -- <input.lcdproj> [output.lcdproj]` creates a new file; it does not overwrite the source. It normalizes duplicated initial/event bindings, restores a return route from Mode F, binds physical buttons to semantic events, and registers the established ECROS tags/data sources. The actual CLI command catalogue and hardware zeroing procedure remain explicit integration work and are not fabricated by this repair.
 
 Batch safety checklist:
 

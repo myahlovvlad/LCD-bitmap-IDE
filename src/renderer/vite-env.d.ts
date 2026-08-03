@@ -15,6 +15,7 @@ declare global {
       manualExportPdf?: (html: string, filename: string) => Promise<boolean>;
       ipcSend?: (channel: string, payload: unknown) => void;
       onMutateRequest?: (handler: (requestId: string, action: string, payload: unknown) => void) => void;
+      onStartupProject?: (handler: (payload: { filename: string; content: string }) => void) => void;
       screenDslFiles?: {
         open(): Promise<{
           cancelled: boolean;
