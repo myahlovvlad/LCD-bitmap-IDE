@@ -6,6 +6,19 @@ Screen DSL V1 is a text-facing import/export layer for LCD screen authoring.
 It sits above `ScreenInterchangeProjectV1` and does not replace project state,
 the compiler IR, the renderer, or Command Bus mutation paths.
 
+## Source-of-Truth Rule
+
+**The DSL is a deterministic, editable projection of the normalized project
+model, not a second independent source of truth.**
+
+The visual editor, REST/MCP commands, importers and the DSL apply flow all
+mutate the normalized model through the application command / ChangeSet path.
+After a committed mutation, canonical DSL is regenerated from that model. A
+hand-edited DSL draft is only a candidate: it must be parsed, validated,
+previewed and converted to a ChangeSet before it can alter the project. This
+prevents synchronization loops, divergent copies of a screen and a DSL watcher
+creating a second mutation for the same revision.
+
 ## Canonical Document
 
 Required root fields:

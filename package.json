@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build:renderer": "tsc -p tsconfig.renderer.json --noEmit && vite build",
-    "tauri:dev": "npm --prefix apps/tauri run dev",
-    "tauri:build": "npm --prefix apps/tauri exec tauri build --",
-    "tauri:check": "npm --prefix apps/tauri run check",
+    "tauri:dev": "cross-env CARGO_BUILD_JOBS=1 npm --prefix apps/tauri run dev",
+    "tauri:build": "cross-env CARGO_BUILD_JOBS=1 npm --prefix apps/tauri exec tauri build --",
+    "tauri:check": "cross-env CARGO_BUILD_JOBS=1 npm --prefix apps/tauri run check",
     "preview:test": "node scripts/serve-static.mjs dist/renderer 4173",
     "electron:build": "tsc -p tsconfig.electron.json --noEmit && node scripts/build-electron-main.mjs",
     "electron:dev": "concurrently -k \"npm:dev\" \"wait-on http://127.0.0.1:5173 && node scripts/build-electron-main.mjs && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",

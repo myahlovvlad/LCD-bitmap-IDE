@@ -48,6 +48,22 @@ test('keeps the LCD preview to the right of a scrollable Canvas inspector', asyn
   await expect.poll(() => controls.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
 });
 
+test('keeps the LCD canvas mounted while auxiliary tools are open', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 700 });
+  await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();
+
+  const canvas = page.locator('.lcd-editor-frame .lcd-canvas').first();
+  await expect(canvas).toBeVisible();
+
+  await page.getByRole('button', { name: 'Import image', exact: true }).click();
+  await expect(page.getByTestId('lcd-auxiliary-panel')).toBeVisible();
+  await expect(canvas).toBeVisible();
+
+  await page.getByTestId('lcd-open-screen-dsl-studio').click();
+  await expect(page.getByTestId('screen-dsl-studio')).toBeVisible();
+  await expect(canvas).toBeVisible();
+});
+
 test('collapses, resizes and persists LCD sidebars', async ({ page }) => {
   await page.setViewportSize({ width: 1536, height: 864 });
   await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();

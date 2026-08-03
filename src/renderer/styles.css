@@ -1663,7 +1663,8 @@ button:disabled {
   width: 100%;
   height: auto;
   min-height: 0;
-  overflow: hidden;
+  /* The workspace column owns scrolling; this lets the LCD preview stay sticky. */
+  overflow: visible;
   border: 1px solid #4b5563;
   border-radius: 16px;
   background: #1f2937;
@@ -1785,6 +1786,17 @@ button:disabled {
   min-height: 0;
   max-height: none;
   overflow: auto;
+}
+
+.lcd-auxiliary-panel {
+  min-width: 0;
+}
+
+.lcd-auxiliary-panel .pixel-importer-panel,
+.lcd-auxiliary-panel .screen-dsl-studio,
+.lcd-auxiliary-panel .glyph-c-generator,
+.lcd-auxiliary-panel .template-gallery {
+  min-width: 0;
 }
 
 .lcd-action-row {
@@ -2917,13 +2929,16 @@ button:disabled {
 
 @media (max-width: 1599px) {
   .lcd-workspace .workspace-canvas-column {
-    overflow-y: auto;
+    overflow: auto;
   }
 
   .lcd-editor {
-    grid-template-columns: minmax(0, 1fr);
+    /* Preserve the left tools → LCD relationship on smaller desktop windows.
+       The workspace can scroll horizontally instead of replacing the preview. */
+    grid-template-columns: minmax(250px, 0.72fr) minmax(360px, 1.28fr);
+    min-width: 626px;
     flex: 0 0 auto;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .lcd-editor > .flex-1 {
@@ -2933,7 +2948,8 @@ button:disabled {
   }
 
   .lcd-display-column {
-    position: static;
+    align-self: start;
+    position: sticky;
   }
 }
 

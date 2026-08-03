@@ -80,6 +80,12 @@ interface LCDCanvasEditorProps {
   showPixelGrid: boolean;
   onTogglePixelGrid: () => void;
   onOpenImageGlyphImport?: () => void;
+  /**
+   * Workspace-specific tools are deliberately rendered in the editor sidebar.
+   * Keeping the LCD canvas mounted means auxiliary workflows never become a
+   * second screen or hide the deterministic preview.
+   */
+  auxiliaryPanel?: React.ReactNode;
 }
 
 const specialChars = ['?', '!', '#', '%', '/', '+', '-', '=', '.', ',', ':'];
@@ -93,7 +99,8 @@ export function LCDCanvasEditor({
   labels,
   showPixelGrid,
   onTogglePixelGrid,
-  onOpenImageGlyphImport
+  onOpenImageGlyphImport,
+  auxiliaryPanel
 }: LCDCanvasEditorProps): React.ReactElement {
   const {
     project,
@@ -630,6 +637,12 @@ export function LCDCanvasEditor({
               })
             }
           />
+        ) : null}
+
+        {auxiliaryPanel ? (
+          <section className="lcd-auxiliary-panel" aria-label={labels.canvasTools} data-testid="lcd-auxiliary-panel">
+            {auxiliaryPanel}
+          </section>
         ) : null}
 
         <ExportImportPanel

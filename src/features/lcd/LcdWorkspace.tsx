@@ -104,6 +104,60 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
   const linkedStates = screen
     ? project.fsm.stateOrder.map((id) => project.fsm.states[id]).filter((state) => state.screenId === screen.id)
     : [];
+  const auxiliaryPanel = toolPanel === 'pixel-import' ? (
+    <PixelImporter
+      language={language}
+      onOpenEditor={() => setToolPanel('editor')}
+      labels={{
+        pixelImporter: language === 'ru' ? 'Импорт пикселей' : language === 'zh' ? '像素导入' : 'Pixel importer',
+        chooseImage: language === 'ru' ? 'Выбрать изображение' : language === 'zh' ? '选择图像' : 'Choose image',
+        threshold: language === 'ru' ? 'Порог' : language === 'zh' ? '阈值' : 'Threshold',
+        dithering: language === 'ru' ? 'Дизеринг' : language === 'zh' ? '抖动' : 'Dithering',
+        applyNewScreen: language === 'ru' ? 'Создать экран' : language === 'zh' ? '作为新屏幕应用' : 'Apply as new screen',
+        insertCurrentScreen: language === 'ru' ? 'Вставить в экран' : language === 'zh' ? '插入当前屏幕' : 'Insert into current screen',
+        applyAndEditBitmap: labels.applyAndEditBitmap,
+        importedOriginal: labels.importedOriginal
+      }}
+    />
+  ) : toolPanel === 'glyph-c' ? (
+    <GlyphCGenerator fontGlyphs={fontGlyphs} labels={labels} />
+  ) : toolPanel === 'templates' ? (
+    <section className="template-gallery">
+      <header className="template-gallery-header">
+        <h2>{labels.screenTemplates}</h2>
+        <div>
+          <button type="button" onClick={() => exportTemplates(templates)}>
+            <Download size={15} /> {labels.exportLabel}
+          </button>
+          <button type="button" onClick={() => templateInputRef.current?.click()}>
+            <Upload size={15} /> {labels.importTemplate}
+          </button>
+        </div>
+      </header>
+      {templates.length === 0 ? <p>{labels.noSavedTemplates}</p> : templates.map((template) => (
+        <button key={template.id} type="button" onClick={() => createScreenFromTemplate(template.id)}>
+          <strong>{template.name}</strong>
+          <span>{template.width}x{template.height}, {template.objects.length} {labels.canvasObjects.toLowerCase()}</span>
+        </button>
+      ))}
+      <input
+        ref={templateInputRef}
+        type="file"
+        accept=".json,.lcdtemplate,application/json"
+        hidden
+        onChange={(event) => {
+          void importTemplates(event, () => setTemplatesVersion((value) => value + 1));
+        }}
+      />
+    </section>
+  ) : toolPanel === 'screen-dsl' && session ? (
+    <ScreenDslStudio
+      session={session}
+      selectedScreenId={selectedScreenId}
+      language={language}
+      onApplyPreview={(preview, sourceText) => applyScreenDslPreview(preview, sourceText)}
+    />
+  ) : null;
   return (
     <section
       className="workspace-root lcd-workspace lcd-workspace-resizable"
@@ -207,60 +261,7 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
           </button>
         </header>
 
-        {toolPanel === 'pixel-import' ? (
-          <PixelImporter
-            language={language}
-            onOpenEditor={() => setToolPanel('editor')}
-            labels={{
-              pixelImporter: language === 'ru' ? 'Импорт пикселей' : language === 'zh' ? '像素导入' : 'Pixel importer',
-              chooseImage: language === 'ru' ? 'Выбрать изображение' : language === 'zh' ? '选择图像' : 'Choose image',
-              threshold: language === 'ru' ? 'Порог' : language === 'zh' ? '阈值' : 'Threshold',
-              dithering: language === 'ru' ? 'Дизеринг' : language === 'zh' ? '抖动' : 'Dithering',
-              applyNewScreen: language === 'ru' ? 'Создать экран' : language === 'zh' ? '作为新屏幕应用' : 'Apply as new screen',
-              insertCurrentScreen: language === 'ru' ? 'Вставить в экран' : language === 'zh' ? '插入当前屏幕' : 'Insert into current screen',
-              applyAndEditBitmap: labels.applyAndEditBitmap,
-              importedOriginal: labels.importedOriginal
-            }}
-          />
-        ) : toolPanel === 'glyph-c' ? (
-          <GlyphCGenerator fontGlyphs={fontGlyphs} labels={labels} />
-        ) : toolPanel === 'templates' ? (
-          <section className="template-gallery">
-            <header className="template-gallery-header">
-              <h2>{labels.screenTemplates}</h2>
-              <div>
-                <button type="button" onClick={() => exportTemplates(templates)}>
-                  <Download size={15} /> {labels.exportLabel}
-                </button>
-                <button type="button" onClick={() => templateInputRef.current?.click()}>
-                  <Upload size={15} /> {labels.importTemplate}
-                </button>
-              </div>
-            </header>
-            {templates.length === 0 ? <p>{labels.noSavedTemplates}</p> : templates.map((template) => (
-              <button key={template.id} type="button" onClick={() => createScreenFromTemplate(template.id)}>
-                <strong>{template.name}</strong>
-                <span>{template.width}x{template.height}, {template.objects.length} {labels.canvasObjects.toLowerCase()}</span>
-              </button>
-            ))}
-            <input
-              ref={templateInputRef}
-              type="file"
-              accept=".json,.lcdtemplate,application/json"
-              hidden
-              onChange={(event) => {
-                void importTemplates(event, () => setTemplatesVersion((value) => value + 1));
-              }}
-            />
-          </section>
-        ) : toolPanel === 'screen-dsl' && session ? (
-          <ScreenDslStudio
-            session={session}
-            selectedScreenId={selectedScreenId}
-            language={language}
-            onApplyPreview={(preview, sourceText) => applyScreenDslPreview(preview, sourceText)}
-          />
-        ) : screen ? (
+        {screen ? (
           <LCDCanvasEditor
             canvasData={{
               stateId: screen.id,
@@ -275,6 +276,7 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
             showPixelGrid={showPixelGrid}
             onTogglePixelGrid={() => setShowPixelGrid((value) => !value)}
             onOpenImageGlyphImport={() => setToolPanel('pixel-import')}
+            auxiliaryPanel={auxiliaryPanel}
           />
         ) : <section className="workspace-empty">{labels.selectOrCreateScreen}</section>}
       </main>
