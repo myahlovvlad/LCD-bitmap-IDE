@@ -39,6 +39,7 @@
  *   DELETE /api/procedures/:id          — delete procedure
  *   PUT    /api/alarms/:id             — AlarmDefinition (upsert)
  *   DELETE /api/alarms/:id             — delete alarm
+ *   POST   /api/fsm/auto-layout         — crossing-minimised ELK FSM layout
  *   POST   /api/compile                 — { backend?, scope?, screenId?, language? } → compile
  *   POST   /api/runtime/event           — { eventId } → fire event
  */
@@ -194,6 +195,14 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   const controlElementId = idParam('/api/control-panel/elements');
   if (controlElementId && method === 'PUT') {
     postBody().then((b) => mutate('updateControlElement', { elementId: controlElementId, updates: b }).then((r) => json(res, { ok: true, result: r }))).catch((e) => json(res, { error: String(e) }, 400)); return;
+  }
+
+  // FSM layout. The calculation runs in the renderer, where the same ELK
+  // implementation as the visible "ELK Layout" command is available.
+  if (method === 'POST' && url === '/api/fsm/auto-layout') {
+    mutate('autoLayoutFsm', {}).then((r) => json(res, { ok: true, result: r }))
+      .catch((e) => json(res, { error: String(e) }, 400));
+    return;
   }
 
   // Tag mutations

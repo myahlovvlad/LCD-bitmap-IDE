@@ -51,7 +51,7 @@ export const projectSchema = z.object({
   states: z.record(z.string(), fsmStateSchema),
   transitions: z.record(z.string(), fsmTransitionSchema),
   canvasByStateId: z.record(z.string(), canvasDataSchema),
-  graphLayout: z.record(z.string(), z.object({ x: z.number(), y: z.number() })),
+  graphLayout: z.record(z.string(), z.object({ x: z.number(), y: z.number(), z: z.number().optional() })),
   auditTrail: z.array(z.unknown()).max(10000)
 });
 

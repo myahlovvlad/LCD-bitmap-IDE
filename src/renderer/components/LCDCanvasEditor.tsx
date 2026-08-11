@@ -677,6 +677,7 @@ export function LCDCanvasEditor({
           language={language}
           labels={labels}
           tags={Object.values(project?.tags ?? {})}
+          procedures={Object.values(project?.procedures ?? {})}
           onUpdateSelected={updateSelected}
           onUpdateText={updateSelectedText}
           onUpdateGeometry={updateSelectedGeometry}
@@ -1070,6 +1071,7 @@ function ObjectProperties({
   language,
   labels,
   tags,
+  procedures,
   onUpdateSelected,
   onUpdateText,
   onUpdateGeometry,
@@ -1081,6 +1083,7 @@ function ObjectProperties({
   language: LanguageCode;
   labels: UiText;
   tags: HmiTag[];
+  procedures: Array<{ id: string; name: { ru: string; en: string } }>;
   onUpdateSelected: (updates: Partial<CanvasObject>) => void;
   onUpdateText: (updates: Partial<TextCanvasObject>) => void;
   onUpdateGeometry: (object: CanvasObject) => void;
@@ -1176,6 +1179,34 @@ function ObjectProperties({
                     const expr = parseValueExpr(event.target.value);
                     const next: HmiBindings = { ...firstSelected.bindings };
                     if (expr) { next.text = expr; } else { delete next.text; }
+                    onUpdateSelected({ bindings: Object.keys(next).length > 0 ? next : undefined });
+                  }}
+                />
+              </label>
+              <label>
+                CLI-процедура действия
+                <select
+                  value={firstSelected.bindings?.procedureId ?? ''}
+                  onChange={(event) => {
+                    const next: HmiBindings = { ...firstSelected.bindings };
+                    if (event.target.value) next.procedureId = event.target.value;
+                    else delete next.procedureId;
+                    onUpdateSelected({ bindings: Object.keys(next).length > 0 ? next : undefined });
+                  }}
+                >
+                  <option value="">Нет прямого действия</option>
+                  {procedures.map((procedure) => <option key={procedure.id} value={procedure.id}>{procedure.name.ru || procedure.name.en}</option>)}
+                </select>
+              </label>
+              <label>
+                Расчётный алгоритм / ID
+                <input
+                  value={firstSelected.bindings?.algorithmId ?? ''}
+                  placeholder="Beer-Lambert / ECROS.ABSORBANCE"
+                  onChange={(event) => {
+                    const next: HmiBindings = { ...firstSelected.bindings };
+                    if (event.target.value.trim()) next.algorithmId = event.target.value.trim();
+                    else delete next.algorithmId;
                     onUpdateSelected({ bindings: Object.keys(next).length > 0 ? next : undefined });
                   }}
                 />

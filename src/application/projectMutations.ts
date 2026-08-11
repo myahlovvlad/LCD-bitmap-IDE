@@ -309,7 +309,7 @@ function addFsmTransition(
   let eventOrder = project.fsm.eventOrder;
   const changes: SemanticChange[] = [];
   if (!nextEventId || !events[nextEventId]) {
-    nextEventId = context.createId(events, 'EVENT').toUpperCase();
+    nextEventId = createFsmEventId(events);
     const event = { id: nextEventId, name: nextEventId };
     events = { ...events, [nextEventId]: event };
     eventOrder = [...eventOrder, nextEventId];
@@ -386,7 +386,7 @@ function addFsmEvent(
   context: ApplicationCommandContext
 ): ProjectMutationResult {
   const project = workspace.project;
-  const id = context.createId(project.fsm.events, 'EVENT').toUpperCase();
+  const id = createFsmEventId(project.fsm.events);
   const event: FsmEvent = {
     id,
     name: payload.name?.trim() || id,
@@ -402,6 +402,16 @@ function addFsmEvent(
       eventOrder: [...project.fsm.eventOrder, id]
     }
   }, [created('fsm-event', id, `/fsm/events/${id}`, event)]);
+}
+
+function createFsmEventId(events: Readonly<Record<string, unknown>>): string {
+  let suffix = 1;
+  let id = 'EVENT';
+  while (events[id]) {
+    suffix += 1;
+    id = `EVENT-${suffix}`;
+  }
+  return id;
 }
 
 function updateFsmEvent(

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { Copy, Download, FileStack, Link2, PackageCheck, PlugZap, RefreshCw, Tags, Unplug } from 'lucide-react';
+import { Copy, Download, FileStack, HelpCircle, Link2, PackageCheck, Play, PlugZap, RefreshCw, Tags, Unplug } from 'lucide-react';
 import type { TextCanvasObject } from '../../domain/canvas';
 import { FontRenderer } from '../../domain/fonts';
 import { useProjectStore } from '../../renderer/store/projectStore';
@@ -13,6 +13,7 @@ import {
 } from '../../spectrophotometer';
 import { buildHandoffPackage } from './handoffPackage';
 import { formatHmiValue } from '../../services/runtime/resolveLcdBindings';
+import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 import type {
   SpectroSerialPortInfo,
   SpectroSerialStatus
@@ -55,6 +56,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
   const [serialBusy, setSerialBusy] = useState(false);
   const [serialLog, setSerialLog] = useState<string[]>([]);
   const [identifiedProfile, setIdentifiedProfile] = useState<string | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
   const labels = HANDOFF_TEXT[language];
 
   const screenId = selectedScreenId && project?.screens[selectedScreenId]
@@ -66,6 +68,12 @@ export function HmiHandoffWorkspace(): React.ReactElement {
     [screen]
   );
   const selectedObject = textObjects.find((object) => object.id === selectedObjectId) ?? textObjects[0] ?? null;
+  const selectedProcedure = selectedObject?.bindings?.procedureId
+    ? project?.procedures?.[selectedObject.bindings.procedureId]
+    : null;
+  const selectedProcedureCommands = (selectedProcedure?.steps ?? [])
+    .filter((step) => step.type === 'cli' && Boolean(step.cliCommandId))
+    .map((step) => step.cliCommandId as string);
   const fontRenderer = useMemo(() => new FontRenderer(fontGlyphs), [fontGlyphs]);
   const serialApi = window.spectroDesigner?.spectrophotometerSerial;
 
@@ -101,6 +109,28 @@ export function HmiHandoffWorkspace(): React.ReactElement {
         text: { kind: 'tag', tagId }
       }
     });
+  };
+
+  const setActionBinding = (patch: { procedureId?: string; algorithmId?: string }): void => {
+    if (!selectedObject) return;
+    updateCanvasObject(screenId, { ...selectedObject, bindings: { ...selectedObject.bindings, ...patch } });
+  };
+
+  const executeSelectedProcedure = async (): Promise<void> => {
+    if (!serialApi || !serialStatus.protocolConnected || selectedProcedureCommands.length === 0) return;
+    setSerialBusy(true);
+    try {
+      const log: string[] = [];
+      for (const commandId of selectedProcedureCommands) {
+        const result = await serialApi.command({ commandId });
+        log.push(`${commandId}: ${result.raw.trim()}`);
+      }
+      setSerialLog((lines) => [...lines, ...log]);
+    } catch (error) {
+      setSerialLog((lines) => [...lines, error instanceof Error ? error.message : String(error)]);
+    } finally {
+      setSerialBusy(false);
+    }
   };
 
   const exportPackage = async (): Promise<void> => {
@@ -214,6 +244,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
           <button type="button" className="hmi-btn-primary" onClick={() => void exportPackage()} disabled={exportState === 'building'} data-testid="handoff-export-package">
             <Download size={15} />{labels.exportPackage}
           </button>
+          <button type="button" className="hmi-help-button" onClick={() => setShowTutorial(true)} title={labels.training}><HelpCircle size={15} /></button>
           <span role="status" className={`hmi-handoff-status ${exportState}`}>{exportMessage}</span>
         </header>
 
@@ -290,6 +321,23 @@ export function HmiHandoffWorkspace(): React.ReactElement {
               <p>{selectedObject.bindings?.text?.kind === 'tag'
                 ? selectedObject.bindings.text.tagId
                 : labels.notBound}</p>
+              <label>
+                <span>{labels.actionProcedure}</span>
+                <select value={selectedObject.bindings?.procedureId ?? ''} onChange={(event) => setActionBinding({ procedureId: event.target.value || undefined })}>
+                  <option value="">{labels.noProcedure}</option>
+                  {Object.values(project.procedures ?? {}).map((procedure) => (
+                    <option key={procedure.id} value={procedure.id}>{procedure.id} — {procedure.name[language] || procedure.name.en}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>{labels.algorithmId}</span>
+                <input value={selectedObject.bindings?.algorithmId ?? ''} onChange={(event) => setActionBinding({ algorithmId: event.target.value || undefined })} placeholder="ECROS.RESULT.%T_A" />
+              </label>
+              {selectedProcedure ? <p className="hmi-procedure-trace"><strong>{labels.cliTrace}</strong> {selectedProcedureCommands.join(' → ') || '—'}</p> : null}
+              <button type="button" className="hmi-procedure-run" onClick={() => void executeSelectedProcedure()} disabled={!serialStatus.protocolConnected || serialBusy || selectedProcedureCommands.length === 0} title={labels.runProcedureHint}>
+                <Play size={13} />{labels.runProcedure}
+              </button>
             </>
           ) : null}
         </section>
@@ -345,13 +393,14 @@ export function HmiHandoffWorkspace(): React.ReactElement {
           <p>{labels.concentrationAssumption}</p>
         </section>
       </aside>
+      {showTutorial ? <TutorialOverlay workspace="hmi-handoff" language={language} onClose={() => setShowTutorial(false)} /> : null}
     </section>
   );
 }
 
 const HANDOFF_TEXT = {
   en: {
-    title: 'HMI Handoff',
+    title: 'HMI Editor & Handoff',
     screens: 'Screens',
     noProject: 'No project or screen loaded.',
     cloneLayout: 'Clone layout only',
@@ -377,10 +426,11 @@ const HANDOFF_TEXT = {
     disconnect: 'Disconnect', connected: 'Instrument connected', portOpen: 'Port open; protocol not connected',
     disconnected: 'Disconnected', serialLog: 'Instrument CLI log', noSerialData: 'No instrument response yet.',
     instrumentModel: 'Instrument model', modelNotResolved: 'Instrument model was not resolved from gettype/getsn.',
-    objectsShort: 'objects', glyphClosure: 'glyph closure', cliContracts: 'CLI contracts', formulas: 'formulas'
+    objectsShort: 'objects', glyphClosure: 'glyph closure', cliContracts: 'CLI contracts', formulas: 'formulas',
+    actionProcedure: 'Action procedure', noProcedure: 'No procedure', algorithmId: 'Calculation algorithm ID', cliTrace: 'CLI trace:', runProcedure: 'Run procedure', runProcedureHint: 'Runs listed CLI steps only after instrument connection.', training: 'Training'
   },
   ru: {
-    title: 'Передача HMI',
+    title: 'Редактор HMI и передача',
     screens: 'Экраны',
     noProject: 'Проект или экран не загружен.',
     cloneLayout: 'Клон только макета',
@@ -406,10 +456,11 @@ const HANDOFF_TEXT = {
     disconnect: 'Отключить', connected: 'Прибор подключён', portOpen: 'Порт открыт, CLI connect не выполнен',
     disconnected: 'Отключено', serialLog: 'Журнал CLI прибора', noSerialData: 'Ответов прибора пока нет.',
     instrumentModel: 'Модель прибора', modelNotResolved: 'Модель не определена по ответам gettype/getsn.',
-    objectsShort: 'объектов', glyphClosure: 'набор глифов', cliContracts: 'контракты CLI', formulas: 'формулы'
+    objectsShort: 'объектов', glyphClosure: 'набор глифов', cliContracts: 'контракты CLI', formulas: 'формулы',
+    actionProcedure: 'Процедура действия', noProcedure: 'Процедура не назначена', algorithmId: 'ID расчётного алгоритма', cliTrace: 'Цепочка CLI:', runProcedure: 'Выполнить процедуру', runProcedureHint: 'Запускает шаги CLI только после подключения прибора.', training: 'Обучение'
   },
   zh: {
-    title: 'HMI 交付',
+    title: 'HMI 编辑与交付',
     screens: '屏幕',
     noProject: '未加载项目或屏幕。',
     cloneLayout: '仅克隆布局',
@@ -435,6 +486,7 @@ const HANDOFF_TEXT = {
     disconnect: '断开连接', connected: '仪器已连接', portOpen: '端口已打开，CLI 尚未连接',
     disconnected: '已断开', serialLog: '仪器 CLI 日志', noSerialData: '尚无仪器响应。',
     instrumentModel: '仪器型号', modelNotResolved: '无法根据 gettype/getsn 确定仪器型号。',
-    objectsShort: '个对象', glyphClosure: '字形集合', cliContracts: 'CLI 契约', formulas: '公式'
+    objectsShort: '个对象', glyphClosure: '字形集合', cliContracts: 'CLI 契约', formulas: '公式',
+    actionProcedure: '动作流程', noProcedure: '未指定流程', algorithmId: '计算算法 ID', cliTrace: 'CLI 链:', runProcedure: '执行流程', runProcedureHint: '仅在仪器连接后执行列出的 CLI 步骤。', training: '培训'
   }
 } as const;

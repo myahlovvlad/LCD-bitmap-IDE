@@ -12,11 +12,13 @@
  */
 
 import type React from 'react';
-import { useMemo, useState } from 'react';
-import { Download, Search } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { Download, HelpCircle, Search, Upload, RefreshCw } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useProjectStore } from '../../renderer/store/projectStore';
 import { UI_TEXT } from '../../renderer/config/i18n';
 import type { TextCanvasObject } from '../../renderer/types/domain';
+import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 
 interface TextEntry {
   screenId: string;
@@ -26,6 +28,7 @@ interface TextEntry {
   en: string;
   zh: string;
   subsystem: string;
+  globalTextKey?: string;
 }
 
 function buildTextEntries(
@@ -55,10 +58,24 @@ function buildTextEntries(
         en: obj.text.en ?? '',
         zh: obj.text.zh ?? '',
         subsystem: screenToSubsystem[screenId] ?? '',
+        globalTextKey: obj.globalTextKey,
       });
     }
   }
   return entries;
+}
+
+function normalizeTextKey(text: string): string {
+  return text.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+}
+
+function cell(row: Record<string, unknown>, ...names: string[]): string {
+  const index = new Map(Object.keys(row).map((key) => [key.toLowerCase().replace(/[ _-]/g, ''), key]));
+  for (const name of names) {
+    const key = index.get(name.toLowerCase().replace(/[ _-]/g, ''));
+    if (key && row[key] !== undefined && row[key] !== null) return String(row[key]);
+  }
+  return '';
 }
 
 function exportCsv(entries: TextEntry[]): void {
@@ -82,6 +99,8 @@ export function TextRegistryWorkspace(): React.ReactElement {
   const [search, setSearch] = useState('');
   const [filterSubsystem, setFilterSubsystem] = useState('');
   const [editingCell, setEditingCell] = useState<{ id: string; field: 'ru' | 'en' | 'zh' } | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
 
   if (!project) {
     return <section className="workspace-empty">{labels.noProjectLoaded}</section>;
@@ -117,14 +136,65 @@ export function TextRegistryWorkspace(): React.ReactElement {
   const untranslated = filtered.filter((e) => !e.en || !e.zh).length;
 
   const commitEdit = (entry: TextEntry, field: 'ru' | 'en' | 'zh', value: string): void => {
-    const screen = project.screens[entry.screenId];
-    if (!screen) return;
-    const obj = screen.objects.find((o) => o.id === entry.objectId);
-    if (!obj || obj.type !== 'text') return;
-    updateCanvasObject(entry.screenId, {
-      ...obj,
-      text: { ...obj.text, [field]: value }
-    });
+    const peerKey = entry.globalTextKey;
+    const peers = allEntries.filter((candidate) => peerKey
+      ? candidate.globalTextKey === peerKey
+      : candidate.screenId === entry.screenId && candidate.objectId === entry.objectId);
+    for (const peer of peers) {
+      const screen = project.screens[peer.screenId];
+      const obj = screen?.objects.find((object) => object.id === peer.objectId);
+      if (!obj || obj.type !== 'text') continue;
+      updateCanvasObject(peer.screenId, { ...obj, text: { ...obj.text, [field]: value } });
+    }
+  };
+
+  const promoteRepeatedText = (): void => {
+    const groups = new Map<string, TextEntry[]>();
+    for (const entry of allEntries) {
+      const key = normalizeTextKey(entry.ru);
+      if (!key) continue;
+      const group = groups.get(key) ?? [];
+      group.push(entry);
+      groups.set(key, group);
+    }
+    for (const [key, entries] of groups) {
+      if (entries.length < 2) continue;
+      for (const entry of entries) {
+        const screen = project.screens[entry.screenId];
+        const obj = screen?.objects.find((object) => object.id === entry.objectId);
+        if (obj?.type === 'text' && obj.globalTextKey !== `global:${key}`) {
+          updateCanvasObject(entry.screenId, { ...obj, globalTextKey: `global:${key}` });
+        }
+      }
+    }
+  };
+
+  const importRegistry = async (file: File): Promise<void> => {
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    let rows: Record<string, unknown>[];
+    if (extension === 'json') {
+      rows = JSON.parse(await file.text()) as Record<string, unknown>[];
+    } else {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      rows = sheet ? XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' }) : [];
+    }
+    for (const row of rows) {
+      const screenId = cell(row, 'screen_id', 'screen id', 'screenid');
+      const objectId = cell(row, 'object_id', 'object id', 'objectid');
+      const screen = project.screens[screenId];
+      const object = screen?.objects.find((candidate) => candidate.id === objectId);
+      if (!object || object.type !== 'text') continue;
+      updateCanvasObject(screenId, {
+        ...object,
+        text: {
+          ...object.text,
+          ru: cell(row, 'ru') || object.text.ru,
+          en: cell(row, 'en') || object.text.en,
+          zh: cell(row, 'zh') || object.text.zh,
+        }
+      });
+    }
   };
 
   const cellKey = (e: TextEntry, f: string): string => `${e.screenId}:${e.objectId}:${f}`;
@@ -164,6 +234,24 @@ export function TextRegistryWorkspace(): React.ReactElement {
             <Download size={14} />
             CSV
           </button>
+          <button type="button" onClick={() => importRef.current?.click()} title="Импорт CSV, JSON или XLSX">
+            <Upload size={14} /> Импорт
+          </button>
+          <button type="button" onClick={promoteRepeatedText} title="Сделать повторяющиеся русские строки глобальными">
+            <RefreshCw size={14} /> Синхронизировать повторы
+          </button>
+          <button type="button" className="hmi-help-button" onClick={() => setShowTutorial(true)} title={language === 'ru' ? 'Обучение' : 'Training'}><HelpCircle size={15} /></button>
+          <input
+            ref={importRef}
+            type="file"
+            hidden
+            accept=".csv,.json,.xlsx"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void importRegistry(file);
+              event.currentTarget.value = '';
+            }}
+          />
         </div>
       </header>
 
@@ -251,6 +339,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
           </tbody>
         </table>
       </div>
+      {showTutorial ? <TutorialOverlay workspace="text-registry" language={language} onClose={() => setShowTutorial(false)} /> : null}
     </section>
   );
 }

@@ -27,10 +27,18 @@ import { Ecros5501SimulationTransport } from '../../spectrophotometer';
 import type { OrchestratedTransitionState } from '../../services/runtime/orchestratedRuntimeEngine';
 import type { RuntimeEvent } from '../../services/runtimeEngine';
 import type { ControlPanelButton } from '../../domain/project';
+import type { FsmTransition, LcdBitmapProject } from '../../domain/project';
 import { ValidationPanel } from '../validation/ValidationPanel';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 
 type TransportKind = 'simulation';
+
+function runtimeTransitionLabel(project: LcdBitmapProject, transition: FsmTransition): string {
+  if (transition.labelMode === 'auto') return 'Auto';
+  const button = transition.trigger.buttonId ? project.controlPanel.elements[transition.trigger.buttonId] : null;
+  if (transition.labelMode === 'event') return project.fsm.events[transition.trigger.eventId]?.name ?? 'Auto';
+  return button?.type === 'button' && button.label.trim() ? button.label : 'Auto';
+}
 
 export function RuntimeWorkspace(): React.ReactElement {
   const { project, language, fontGlyphs } = useProjectStore();
@@ -173,9 +181,11 @@ export function RuntimeWorkspace(): React.ReactElement {
                       key={btn.id}
                       type="button"
                       className={`runtime-hw-btn${allowed ? '' : ' disabled'}`}
+                      data-active={allowed ? 'true' : 'false'}
+                      aria-label={`${btn.label}: ${allowed ? 'active in current state' : 'inactive in current state'}`}
                       disabled={!allowed || engine?.isExecutingProcedure}
                       onClick={() => allowed && refresh(() => engine?.pressButton(btn.id))}
-                      title={btn.label}
+                      title={allowed ? `${btn.label} — активно в текущем состоянии` : `${btn.label} — недоступно в текущем состоянии`}
                     >
                       {btn.label}
                     </button>
@@ -278,7 +288,7 @@ export function RuntimeWorkspace(): React.ReactElement {
                 onClick={() => refresh(() => engine?.sendEvent(t.trigger.eventId))}
                 title={`${labels.fsmEvent}: ${t.trigger.eventId} → ${t.to}`}
               >
-                <ChevronRight size={12} />{t.trigger.eventId}
+                <ChevronRight size={12} />{runtimeTransitionLabel(project, t)}
               </button>
             ))
           }

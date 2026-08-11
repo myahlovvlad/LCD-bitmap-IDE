@@ -28,7 +28,7 @@ const profile = (
 
 export const ECROS_INSTRUMENT_PROFILES: readonly EcrosInstrumentProfile[] = [
   profile('ECROS-5400VI', ['54VI'], 'single', [4], false),
-  profile('ECROS-5400UV', ['54UF'], 'single', [4], false),
+  profile('ECROS-5400UV', ['54UF'], 'single', [1.8], false),
   profile('ECROS-5500', ['5K5E'], 'single', [1.8]),
   profile('ECROS-5501', ['5K501E', 'ECROS-5501'], 'single', [1.8]),
   profile('ECROS-5510', ['5K51E'], 'single', [1]),

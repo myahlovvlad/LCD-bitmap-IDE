@@ -85,7 +85,11 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
    */
   sendEvent(eventId: string): void {
     const { transition, procedure } = this.resolveEventTarget(eventId);
-    if (procedure && !this.bypass) {
+    // Timer/fact transitions represent instrument/runtime completion.  They
+    // must advance the FSM immediately; a procedure attached for traceability
+    // must not turn an automatic route into a blocked manual operation.
+    const automatic = transition?.trigger.mechanism === 'timer' || transition?.trigger.mechanism === 'fact';
+    if (procedure && !this.bypass && !automatic) {
       void this.runOrchestrated(transition!, procedure, eventId);
     } else {
       this.inner.sendEvent(eventId);
@@ -113,7 +117,8 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
       return;
     }
     const { transition, procedure } = this.resolveEventTarget(eventId);
-    if (procedure && !this.bypass) {
+    const automatic = transition?.trigger.mechanism === 'timer' || transition?.trigger.mechanism === 'fact';
+    if (procedure && !this.bypass && !automatic) {
       this.inFlightProcedure = this.runOrchestrated(transition!, procedure, eventId);
       try {
         await this.inFlightProcedure;

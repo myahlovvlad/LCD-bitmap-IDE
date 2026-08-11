@@ -38,6 +38,8 @@ export interface TextCanvasObject extends CanvasObjectBase {
   pendingTranslation: boolean;
   /** Fixed LCD content language. Null/undefined follows the editor interface language. */
   displayLanguage?: LanguageCode | null;
+  /** Shared key for repeated strings. Editing one registry row updates all peers. */
+  globalTextKey?: string;
 }
 
 export interface LineCanvasObject extends CanvasObjectBase {
@@ -126,6 +128,8 @@ export interface CanvasData {
 export interface GraphPosition {
   x: number;
   y: number;
+  /** Persistent depth coordinate used by the WebGL FSM presentation. */
+  z?: number;
   width?: number;
   height?: number;
 }

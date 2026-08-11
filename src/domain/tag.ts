@@ -13,6 +13,10 @@ export interface HmiBindings {
   color?: ValueExpression;
   eventId?: string;
   writeTag?: { tagId: string; value: ValueExpression };
+  /** Procedure launched by the FSM transition that activates this HMI object. */
+  procedureId?: string;
+  /** Traceable calculation/algorithm identifier shown in HMI hand-off. */
+  algorithmId?: string;
 }
 
 export type HmiTagDataType = 'float' | 'int' | 'bool' | 'string';

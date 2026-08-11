@@ -88,6 +88,27 @@ describe('application command bus', () => {
     }));
   });
 
+  it('allocates distinct uppercase IDs for successive FSM events', () => {
+    const session = createProjectSession(createProject(), 0);
+    session.project.fsm.events = {
+      EVENT: { id: 'EVENT', name: 'event', scope: 'global', sourceStateId: null }
+    };
+    session.project.fsm.eventOrder = ['EVENT'];
+
+    const result = executeProjectCommand(
+      session,
+      commandFor(session.project, 0, 'fsm.event.add', { name: 'AUTO_DIAG_FILTER_DONE' }),
+      createFixedApplicationCommandContext(timestamp)
+    );
+
+    expect(result.status).toBe('applied');
+    expect(result.session.project.fsm.eventOrder).toEqual(['EVENT', 'EVENT-2']);
+    expect(result.session.project.fsm.events['EVENT-2']).toEqual(expect.objectContaining({
+      id: 'EVENT-2',
+      name: 'AUTO_DIAG_FILTER_DONE'
+    }));
+  });
+
   it('dry-runs without changing the input session revision', () => {
     const session = createProjectSession(createProject(), 3);
     const command = commandFor(session.project, 3, 'screen.create', { name: 'Preview Screen' });

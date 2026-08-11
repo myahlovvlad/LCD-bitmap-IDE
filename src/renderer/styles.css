@@ -3155,6 +3155,14 @@ button:disabled {
   grid-template-columns: minmax(220px, 270px) minmax(430px, 1fr) minmax(300px, 390px);
 }
 
+/* Registry and procedure workspaces are deliberately three vertical working
+   blocks: library → editor → contextual summary/help.  Without an explicit
+   grid template CSS Grid puts those blocks into rows on wide monitors. */
+[data-workspace="tags"],
+[data-workspace="procedures"] {
+  grid-template-columns: minmax(230px, 300px) minmax(480px, 1fr) minmax(260px, 340px);
+}
+
 .lcd-workspace-resizable {
   gap: 0;
 }
@@ -3453,6 +3461,122 @@ button:disabled {
   min-height: 380px;
   background: #0f172a;
 }
+
+.fsm-layout-template {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ide-text-secondary);
+  font-size: 11px;
+}
+
+.fsm-layout-template select {
+  min-width: 145px;
+}
+
+/* Presentation only: graph coordinates and hit targets remain in the 2D
+   ReactFlow plane, while the canvas gains depth cues for dense FSM review. */
+.fsm-canvas-3d {
+  perspective: 1500px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.25), transparent 48%),
+    #0b1220;
+}
+
+.fsm-canvas-3d .react-flow__renderer {
+  transform: rotateX(4deg) rotateZ(-0.35deg);
+  transform-origin: 50% 44%;
+}
+
+.fsm-canvas-3d .state-node {
+  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.38), 9px 9px 0 rgba(15, 23, 42, 0.78), 2px 0 0 rgba(148, 163, 184, 0.2);
+  transform-style: preserve-3d;
+  border-color: #93c5fd;
+}
+
+.fsm-canvas-3d .fsm-edge {
+  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.35));
+}
+
+.fsm-canvas-3d {
+  position: relative;
+  overflow: hidden;
+  background: #07101f;
+}
+
+.fsm-webgl-graph {
+  width: 100%;
+  height: 100%;
+  min-height: 440px;
+  cursor: grab;
+}
+
+.fsm-webgl-graph:active { cursor: grabbing; }
+.fsm-webgl-graph canvas { display: block; width: 100%; height: 100%; outline: none; }
+
+.fsm-webgl-depth-control {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 4;
+  display: grid;
+  gap: 4px;
+  min-width: 190px;
+  padding: 8px 10px;
+  border: 1px solid #496b8f;
+  border-radius: 8px;
+  background: rgba(10, 22, 40, 0.92);
+  color: #dbeafe;
+  font-size: 11px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+.fsm-webgl-depth-control input { width: 100%; }
+
+.fsm-context-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 210px;
+  display: grid;
+  padding: 5px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: #0f172a;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.48);
+}
+
+.fsm-context-menu button {
+  border: 0;
+  border-radius: 5px;
+  padding: 8px 10px;
+  background: transparent;
+  color: #e2e8f0;
+  text-align: left;
+  font-size: 12px;
+}
+
+.fsm-context-menu button:hover { background: #1e293b; }
+.fsm-context-menu button.danger { color: #fca5a5; }
+
+.fsm-workspace:fullscreen,
+.fsm-workspace.fsm-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  grid-template-columns: 1fr !important;
+  background: #0b1220;
+}
+
+.fsm-workspace:fullscreen > .workspace-sidebar,
+.fsm-workspace:fullscreen > .workspace-inspector,
+.fsm-workspace:fullscreen > .workspace-splitter,
+.fsm-workspace.fsm-fullscreen > .workspace-sidebar,
+.fsm-workspace.fsm-fullscreen > .workspace-inspector,
+.fsm-workspace.fsm-fullscreen > .workspace-splitter {
+  display: none;
+}
+
+.fsm-workspace:fullscreen .workspace-canvas-column,
+.fsm-workspace.fsm-fullscreen .workspace-canvas-column { min-width: 0; }
 
 .inspector-card,
 .reference-preview,
@@ -5262,11 +5386,16 @@ button:disabled {
   color: var(--ide-text-primary, #f3f4f6);
   font-size: 0.78rem;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.runtime-hw-btn[data-active="true"] {
+  border-color: #4f93ff;
+  background: linear-gradient(180deg, #315f9d, #263f63);
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.22), 0 0 10px rgba(59, 130, 246, 0.16);
 }
 .runtime-hw-btn:hover:not(:disabled) {
   background: var(--ide-accent, #2563eb);
@@ -5275,7 +5404,8 @@ button:disabled {
 }
 .runtime-hw-btn.disabled,
 .runtime-hw-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.42;
+  filter: saturate(0.25);
   cursor: not-allowed;
 }
 
@@ -5628,6 +5758,33 @@ button:disabled {
 }
 
 .hmi-handoff-inspector select {
+  width: 100%;
+}
+
+.hmi-handoff-inspector label {
+  display: grid;
+  gap: 5px;
+  color: var(--ide-text-secondary);
+  font-size: 12px;
+}
+
+.hmi-handoff-inspector input {
+  width: 100%;
+}
+
+.hmi-procedure-trace {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ide-text-secondary);
+  font-family: var(--ide-font-mono);
+  font-size: 11px;
+}
+
+.hmi-procedure-run {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   width: 100%;
 }
 

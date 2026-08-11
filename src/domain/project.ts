@@ -120,6 +120,8 @@ export interface FsmTransition {
   condition: string | null;
   source: string | null;
   backendProcessId: string | null;
+  /** Preferred text rendered on the FSM edge. */
+  labelMode?: 'button' | 'event' | 'auto';
 }
 
 export interface FsmModel {

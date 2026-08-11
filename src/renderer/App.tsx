@@ -43,6 +43,7 @@ import { exportScreenEmbedded, EMBEDDED_FORMAT_EXTENSIONS, type EmbeddedExportFo
 import type { HmiTag } from '../domain/tag';
 import type { BackendProcedure } from '../domain/procedure';
 import type { AlarmDefinition } from '../domain/alarm';
+import { computeElkLayout } from './core/elkLayout';
 import { GuidedTour } from '../features/guided-tour/GuidedTour';
 import { FIRST_HMI_TOUR } from '../features/guided-tour/tourScenarios';
 
@@ -589,6 +590,29 @@ async function runMutationAction(action: string, payload: unknown): Promise<unkn
     case 'updateControlElement':
       store.updateControlElement(body['elementId'] as string, body['updates'] as Partial<ControlPanelElement>);
       return { elementId: body['elementId'] };
+
+    case 'autoLayoutFsm': {
+      const project = store.project;
+      if (!project) throw new Error('No project loaded');
+      const positions = await computeElkLayout(
+        project.fsm.stateOrder.map((id) => ({
+          id,
+          type: 'stateNode',
+          position: project.fsm.graphLayout[id] ?? { x: 0, y: 0 },
+          data: {}
+        })),
+        project.fsm.transitionOrder.map((id) => {
+          const transition = project.fsm.transitions[id];
+          return { id, source: transition.from, target: transition.to };
+        }),
+        (id) => project.fsm.states[id]?.subsystem ?? 'user',
+        { direction: 'LR', nodeWidth: 220, nodeHeight: 72, paddingX: 80, paddingY: 60 }
+      );
+      const layout: Record<string, { x: number; y: number }> = {};
+      for (const [id, position] of positions) layout[id] = position;
+      store.updateGraphPositions(layout);
+      return { stateCount: Object.keys(layout).length };
+    }
 
     case 'upsertHmiTag':
       store.upsertHmiTag(body as unknown as HmiTag);

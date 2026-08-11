@@ -4,7 +4,7 @@ import { X, ChevronRight, HelpCircle } from 'lucide-react';
 import { UI_TEXT } from '../../renderer/config/i18n';
 import type { LanguageCode } from '../../renderer/types/domain';
 
-export type TutorialWorkspace = 'tags' | 'procedures' | 'fsm' | 'lcd' | 'control-panel' | 'preview' | 'alarms' | 'screen-dsl';
+export type TutorialWorkspace = 'tags' | 'procedures' | 'fsm' | 'lcd' | 'control-panel' | 'preview' | 'alarms' | 'screen-dsl' | 'text-registry' | 'hmi-handoff';
 
 interface TutorialStep {
   title: string;
@@ -62,6 +62,16 @@ const TUTORIAL_CONTENT: Record<LanguageCode, Record<TutorialWorkspace, TutorialS
       { title: 'Reading diagnostics and changes', body: 'The Diagnostics tab lists syntax/schema errors. The Changes tab shows exactly which objects will be added, updated or deleted — destructive deletions are marked and require confirmation before Apply.' },
       { title: '"Stale" warnings', body: 'If the project changes elsewhere (e.g. via Undo, or editing the same screen in the visual editor) while you have an unapplied draft, the session is marked stale. Re-run Preview before Apply to confirm your draft still matches the current project.' },
       { title: 'File workflow', body: '"Open DSL File" loads an external .json/.yaml file into the editor for review (it does not touch the project until you Apply). "Export Canonical" saves the current project state as a file, useful for sharing with other tools or engineers.' }
+    ],
+    'hmi-handoff': [
+      { title: 'HMI action binding', body: 'This workspace makes an LCD object traceable: select a text object, bind its live tag, select its CLI procedure and record the calculation algorithm ID.' },
+      { title: 'Safe execution', body: 'Connect and identify the instrument first. The Run procedure button then sends only the CLI steps shown in the trace and copies every reply to the terminal log.' },
+      { title: 'Dynamic fields', body: 'Choose a field such as absorbance or concentration to bind the selected text to its tag. A tag supplies the value; a procedure acquires it; an algorithm transforms it.' }
+    ],
+    'text-registry': [
+      { title: 'Text Registry', body: 'The registry indexes every LCD text object and its RU / EN / ZH versions. Edit a cell to change the original object on the corresponding screen.' },
+      { title: 'Shared inscriptions', body: 'Use Synchronize repeats to mark equal Russian inscriptions as global. Later corrections and translations are then propagated to every linked copy.' },
+      { title: 'Translation workflow', body: 'Export CSV, translate outside the IDE, then import CSV, JSON or XLSX. Rows are matched by Screen ID and Object ID; unmatched rows are ignored.' }
     ]
   },
   ru: {
@@ -114,6 +124,16 @@ const TUTORIAL_CONTENT: Record<LanguageCode, Record<TutorialWorkspace, TutorialS
       { title: 'Чтение диагностики и изменений', body: 'Вкладка Diagnostics показывает синтаксические/схемные ошибки. Вкладка Changes показывает, какие объекты будут добавлены, изменены или удалены — разрушающие удаления помечаются и требуют подтверждения перед Apply.' },
       { title: 'Предупреждения "Stale" (устарело)', body: 'Если проект изменился в другом месте (например, через Undo или редактирование того же экрана в визуальном редакторе) пока у вас есть неприменённый черновик, сессия помечается как устаревшая. Повторите Preview перед Apply, чтобы убедиться, что черновик соответствует текущему проекту.' },
       { title: 'Работа с файлами', body: '"Open DSL File" загружает внешний .json/.yaml файл в редактор для просмотра (проект не меняется, пока вы не нажмёте Apply). "Export Canonical" сохраняет текущее состояние проекта в файл — полезно для обмена с другими инструментами или инженерами.' }
+    ],
+    'hmi-handoff': [
+      { title: 'Связка действия HMI', body: 'Эта рабочая область делает объект LCD прослеживаемым: выберите текст, привяжите живой тег, назначьте CLI-процедуру и укажите ID расчётного алгоритма.' },
+      { title: 'Безопасное выполнение', body: 'Сначала подключите и определите прибор. Затем «Выполнить процедуру» отправит только шаги CLI, показанные в цепочке, и запишет каждый ответ в терминальный журнал.' },
+      { title: 'Динамические поля', body: 'Выберите, например, оптическую плотность или концентрацию, чтобы связать текст с тегом. Тег даёт значение; процедура получает его; алгоритм преобразует значение.' }
+    ],
+    'text-registry': [
+      { title: 'Реестр текстов', body: 'Реестр индексирует каждый текстовый объект LCD и его версии RU / EN / ZH. Изменение ячейки меняет исходный объект соответствующего экрана.' },
+      { title: 'Общие надписи', body: 'Нажмите «Синхронизировать повторы», чтобы одинаковые русские надписи стали глобальными. Последующие правки и переводы распространяются на все связанные копии.' },
+      { title: 'Процесс перевода', body: 'Экспортируйте CSV, переведите его вне IDE, затем импортируйте CSV, JSON или XLSX. Строки сопоставляются по Screen ID и Object ID; неизвестные строки пропускаются.' }
     ]
   },
   zh: {
@@ -166,6 +186,16 @@ const TUTORIAL_CONTENT: Record<LanguageCode, Record<TutorialWorkspace, TutorialS
       { title: '查看诊断和更改', body: 'Diagnostics 标签列出语法/模式错误。Changes 标签显示将添加、更新或删除的具体对象——破坏性删除会被标记，在 Apply 前需要确认。' },
       { title: '"Stale"（已过期）警告', body: '如果项目在其他地方发生更改（例如通过撤销，或在可视化编辑器中编辑同一屏幕）而您有未应用的草稿，该会话会被标记为已过期。请在 Apply 前重新运行 Preview，以确认草稿仍与当前项目匹配。' },
       { title: '文件工作流', body: '"Open DSL File" 将外部 .json/.yaml 文件加载到编辑器中供查看（在您点击 Apply 之前不会影响项目）。"Export Canonical" 将当前项目状态保存为文件，便于与其他工具或工程师共享。' }
+    ],
+    'hmi-handoff': [
+      { title: 'HMI 动作绑定', body: '此工作区使 LCD 对象可追溯：选择文本对象，绑定实时标签，选择其 CLI 流程并记录计算算法 ID。' },
+      { title: '安全执行', body: '先连接并识别仪器。之后“执行流程”仅发送链中显示的 CLI 步骤，并将每个响应写入终端日志。' },
+      { title: '动态字段', body: '选择吸光度或浓度等字段，将所选文本绑定到标签。标签提供值；流程获取它；算法进行转换。' }
+    ],
+    'text-registry': [
+      { title: '文本注册表', body: '注册表索引每个 LCD 文本对象及其 RU / EN / ZH 版本。编辑单元格会修改相应屏幕上的原始对象。' },
+      { title: '全局文本', body: '使用“同步重复项”将相同的俄语文本标记为全局文本。后续修正和翻译将传播到所有关联副本。' },
+      { title: '翻译流程', body: '导出 CSV，在 IDE 外翻译，然后导入 CSV、JSON 或 XLSX。通过 Screen ID 和 Object ID 匹配行；未知行将被忽略。' }
     ]
   }
 };
