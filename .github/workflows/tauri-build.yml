@@ -70,7 +70,18 @@ jobs:
         run: npm ci --prefix apps/tauri
 
       - name: Build Tauri application
-        run: npm run tauri:build -- --bundles ${{ matrix.bundles }}
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if npm run tauri:build -- --bundles ${{ matrix.bundles }}; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Tauri packaging attempt $attempt failed; retrying in 20 seconds…"
+            sleep 20
+          done
 
       - uses: actions/upload-artifact@v4
         with:

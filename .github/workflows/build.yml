@@ -50,7 +50,20 @@ jobs:
       - run: npm ci
 
       - name: Сборка
-        run: ${{ matrix.command }}
+        shell: bash
+        run: |
+          # Electron archives are fetched from the upstream CDN during packaging.
+          # Retry transient network resets without hiding persistent build errors.
+          for attempt in 1 2 3; do
+            if ${{ matrix.command }}; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Packaging attempt $attempt failed; retrying in 20 seconds…"
+            sleep 20
+          done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
