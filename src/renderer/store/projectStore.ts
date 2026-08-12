@@ -22,6 +22,8 @@ import {
   type ControlPanelElement,
   type BackendProcess,
   type FsmEvent,
+  type FsmLayer,
+  type FsmLayerVisibilityPreset,
   type FsmState,
   type FsmTransition,
   type LcdBitmapProject,
@@ -80,6 +82,8 @@ interface ProjectStoreState {
   updateDisplayConfig: (display: DisplayConfig) => void;
   addFsmState: () => void;
   updateFsmState: (stateId: string, updates: Partial<FsmState>) => void;
+  updateFsmStates: (updates: Record<string, Partial<FsmState>>) => void;
+  updateFsmLayers: (layers: Record<string, FsmLayer>, layerOrder: string[], visibilityPresets: Record<string, FsmLayerVisibilityPreset>) => void;
   deleteFsmState: (stateId: string) => void;
   addFsmTransition: (from: string, to: string, eventId?: string, handles?: { sourceHandle?: string | null; targetHandle?: string | null }) => void;
   updateFsmTransition: (transitionId: string, updates: Partial<FsmTransition>) => void;
@@ -104,6 +108,7 @@ interface ProjectStoreState {
   createScreenFromTemplate: (templateId: string) => void;
   addControlElement: (type: ControlPanelElement['type']) => void;
   updateControlElement: (elementId: string, updates: Partial<ControlPanelElement>, options?: { history?: boolean }) => void;
+  updateControlElements: (updates: Record<string, Partial<ControlPanelElement>>, options?: { history?: boolean }) => void;
   deleteControlElements: (elementIds: string[]) => void;
   groupControlElements: (elementIds: string[]) => void;
   ungroupControlElements: (elementIds: string[]) => void;
@@ -175,7 +180,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       project: session.project,
       revision: 0,
       language,
-      selectedStateId: project.fsm.stateOrder[0] ?? null,
+      // Prefer a state that actually has an LCD screen.  The FSM inspector can
+      // therefore open its linked layout immediately after project creation,
+      // without asking React Flow to synthesize a selection during rendering.
+      selectedStateId: project.fsm.stateOrder.find((id) => Boolean(project.fsm.states[id]?.screenId))
+        ?? project.fsm.stateOrder.find((id) => project.fsm.states[id]?.initial)
+        ?? project.fsm.stateOrder[0]
+        ?? null,
       selectedScreenId: project.screenOrder[0] ?? null,
       selectedTransitionId: null,
       selectedControlElementIds: [],
@@ -189,7 +200,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       pendingHistoryCapture: false
     });
   },
-  selectState: (selectedStateId) => set({ selectedStateId, selectedTransitionId: null }),
+  selectState: (selectedStateId) => set((state) => (
+    state.selectedStateId === selectedStateId && state.selectedTransitionId === null
+      ? state
+      : { selectedStateId, selectedTransitionId: null }
+  )),
   selectScreen: (selectedScreenId) => set({ selectedScreenId }),
   selectTransition: (selectedTransitionId) => set({ selectedTransitionId }),
   selectControlElements: (selectedControlElementIds) => set({ selectedControlElementIds }),
@@ -232,6 +247,16 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     type: 'fsm.state.update',
     meta: createCommandMeta(state, 'fsm.state.update'),
     payload: { stateId, updates }
+  })),
+  updateFsmStates: (updates) => commitProjectCommand(set, get, (state) => ({
+    type: 'fsm.states.update',
+    meta: createCommandMeta(state, 'fsm.states.update'),
+    payload: { updates }
+  })),
+  updateFsmLayers: (layers, layerOrder, visibilityPresets) => commitProjectCommand(set, get, (state) => ({
+    type: 'fsm.layers.update',
+    meta: createCommandMeta(state, 'fsm.layers.update'),
+    payload: { layers, layerOrder, visibilityPresets }
   })),
   deleteFsmState: (stateId) => commitProjectCommand(set, get, (state) => ({
     type: 'fsm.state.delete',
@@ -453,6 +478,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       type: 'controlPanel.element.update',
       meta: createCommandMeta(state, 'controlPanel.element.update'),
       payload: { elementId, updates }
+    }), {}, { recordHistory: options?.history !== false });
+  },
+  updateControlElements: (updates, options) => {
+    commitProjectCommand(set, get, (state) => ({
+      type: 'controlPanel.elements.update',
+      meta: createCommandMeta(state, 'controlPanel.elements.update'),
+      payload: { updates }
     }), {}, { recordHistory: options?.history !== false });
   },
   deleteControlElements: (elementIds) => commitProjectCommand(set, get, (state) => ({

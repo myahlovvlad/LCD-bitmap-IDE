@@ -13,6 +13,7 @@ interface FsmWebGlGraphProps {
   positions: Record<string, GraphPosition>;
   selectedStateId: string | null;
   onSelectState: (id: string) => void;
+  ariaLabel?: string;
 }
 
 const SCALE = 0.012;
@@ -24,8 +25,18 @@ const DEPTH_SCALE = 0.045;
  * coordinates; Z is persisted alongside them and controls depth in metres of
  * the virtual presentation space.  Selection remains routed through Zustand.
  */
-export function FsmWebGlGraph({ states, stateIds, transitions, positions, selectedStateId, onSelectState }: FsmWebGlGraphProps): React.ReactElement {
+export function FsmWebGlGraph({ states, stateIds, transitions, positions, selectedStateId, onSelectState, ariaLabel }: FsmWebGlGraphProps): React.ReactElement {
   const hostRef = useRef<HTMLDivElement>(null);
+  const meshesRef = useRef(new Map<string, THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>>());
+  const requestRenderRef = useRef<() => void>(() => undefined);
+
+  useEffect(() => {
+    meshesRef.current.forEach((mesh, id) => {
+      mesh.material.emissive.set(id === selectedStateId ? '#1d4ed8' : '#000000');
+      mesh.material.emissiveIntensity = id === selectedStateId ? 0.7 : 0;
+    });
+    requestRenderRef.current();
+  }, [selectedStateId]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -41,8 +52,9 @@ export function FsmWebGlGraph({ states, stateIds, transitions, positions, select
     host.replaceChildren(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
+    // Continuous 60 FPS rendering is wasteful for a review-only graph.  Render
+    // only after a navigation, resize, or selection update instead.
+    controls.enableDamping = false;
     controls.enablePan = true;
     controls.minDistance = 12;
     controls.maxDistance = 900;
@@ -69,7 +81,7 @@ export function FsmWebGlGraph({ states, stateIds, transitions, positions, select
       bounds.expandByPoint(point);
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(2.55, 0.84, 0.42),
-        new THREE.MeshStandardMaterial({ color: getSubsystemColor(state.subsystem), roughness: 0.38, metalness: 0.24, emissive: id === selectedStateId ? '#1d4ed8' : '#000000', emissiveIntensity: id === selectedStateId ? 0.7 : 0 })
+        new THREE.MeshStandardMaterial({ color: getSubsystemColor(state.subsystem), roughness: 0.38, metalness: 0.24, emissive: '#000000', emissiveIntensity: 0 })
       );
       mesh.position.copy(point);
       mesh.userData.stateId = id;
@@ -124,18 +136,34 @@ export function FsmWebGlGraph({ states, stateIds, transitions, positions, select
     observer.observe(host);
     resize();
     let frame = 0;
-    const render = (): void => { frame = requestAnimationFrame(render); controls.update(); renderer.render(scene, camera); };
-    render();
+    const requestRender = (): void => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        renderer.render(scene, camera);
+      });
+    };
+    requestRenderRef.current = requestRender;
+    controls.addEventListener('change', requestRender);
+    meshesRef.current = byId;
+    byId.forEach((mesh, id) => {
+      mesh.material.emissive.set(id === selectedStateId ? '#1d4ed8' : '#000000');
+      mesh.material.emissiveIntensity = id === selectedStateId ? 0.7 : 0;
+    });
+    requestRender();
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
       renderer.domElement.removeEventListener('click', onClick);
+      controls.removeEventListener('change', requestRender);
       controls.dispose();
+      meshesRef.current = new Map();
+      requestRenderRef.current = () => undefined;
       byId.forEach((mesh) => { mesh.geometry.dispose(); mesh.material.dispose(); });
       edgeMaterial.dispose();
       renderer.dispose();
     };
-  }, [positions, selectedStateId, stateIds, states, transitions, onSelectState]);
+  }, [positions, stateIds, states, transitions, onSelectState]);
 
-  return <div ref={hostRef} className="fsm-webgl-graph" role="application" aria-label="Интерактивный трёхмерный граф FSM: колёсико меняет масштаб, мышь вращает и перемещает обзор." />;
+  return <div ref={hostRef} className="fsm-webgl-graph" role="application" aria-label={ariaLabel} />;
 }

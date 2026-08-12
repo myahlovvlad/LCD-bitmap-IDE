@@ -40,7 +40,6 @@ ipcMain.handle('manual-export-pdf', async (_event, html: string, filename: strin
       printBackground: true,
       pageSize: 'A4',
       margins: {
-        marginType: 'custom',
         top: 0.45,
         bottom: 0.45,
         left: 0.45,

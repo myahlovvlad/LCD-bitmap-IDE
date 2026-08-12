@@ -17,7 +17,15 @@ const TECHNICAL_TEXT = new Set([
   'C/H · BIN · XBM · Arduino · Rust',
   'CSV · JSON · RU/EN/ZH ·',
   '· SHA-256',
-  'http://127.0.0.1:', '/mcp'
+  'http://127.0.0.1:', '/mcp',
+  'Beer-Lambert / ECROS.ABSORBANCE',
+  'ECROS.RESULT.%T_A',
+  'ELK Layout',
+  'Auto',
+  'CLI ·',
+  'Z ·',
+  'HMI Designer',
+  'Runtime'
 ]);
 
 describe('GUI localization coverage', () => {

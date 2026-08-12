@@ -34,6 +34,12 @@ export interface RuntimeEngine {
   getCurrentScreen(): LcdScreen | null;
   getAvailableButtons(): ControlPanelButton[];
   isButtonAllowed(button: ControlPanelButton): boolean;
+  getButtonBlockReason(button: ControlPanelButton): string | null;
+}
+
+export interface ProjectRuntimeEngineOptions {
+  /** Dynamic instrument values used while evaluating FSM guards. */
+  getGuardValues?: () => Readonly<Record<string, string | number | boolean | null>>;
 }
 
 export class ProjectRuntimeEngine implements RuntimeEngine {
@@ -44,7 +50,10 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
   private stepMode = false;
   private activeButtonId: string | null = null;
 
-  constructor(private readonly project: LcdBitmapProject) {}
+  constructor(
+    private readonly project: LcdBitmapProject,
+    private readonly options: ProjectRuntimeEngineOptions = {}
+  ) {}
 
   start(initialStateId?: string): void {
     const initial = initialStateId
@@ -91,8 +100,9 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
       return;
     }
     this.log('info', 'button', `Button "${element.label || element.id}" pressed.`);
-    if (!this.isButtonAllowed(element)) {
-      this.log('warning', 'error', `Button "${element.id}" is disabled in state "${this.currentStateId ?? 'none'}".`);
+    const blockReason = this.getButtonBlockReason(element);
+    if (blockReason) {
+      this.log('warning', 'error', blockReason);
       return;
     }
     if (!element.fsmEventId) {
@@ -125,13 +135,30 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
   }
 
   isButtonAllowed(button: ControlPanelButton): boolean {
+    return this.getButtonBlockReason(button) === null;
+  }
+
+  getButtonBlockReason(button: ControlPanelButton): string | null {
     if (!this.currentStateId) {
-      return false;
+      return 'Button is unavailable: the runtime has no active state.';
     }
     if (button.disabledStates?.includes(this.currentStateId)) {
-      return false;
+      return `Button "${button.id}" is disabled in state "${this.currentStateId}".`;
     }
-    return !button.allowedStates?.length || button.allowedStates.includes(this.currentStateId);
+    if (!button.fsmEventId) return `Button "${button.id}" has no FSM event binding.`;
+    // A control is enabled only when this state has an executable transition
+    // for its event. Empty allowedStates must never mean "enabled everywhere".
+    const hasProgrammedTransition = this.project.fsm.transitionOrder.some((id) => {
+      const transition = this.project.fsm.transitions[id];
+      return transition?.from === this.currentStateId && transition.trigger.eventId === button.fsmEventId;
+    });
+    if (!hasProgrammedTransition) {
+      return `Button "${button.id}" has no programmed transition from state "${this.currentStateId}".`;
+    }
+    if (button.allowedStates?.length && !button.allowedStates.includes(this.currentStateId)) {
+      return `Button "${button.id}" is not enabled for state "${this.currentStateId}".`;
+    }
+    return null;
   }
 
   private executeEvent(eventId: string): void {
@@ -139,15 +166,12 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
       this.log('error', 'error', 'Runtime has no active state.', { eventId });
       return;
     }
-    const candidates = this.project.fsm.transitionOrder
-      .map((id) => this.project.fsm.transitions[id])
-      .filter((candidate): candidate is FsmTransition =>
-        Boolean(candidate) &&
-        candidate.from === this.currentStateId &&
-        candidate.trigger.eventId === eventId &&
-        this.isMechanismSatisfied(candidate)
-      );
-    const transition = candidates.find((candidate) => this.isConditionSatisfied(candidate, eventId));
+    // Fault transitions always pre-empt a manual or automatic request.  This
+    // is intentionally evaluated only against routes declared for the active
+    // state: a global event does not invent an unsafe target state when the
+    // project has no matching route for that state.
+    const faultTransition = eventId === 'SYS.ERR' ? null : this.findTransition('SYS.ERR');
+    const transition = faultTransition ?? this.findTransition(eventId);
     if (!transition) {
       this.log('warning', 'error', `No transition from "${this.currentStateId}" for event "${eventId}".`, { eventId });
       return;
@@ -163,7 +187,7 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
     this.currentStateId = transition.to;
     this.lastTransition = transition;
     this.log('info', 'transition', `Transition "${transition.id}": ${previousStateId} -> ${transition.to}.`, {
-      eventId,
+      eventId: transition.trigger.eventId,
       transitionId: transition.id,
       stateId: transition.to
     });
@@ -198,7 +222,12 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
   private isMechanismSatisfied(transition: FsmTransition): boolean {
     const mechanism = transition.trigger.mechanism ?? 'event';
     if (mechanism === 'button') {
-      return !transition.trigger.buttonId || transition.trigger.buttonId === this.activeButtonId;
+      if (!transition.trigger.buttonId || transition.trigger.buttonId === this.activeButtonId) return true;
+      // Imported FSMs often retain an older panel element id while the event
+      // binding is still correct. A real virtual-key press must therefore be
+      // accepted when its fsmEventId matches the transition event.
+      const active = this.activeButtonId ? this.project.controlPanel.elements[this.activeButtonId] : null;
+      return active?.type === 'button' && active.fsmEventId === transition.trigger.eventId;
     }
     return true;
   }
@@ -212,7 +241,8 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
       button_id: this.activeButtonId ?? '',
       status: 'READY',
       value: 1,
-      timeout_ms: transition.trigger.timerMs ?? 0
+      timeout_ms: transition.trigger.timerMs ?? 0,
+      values: this.options.getGuardValues?.()
     });
     if (result.behavior.kind === 'invalid') {
       this.log('warning', 'condition', `Invalid typed guard on transition "${transition.id}".`, {
@@ -221,6 +251,18 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
       });
     }
     return result.matched;
+  }
+
+  private findTransition(eventId: string): FsmTransition | null {
+    const candidates = this.project.fsm.transitionOrder
+      .map((id) => this.project.fsm.transitions[id])
+      .filter((candidate): candidate is FsmTransition =>
+        Boolean(candidate) &&
+        candidate.from === this.currentStateId &&
+        candidate.trigger.eventId === eventId &&
+        this.isMechanismSatisfied(candidate)
+      );
+    return candidates.find((candidate) => this.isConditionSatisfied(candidate, eventId)) ?? null;
   }
 
   private log(
@@ -243,6 +285,6 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
   }
 }
 
-export function createRuntimeEngine(project: LcdBitmapProject): ProjectRuntimeEngine {
-  return new ProjectRuntimeEngine(project);
+export function createRuntimeEngine(project: LcdBitmapProject, options?: ProjectRuntimeEngineOptions): ProjectRuntimeEngine {
+  return new ProjectRuntimeEngine(project, options);
 }

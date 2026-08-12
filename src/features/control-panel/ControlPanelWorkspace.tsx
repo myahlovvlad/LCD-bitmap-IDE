@@ -55,6 +55,7 @@ interface InteractionState {
   originY: number;
   originWidth: number;
   originHeight: number;
+  elementOrigins?: Record<string, { x: number; y: number }>;
 }
 
 export function ControlPanelWorkspace({ requestedElementId }: { requestedElementId?: string }): React.ReactElement {
@@ -65,6 +66,7 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
     selectControlElements,
     addControlElement,
     updateControlElement,
+    updateControlElements,
     deleteControlElements,
     groupControlElements,
     ungroupControlElements,
@@ -110,11 +112,14 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
     }
     event.currentTarget.setPointerCapture(event.pointerId);
     captureHistory();
-    if (event.shiftKey) {
-      selectControlElements(Array.from(new Set([...selectedControlElementIds, element.id])));
-    } else if (!selectedControlElementIds.includes(element.id)) {
-      selectControlElements([element.id]);
-    }
+    const elementIds = event.shiftKey
+      ? Array.from(new Set([...selectedControlElementIds, element.id]))
+      : selectedControlElementIds.includes(element.id) ? selectedControlElementIds : [element.id];
+    selectControlElements(elementIds);
+    const elementOrigins = Object.fromEntries(elementIds
+      .map((id) => panel.elements[id])
+      .filter((item): item is ControlPanelElement => Boolean(item) && !item.locked)
+      .map((item) => [item.id, { x: item.x, y: item.y }]));
     setInteraction({
       mode: 'move',
       elementId: element.id,
@@ -123,7 +128,8 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
       originX: element.x,
       originY: element.y,
       originWidth: element.width,
-      originHeight: element.height
+      originHeight: element.height,
+      elementOrigins
     });
   };
 
@@ -161,10 +167,11 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
       }, { history: false });
       return;
     }
-    updateControlElement(interaction.elementId, {
-      x: snap(interaction.originX + dx, grid),
-      y: snap(interaction.originY + dy, grid)
-    }, { history: false });
+    const origins = interaction.elementOrigins ?? { [interaction.elementId]: { x: interaction.originX, y: interaction.originY } };
+    updateControlElements(Object.fromEntries(Object.entries(origins).map(([id, origin]) => [id, {
+      x: snap(origin.x + dx, grid),
+      y: snap(origin.y + dy, grid)
+    }])), { history: false });
   };
 
   return (

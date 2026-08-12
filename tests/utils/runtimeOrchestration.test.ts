@@ -139,6 +139,24 @@ describe('executeProcedure', () => {
     expect(sendSpy).toHaveBeenCalledWith('connect');
   });
 
+  it('appends configured CLI function arguments in order', async () => {
+    const transport = createInstantSimulation();
+    const sendSpy = vi.spyOn(transport, 'sendCommand');
+    const procedure: BackendProcedure = {
+      id: 'PROC-CLI-ARGS',
+      name: { ru: 'Аргументы', en: 'Arguments', zh: '参数' },
+      services: [],
+      steps: [{ type: 'cli', cliCommandId: 'set-channel', cliArgs: ['2', '--gain', '4'] }]
+    };
+
+    const result = await executeProcedure(procedure, makeCtx({ transport, cliCatalog: {
+      'set-channel': { id: 'set-channel', command: 'set-channel' }
+    } }));
+
+    expect(result.outcome).toBe('success');
+    expect(sendSpy).toHaveBeenCalledWith('set-channel 2 --gain 4');
+  });
+
   it('returns failure when a cli step command fails', async () => {
     const transport = createInstantSimulation({}, ['connect']);
     const procedure: BackendProcedure = {
@@ -325,6 +343,34 @@ describe('OrchestratedRuntimeEngine', () => {
     engine.sendEvent('START');
 
     expect(engine.currentStateId).toBe('measure');
+  });
+
+  it('evaluates dotted instrument tags and gives SYS.ERR priority over a manual input', () => {
+    const project = migrateLegacySnapshot(createDemoProject()).project;
+    const manual = project.fsm.transitions['tr-main-measure'];
+    const startEvent = project.fsm.events.START;
+    if (!manual || !startEvent) throw new Error('Demo navigation route is missing');
+
+    project.fsm.events['SYS.ERR'] = { ...startEvent, id: 'SYS.ERR', name: 'System fault', scope: 'global' };
+    project.fsm.transitions['tr-main-fault'] = {
+      ...manual,
+      id: 'tr-main-fault',
+      to: 'error',
+      trigger: { ...manual.trigger, eventId: 'SYS.ERR', mechanism: 'fact', fact: 'device.error == true' },
+      condition: 'alarm.main == true'
+    };
+    project.fsm.transitionOrder = ['tr-main-fault', ...project.fsm.transitionOrder];
+
+    const engine = createOrchestratedEngine(project, createInstantSimulation(), { bypassProcedures: true });
+    engine.start('main-menu');
+    engine.tags.set('device.error', true);
+    engine.tags.set('alarm.main', true);
+
+    engine.sendEvent('START');
+
+    expect(engine.currentStateId).toBe('error');
+    expect(engine.lastTransition?.id).toBe('tr-main-fault');
+    expect(engine.lastTransition?.trigger.eventId).toBe('SYS.ERR');
   });
 
   it('reset clears procedure status', async () => {

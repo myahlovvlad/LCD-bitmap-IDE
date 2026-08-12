@@ -1184,7 +1184,7 @@ function ObjectProperties({
                 />
               </label>
               <label>
-                CLI-процедура действия
+                {labels.cliActionProcedure}
                 <select
                   value={firstSelected.bindings?.procedureId ?? ''}
                   onChange={(event) => {
@@ -1194,12 +1194,12 @@ function ObjectProperties({
                     onUpdateSelected({ bindings: Object.keys(next).length > 0 ? next : undefined });
                   }}
                 >
-                  <option value="">Нет прямого действия</option>
+                  <option value="">{labels.noDirectAction}</option>
                   {procedures.map((procedure) => <option key={procedure.id} value={procedure.id}>{procedure.name.ru || procedure.name.en}</option>)}
                 </select>
               </label>
               <label>
-                Расчётный алгоритм / ID
+                {labels.calculationAlgorithmId}
                 <input
                   value={firstSelected.bindings?.algorithmId ?? ''}
                   placeholder="Beer-Lambert / ECROS.ABSORBANCE"

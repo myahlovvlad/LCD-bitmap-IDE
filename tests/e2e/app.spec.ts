@@ -34,6 +34,27 @@ test('opens the linked screen from the FSM workspace', async ({ page }) => {
   await expect(page.locator('.lcd-editor-frame .lcd-canvas').first()).toBeVisible();
 });
 
+test('keeps the viewport zoom after moving an FSM state node', async ({ page }) => {
+  const viewport = page.locator('.fsm-canvas .react-flow__viewport');
+  const node = page.locator('.fsm-canvas .react-flow__node').filter({ has: page.locator('.state-node') }).first();
+  await expect(node).toBeVisible();
+  await page.waitForTimeout(350); // allow initial fitView, if any
+  const scaleOf = async (): Promise<number> => {
+    const transform = await viewport.getAttribute('style') ?? '';
+    const match = transform.match(/scale\(([^)]+)\)/);
+    return Number(match?.[1] ?? NaN);
+  };
+  const before = await scaleOf();
+  const box = await node.boundingBox();
+  if (!box) throw new Error('FSM state node has no bounding box.');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 42, box.y + box.height / 2 + 18);
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  expect(await scaleOf()).toBeCloseTo(before, 6);
+});
+
 test('keeps the LCD preview to the right of a scrollable Canvas inspector', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();

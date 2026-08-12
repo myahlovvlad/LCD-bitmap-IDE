@@ -64,6 +64,7 @@ interface ProjectStateCache {
 let cache: ProjectStateCache = { project: null, runtimeState: null, updatedAt: new Date().toISOString() };
 let mainWindow: BrowserWindow | null = null;
 let httpServer: Server | null = null;
+let apiIpcHandlersRegistered = false;
 
 // Pending renderer mutations: requestId → { resolve, reject, timer }
 const pendingMutations = new Map<string, {
@@ -75,30 +76,46 @@ const pendingMutations = new Map<string, {
 export function setMainWindow(win: BrowserWindow): void { mainWindow = win; }
 
 export function startApiServer(ipcMain: IpcMain): Server {
-  ipcMain.on('api:project-state', (_e, state: { project: unknown }) => {
-    cache = { ...cache, project: state.project, updatedAt: new Date().toISOString() };
-  });
-  ipcMain.on('api:runtime-state', (_e, runtimeState: ProjectStateCache['runtimeState']) => {
-    cache = { ...cache, runtimeState, updatedAt: new Date().toISOString() };
-  });
-  // Renderer replies to mutation requests
-  ipcMain.on('api:mutate-res', (_e, { requestId, result, error }: { requestId: string; result?: unknown; error?: string }) => {
-    const pending = pendingMutations.get(requestId);
-    if (!pending) return;
-    clearTimeout(pending.timer);
-    pendingMutations.delete(requestId);
-    if (error) pending.reject(new Error(error));
-    else pending.resolve(result);
-  });
+  if (httpServer) return httpServer;
+  if (!apiIpcHandlersRegistered) {
+    apiIpcHandlersRegistered = true;
+    ipcMain.on('api:project-state', (_e, state: { project: unknown }) => {
+      cache = { ...cache, project: state.project, updatedAt: new Date().toISOString() };
+    });
+    ipcMain.on('api:runtime-state', (_e, runtimeState: ProjectStateCache['runtimeState']) => {
+      cache = { ...cache, runtimeState, updatedAt: new Date().toISOString() };
+    });
+    // Renderer replies to mutation requests
+    ipcMain.on('api:mutate-res', (_e, { requestId, result, error }: { requestId: string; result?: unknown; error?: string }) => {
+      const pending = pendingMutations.get(requestId);
+      if (!pending) return;
+      clearTimeout(pending.timer);
+      pendingMutations.delete(requestId);
+      if (error) pending.reject(new Error(error));
+      else pending.resolve(result);
+    });
+  }
 
-  httpServer = createServer(handleRequest);
-  httpServer.listen(API_PORT, '127.0.0.1', () => {
+  const server = createServer(handleRequest);
+  server.once('error', (error: NodeJS.ErrnoException) => {
+    // Another IDE instance may already expose the optional local API.  The UI
+    // must remain usable; port ownership is not a reason to terminate Electron.
+    console.warn(`[api] disabled: ${error.code ?? error.message}`);
+    if (httpServer === server) httpServer = null;
+  });
+  httpServer = server;
+  server.listen(API_PORT, '127.0.0.1', () => {
     console.log(`[api] REST API on http://127.0.0.1:${API_PORT}`);
   });
-  return httpServer;
+  return server;
 }
 
-export function stopApiServer(): void { httpServer?.close(); httpServer = null; }
+export function stopApiServer(): void {
+  httpServer?.close();
+  httpServer = null;
+  for (const pending of pendingMutations.values()) clearTimeout(pending.timer);
+  pendingMutations.clear();
+}
 
 /** Send a mutation request to the renderer and await the response (5s timeout). */
 async function mutate(action: string, payload: unknown): Promise<unknown> {

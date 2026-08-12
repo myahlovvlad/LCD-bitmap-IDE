@@ -1,0 +1,4229 @@
+[
+  {
+    "oldStateId": "SYS-DIAGNOSTIC",
+    "newStateId": "DIAG_FILTER_PROC",
+    "screenIdOld": "SYS-DIAGNOSTIC",
+    "screenIdNew": "DIAG_FILTER_PROC",
+    "title": "1-1-1 Diagnostic-filter-process",
+    "svgNodeId": "DIAG_FILTER",
+    "subsystem": "diagnostic",
+    "confidence": "high",
+    "evidence": [
+      "origin:official-pdf",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "PHOT-MAIN-A",
+    "newStateId": "PHOT_A_MAIN_PREZERO",
+    "screenIdOld": "PHOT-MAIN-A",
+    "screenIdNew": "PHOT_A_MAIN_PREZERO",
+    "title": "3-1-1 Photometry-A-Main-before zero",
+    "svgNodeId": "P_MAIN",
+    "subsystem": "photometry",
+    "confidence": "high",
+    "evidence": [
+      "origin:derived-normalization",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "PHOT-SIGNAL",
+    "newStateId": "QUANT_CRV_MAIN",
+    "screenIdOld": "PHOT-SIGNAL",
+    "screenIdNew": "QUANT_CRV_MAIN",
+    "title": "4-1 Quantitative-submode-curves",
+    "svgNodeId": "Q_MENU",
+    "subsystem": "quantitative",
+    "confidence": "medium",
+    "evidence": [
+      "origin:official-pdf",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "SET-MAIN",
+    "newStateId": "SET_DARK_MAIN",
+    "screenIdOld": "SET-MAIN",
+    "screenIdNew": "SET_DARK_MAIN",
+    "title": "7-1-1 Settings-Dark_current",
+    "svgNodeId": "S_MENU",
+    "subsystem": "settings",
+    "confidence": "high",
+    "evidence": [
+      "origin:official-pdf",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "SHARED-PRINTER-CONNECTED",
+    "newStateId": "SHARED_PRNT_CONN",
+    "screenIdOld": "SHARED-PRINTER-CONNECTED",
+    "screenIdNew": "SHARED_PRNT_CONN",
+    "title": "Printer connected",
+    "svgNodeId": null,
+    "subsystem": "shared",
+    "confidence": "high",
+    "evidence": [
+      "origin:derived-normalization",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "SHARED-PRINTER-DISCONNECTED",
+    "newStateId": "SHARED_PRNT_DISC",
+    "screenIdOld": "SHARED-PRINTER-DISCONNECTED",
+    "screenIdNew": "SHARED_PRNT_DISC",
+    "title": "Printer disconnected",
+    "svgNodeId": null,
+    "subsystem": "shared",
+    "confidence": "high",
+    "evidence": [
+      "origin:derived-normalization",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "SHARED-PC-CONNECTED",
+    "newStateId": "SHARED_PC_CONN",
+    "screenIdOld": "SHARED-PC-CONNECTED",
+    "screenIdNew": "SHARED_PC_CONN",
+    "title": "PC connected",
+    "svgNodeId": null,
+    "subsystem": "shared",
+    "confidence": "high",
+    "evidence": [
+      "origin:derived-normalization",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "SHARED-USB-NOT-DETECTED",
+    "newStateId": "SHARED_USB_NO_DET",
+    "screenIdOld": "SHARED-USB-NOT-DETECTED",
+    "screenIdNew": "SHARED_USB_NO_DET",
+    "title": "USB-storage connected",
+    "svgNodeId": null,
+    "subsystem": "files",
+    "confidence": "high",
+    "evidence": [
+      "origin:derived-normalization",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "SHARED-PRINTER-NOT-DETECTED",
+    "newStateId": "SHARED_PRNT_NO_DET",
+    "screenIdOld": "SHARED-PRINTER-NOT-DETECTED",
+    "screenIdNew": "SHARED_PRNT_NO_DET",
+    "title": "Printer not connected",
+    "svgNodeId": null,
+    "subsystem": "shared",
+    "confidence": "high",
+    "evidence": [
+      "origin:derived-normalization",
+      "manual-mapping"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-filter-process-copy",
+    "newStateId": "DIAG_FILTER_OK",
+    "screenIdOld": "diagnostic-filter-process-copy",
+    "screenIdNew": "DIAG_FILTER_OK",
+    "title": "1-1-2 Diagnostic-filter-success",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-filter-success-copy",
+    "newStateId": "DIAG_FILTER_FAIL",
+    "screenIdOld": "diagnostic-filter-success-copy",
+    "screenIdNew": "DIAG_FILTER_FAIL",
+    "title": "1-1-3 Diagnostic-filter-fail",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-filter-fail-copy",
+    "newStateId": "DIAG_LAMP_PROC",
+    "screenIdOld": "diagnostic-filter-fail-copy",
+    "screenIdNew": "DIAG_LAMP_PROC",
+    "title": "1-2-1 Diagnostic-lamps-process",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-lamp-process-copy",
+    "newStateId": "DIAG_LAMP_OK",
+    "screenIdOld": "diagnostic-lamp-process-copy",
+    "screenIdNew": "DIAG_LAMP_OK",
+    "title": "1-2-2 Diagnostic-lamps-success",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-lamp-success-copy",
+    "newStateId": "DIAG_LAMP_FAIL",
+    "screenIdOld": "diagnostic-lamp-success-copy",
+    "screenIdNew": "DIAG_LAMP_FAIL",
+    "title": "1-2-3 Diagnostic-lamps-fail",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-lamp-fail-copy",
+    "newStateId": "DIAG_DET_PROC",
+    "screenIdOld": "diagnostic-lamp-fail-copy",
+    "screenIdNew": "DIAG_DET_PROC",
+    "title": "1-3-1 Diagnostic-detector-process",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-lamp-fail-copy-copy",
+    "newStateId": "DIAG_DET_FAIL",
+    "screenIdOld": "diagnostic-lamp-fail-copy-copy",
+    "screenIdNew": "DIAG_DET_FAIL",
+    "title": "1-3-3 Diagnostic-detector-fail",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-detector-process-copy",
+    "newStateId": "DIAG_DET_OK",
+    "screenIdOld": "diagnostic-detector-process-copy",
+    "screenIdNew": "DIAG_DET_OK",
+    "title": "1-3-2 Diagnostic-detector-success",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-detector-fail-copy",
+    "newStateId": "DIAG_W_LAMP_PROC",
+    "screenIdOld": "diagnostic-detector-fail-copy",
+    "screenIdNew": "DIAG_W_LAMP_PROC",
+    "title": "1-4-1 Diagnostic-W-lamp-process",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-w-lamp-process-copy",
+    "newStateId": "DIAG_W_LAMP_OK",
+    "screenIdOld": "diagnostic-w-lamp-process-copy",
+    "screenIdNew": "DIAG_W_LAMP_OK",
+    "title": "1-4-2 Diagnostic-W-lamp-success",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-w-lamp-process-copy-copy",
+    "newStateId": "DIAG_W_LAMP_FAIL",
+    "screenIdOld": "diagnostic-w-lamp-process-copy-copy",
+    "screenIdNew": "DIAG_W_LAMP_FAIL",
+    "title": "1-4-3 Diagnostic-W-lamp-fail",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-w-lamp-fail-copy",
+    "newStateId": "DIAG_D2_LAMP_PROC",
+    "screenIdOld": "diagnostic-w-lamp-fail-copy",
+    "screenIdNew": "DIAG_D2_LAMP_PROC",
+    "title": "1-5-1 Diagnostic-D2-lamp-process",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-d2-lamp-process-copy",
+    "newStateId": "DIAG_D2_LAMP_OK",
+    "screenIdOld": "diagnostic-d2-lamp-process-copy",
+    "screenIdNew": "DIAG_D2_LAMP_OK",
+    "title": "1-5-2 Diagnostic-D2-lamp-success",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-d2-lamp-success-copy",
+    "newStateId": "DIAG_D2_LAMP_FAIL",
+    "screenIdOld": "diagnostic-d2-lamp-success-copy",
+    "screenIdNew": "DIAG_D2_LAMP_FAIL",
+    "title": "1-5-3 Diagnostic-D2-lamp-fail",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-d2-lamp-fail-copy",
+    "newStateId": "DIAG_CALIBR_WL_PROC",
+    "screenIdOld": "diagnostic-d2-lamp-fail-copy",
+    "screenIdNew": "DIAG_CALIBR_WL_PROC",
+    "title": "1-6-1 Diagnostic-calibr wl-process",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-calibr-wl-process-copy",
+    "newStateId": "DIAG_CALIBR_WL_OK",
+    "screenIdOld": "diagnostic-calibr-wl-process-copy",
+    "screenIdNew": "DIAG_CALIBR_WL_OK",
+    "title": "1-6-2 Diagnostic-calibr wl-success",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-calibr-wl-success-copy",
+    "newStateId": "DIAG_CALIBR_WL_FAIL",
+    "screenIdOld": "diagnostic-calibr-wl-success-copy",
+    "screenIdNew": "DIAG_CALIBR_WL_FAIL",
+    "title": "1-6-3 Diagnostic-calibr wl-fail",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-calibr-wl-fail-copy",
+    "newStateId": "DIAG_SYS_PROC",
+    "screenIdOld": "diagnostic-calibr-wl-fail-copy",
+    "screenIdNew": "DIAG_SYS_PROC",
+    "title": "1-7-1 Diagnostic-system-process",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-system-process-copy",
+    "newStateId": "DIAG_SYS_OK",
+    "screenIdOld": "diagnostic-system-process-copy",
+    "screenIdNew": "DIAG_SYS_OK",
+    "title": "1-7-2 Diagnostic-system-success",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-system-success-copy",
+    "newStateId": "DIAG_SYS_FAIL",
+    "screenIdOld": "diagnostic-system-success-copy",
+    "screenIdNew": "DIAG_SYS_FAIL",
+    "title": "1-7-3 Diagnostic-system-fail",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-system-success-copy-copy",
+    "newStateId": "DIAG_DARKCURR_PROC",
+    "screenIdOld": "diagnostic-system-success-copy-copy",
+    "screenIdNew": "DIAG_DARKCURR_PROC",
+    "title": "1-8-1 Diagnostic-dark_current-proccess",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-dark-current-proccess-copy",
+    "newStateId": "DIAG_DARKCURR_OK",
+    "screenIdOld": "diagnostic-dark-current-proccess-copy",
+    "screenIdNew": "DIAG_DARKCURR_OK",
+    "title": "1-8-2 Diagnostic-dark_current-success",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-dark-current-success-copy",
+    "newStateId": "DIAG_DARKCURR_FAIL",
+    "screenIdOld": "diagnostic-dark-current-success-copy",
+    "screenIdNew": "DIAG_DARKCURR_FAIL",
+    "title": "1-8-3 Diagnostic-dark_current-fail",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-dark-current-fail-copy",
+    "newStateId": "DIAG_WARM",
+    "screenIdOld": "diagnostic-dark-current-fail-copy",
+    "screenIdNew": "DIAG_WARM",
+    "title": "1-9-1 Diagnostic-warming",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "diagnostic-warming-copy",
+    "newStateId": "MAINMNU_SEL_PHOT",
+    "screenIdOld": "diagnostic-warming-copy",
+    "screenIdNew": "MAINMNU_SEL_PHOT",
+    "title": "2-1-1 Main menu-select-photometry",
+    "svgNodeId": null,
+    "subsystem": "main-menu",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "main-menu-select-photometry-copy",
+    "newStateId": "MAINMNU_SEL_QUANT",
+    "screenIdOld": "main-menu-select-photometry-copy",
+    "screenIdNew": "MAINMNU_SEL_QUANT",
+    "title": "2-1-2 Main menu-select-quantitative",
+    "svgNodeId": null,
+    "subsystem": "main-menu",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "main-menu-select-quantitative-copy",
+    "newStateId": "MAINMNU_SEL_MW",
+    "screenIdOld": "main-menu-select-quantitative-copy",
+    "screenIdNew": "MAINMNU_SEL_MW",
+    "title": "2-1-3 Main menu-select-multiwavelength",
+    "svgNodeId": null,
+    "subsystem": "main-menu",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "main-menu-select-multiwavelength-copy",
+    "newStateId": "MAINMNU_SEL_KIN",
+    "screenIdOld": "main-menu-select-multiwavelength-copy",
+    "screenIdNew": "MAINMNU_SEL_KIN",
+    "title": "2-1-4 Main menu-select-kinetics",
+    "svgNodeId": null,
+    "subsystem": "main-menu",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "main-menu-select-kinetics-copy",
+    "newStateId": "MAINMNU_SEL_SET",
+    "screenIdOld": "main-menu-select-kinetics-copy",
+    "screenIdNew": "MAINMNU_SEL_SET",
+    "title": "2-1-5 Main menu-select-setup",
+    "svgNodeId": null,
+    "subsystem": "main-menu",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-a-main-before-zero-copy",
+    "newStateId": "PHOT_E_MAIN_PREZERO",
+    "screenIdOld": "photometry-a-main-before-zero-copy",
+    "screenIdNew": "PHOT_E_MAIN_PREZERO",
+    "title": "3-2-1 Photometry-E-Main-before zero",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-t-main-before-zero-copy-copy",
+    "newStateId": "PHOT_T_MAIN_PREZERO",
+    "screenIdOld": "photometry-t-main-before-zero-copy-copy",
+    "screenIdNew": "PHOT_T_MAIN_PREZERO",
+    "title": "3-3-1 Photometry-T-Main-before zero",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-a-main-before-zero-copy-2",
+    "newStateId": "PHOT_A_MAIN_ZERO_PROC",
+    "screenIdOld": "photometry-a-main-before-zero-copy-2",
+    "screenIdNew": "PHOT_A_MAIN_ZERO_PROC",
+    "title": "3-1-3 Photometry-A-Main-zero-process",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-t-main-before-zero-copy-copy-2",
+    "newStateId": "PHOT_E_MAIN_ZERO_PROC",
+    "screenIdOld": "photometry-t-main-before-zero-copy-copy-2",
+    "screenIdNew": "PHOT_E_MAIN_ZERO_PROC",
+    "title": "3-2-2 Photometry-E-Main-zero-process",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-t-main-before-zero-copy",
+    "newStateId": "PHOT_T_MAIN_ZERO_PROC",
+    "screenIdOld": "photometry-t-main-before-zero-copy",
+    "screenIdNew": "PHOT_T_MAIN_ZERO_PROC",
+    "title": "3-3-2 Photometry-T-Main-zero-process",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-a-main-before-zero-copy-3",
+    "newStateId": "PHOT_A_MAIN_ZERO_DONE",
+    "screenIdOld": "photometry-a-main-before-zero-copy-3",
+    "screenIdNew": "PHOT_A_MAIN_ZERO_DONE",
+    "title": "3-1-2 Photometry-A-Main-zero-done",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-t-main-zero-process-copy",
+    "newStateId": "PHOT_IN_WL_PROC",
+    "screenIdOld": "photometry-t-main-zero-process-copy",
+    "screenIdNew": "PHOT_IN_WL_PROC",
+    "title": "3-4-1 Photometry-input_wl_process",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-input-wl-process-copy",
+    "newStateId": "PHOT_IN_WL_IN",
+    "screenIdOld": "photometry-input-wl-process-copy",
+    "screenIdNew": "PHOT_IN_WL_IN",
+    "title": "3-4-2 Photometry-input_wl_inputing",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "main-menu-select-setup-copy",
+    "newStateId": "FILE_GRP_CORR",
+    "screenIdOld": "main-menu-select-setup-copy",
+    "screenIdNew": "FILE_GRP_CORR",
+    "title": "8-5 File_group-Corr_λ",
+    "svgNodeId": null,
+    "subsystem": "files",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-group-corr-copy",
+    "newStateId": "FILE_GRP_KIN",
+    "screenIdOld": "file-group-corr-copy",
+    "screenIdNew": "FILE_GRP_KIN",
+    "title": "8-4 File_group-Kinetics",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-group-kinetics-copy",
+    "newStateId": "FILE_GRP_MW",
+    "screenIdOld": "file-group-kinetics-copy",
+    "screenIdNew": "FILE_GRP_MW",
+    "title": "8-3 File_group-Multiwavelength",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-group-multiwavelength-copy",
+    "newStateId": "FILE_GRP_QUANT_ANALYSIS",
+    "screenIdOld": "file-group-multiwavelength-copy",
+    "screenIdNew": "FILE_GRP_QUANT_ANALYSIS",
+    "title": "8-2 File_group-Quantitative_analysis",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-group-quantitative-copy",
+    "newStateId": "FILE_GRP_PHOT",
+    "screenIdOld": "file-group-quantitative-copy",
+    "screenIdNew": "FILE_GRP_PHOT",
+    "title": "8-1 File_group-Photometry",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-photometry-select-copy",
+    "newStateId": "FILE_GRP_PHOT_MN_SEL",
+    "screenIdOld": "file-photometry-select-copy",
+    "screenIdNew": "FILE_GRP_PHOT_MN_SEL",
+    "title": "8-1-1 File_group-Photometry-Mn-select",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-photometry-select-copy-copy",
+    "newStateId": "FILE_PHOT_MN_OPEN",
+    "screenIdOld": "file-photometry-select-copy-copy",
+    "screenIdNew": "FILE_PHOT_MN_OPEN",
+    "title": "8-1-1-1 File_Photometry_Mn_open",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-photometry-select-copy-copy-copy",
+    "newStateId": "8_FILE_STOR_NAVIGATOR",
+    "screenIdOld": "file-photometry-select-copy-copy-copy",
+    "screenIdNew": "8_FILE_STOR_NAVIGATOR",
+    "title": "8-Files-storage navigator",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-photometry-select-copy-copy-copy-copy-2",
+    "newStateId": "FILE_PHOT_MN_REN",
+    "screenIdOld": "file-photometry-select-copy-copy-copy-copy-2",
+    "screenIdNew": "FILE_PHOT_MN_REN",
+    "title": "8-1-1-2-1 File_Photometry_Mn_renaming",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-photometry-select-copy-copy-copy-copy-copy-3",
+    "newStateId": "FILE_PHOT_MN_DELETING_NO",
+    "screenIdOld": "file-photometry-select-copy-copy-copy-copy-copy-3",
+    "screenIdNew": "FILE_PHOT_MN_DELETING_NO",
+    "title": "8-1-1-3-1 File_Photometry_Mn_deleting-No",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "usb-storage-connected-copy",
+    "newStateId": "USB_STOR_DISCONN",
+    "screenIdOld": "usb-storage-connected-copy",
+    "screenIdNew": "USB_STOR_DISCONN",
+    "title": "USB-storage disconnected",
+    "svgNodeId": null,
+    "subsystem": "files",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-input-wl-done-copy",
+    "newStateId": "PHOT_PAR_MODE",
+    "screenIdOld": "photometry-input-wl-done-copy",
+    "screenIdNew": "PHOT_PAR_MODE",
+    "title": "3-5-1 Photometry-parameters-mode",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-input-wl-done-copy-copy",
+    "newStateId": "PHOT_PAR_PARLL_MEAS",
+    "screenIdOld": "photometry-input-wl-done-copy-copy",
+    "screenIdNew": "PHOT_PAR_PARLL_MEAS",
+    "title": "3-5-2 Photometry-parameters-parall measurements",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-input-wl-done-copy-copy-copy",
+    "newStateId": "PHOT_PAR_MODE_A",
+    "screenIdOld": "photometry-input-wl-done-copy-copy-copy",
+    "screenIdNew": "PHOT_PAR_MODE_A",
+    "title": "3-5-1-1 Photometry-parameters-mode-A",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-parameter-mode-copy",
+    "newStateId": "PHOT_PAR_MODE_T",
+    "screenIdOld": "photometry-parameter-mode-copy",
+    "screenIdNew": "PHOT_PAR_MODE_T",
+    "title": "3-5-1-2 Photometry-parameters-mode-T",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-parameter-mode-copy-copy",
+    "newStateId": "PHOT_PAR_MODE_E",
+    "screenIdOld": "photometry-parameter-mode-copy-copy",
+    "screenIdNew": "PHOT_PAR_MODE_E",
+    "title": "3-5-1-3 Photometry-parameters-mode-E",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-parameter-mode-copy-copy-copy-copy",
+    "newStateId": "PHOT_PAR_MODE_E_IN_GAIN",
+    "screenIdOld": "photometry-parameter-mode-copy-copy-copy-copy",
+    "screenIdNew": "PHOT_PAR_MODE_E_IN_GAIN",
+    "title": "3-5-1-3-1 Photometry-parameters-mode-E-inputing gain",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-parameter-mode-copy-copy-copy-copy-copy-copy",
+    "newStateId": "PHOT_PAR_PARLL_MEAS_IN",
+    "screenIdOld": "photometry-parameter-mode-copy-copy-copy-copy-copy-copy",
+    "screenIdNew": "PHOT_PAR_PARLL_MEAS_IN",
+    "title": "3-5-2-1 Photometry-parameters-parall measurements-inputing",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-parameter-mode-copy-copy-copy-copy-copy-copy-copy",
+    "newStateId": "PHOT_A_MEAS_N1_UNFIXED",
+    "screenIdOld": "photometry-parameter-mode-copy-copy-copy-copy-copy-copy-copy",
+    "screenIdNew": "PHOT_A_MEAS_N1_UNFIXED",
+    "title": "3-6-1-1 Photometry-A-n-1-measurement-not fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-group-photometry-mn-select-copy",
+    "newStateId": "FILE_GRP_PHOT_WATER_SEL",
+    "screenIdOld": "file-group-photometry-mn-select-copy",
+    "screenIdNew": "FILE_GRP_PHOT_WATER_SEL",
+    "title": "8-1-2 File_group-Photometry-water-select",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-group-photometry-water-select-copy",
+    "newStateId": "FILE_GRP_QUANT_ANALYSIS_COEF",
+    "screenIdOld": "file-group-photometry-water-select-copy",
+    "screenIdNew": "FILE_GRP_QUANT_ANALYSIS_COEF",
+    "title": "8-2-3 File_group-Quantitative_analysis-coefficients",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-photometry-select-copy-copy-copy-3",
+    "newStateId": "FILE_PHOT_MN_INFO",
+    "screenIdOld": "file-photometry-select-copy-copy-copy-3",
+    "screenIdNew": "FILE_PHOT_MN_INFO",
+    "title": "8-1-1-5 File_Photometry_Mn_info",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-group-quantitative-analysis-coefficients-copy",
+    "newStateId": "FILE_GRP_QUANT_ANALYSIS_RES",
+    "screenIdOld": "file-group-quantitative-analysis-coefficients-copy",
+    "screenIdNew": "FILE_GRP_QUANT_ANALYSIS_RES",
+    "title": "8-2-2 File_group-Quantitative_analysis-results",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-group-quantitative-analysis-coefficients-copy-copy",
+    "newStateId": "FILE_GRP_QUANT_ANALYSIS_CRV",
+    "screenIdOld": "file-group-quantitative-analysis-coefficients-copy-copy",
+    "screenIdNew": "FILE_GRP_QUANT_ANALYSIS_CRV",
+    "title": "8-2-1 File_group-Quantitative_analysis-curves",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "8-1-1-1-file-photometry-select-copy-copy-copy",
+    "newStateId": "FILE_PHOT_MN_REN_N112",
+    "screenIdOld": "8-1-1-1-file-photometry-select-copy-copy-copy",
+    "screenIdNew": "FILE_PHOT_MN_REN_N112",
+    "title": "8-1-1-2 File_Photometry_Mn_rename",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N112"
+    ]
+  },
+  {
+    "oldStateId": "8-1-1-2-file-photometry-select-rename-copy",
+    "newStateId": "FILE_PHOT_MN_DEL",
+    "screenIdOld": "8-1-1-2-file-photometry-select-rename-copy",
+    "screenIdNew": "FILE_PHOT_MN_DEL",
+    "title": "8-1-1-3 File_Photometry_Mn_delete",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "8-1-1-3-file-photometry-select-delete-copy",
+    "newStateId": "FILE_PHOT_MN_IMP",
+    "screenIdOld": "8-1-1-3-file-photometry-select-delete-copy",
+    "screenIdNew": "FILE_PHOT_MN_IMP",
+    "title": "8-1-1-6 File_Photometry_Mn_import",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "8-1-1-4-file-photometry-select-export-usb-copy",
+    "newStateId": "FILE_PHOT_MN_EXP_USB",
+    "screenIdOld": "8-1-1-4-file-photometry-select-export-usb-copy",
+    "screenIdNew": "FILE_PHOT_MN_EXP_USB",
+    "title": "8-1-1-4 File_Photometry_Mn_export-USB Copy",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "file-photometry-select-copy-copy-copy-copy-copy-copy",
+    "newStateId": "FILE_PHOT_MN_DELETING_YES",
+    "screenIdOld": "file-photometry-select-copy-copy-copy-copy-copy-copy",
+    "screenIdNew": "FILE_PHOT_MN_DELETING_YES",
+    "title": "8-1-1-3-2 File_Photometry_Mn_deleting-Yes",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "8-1-1-2-1-file-photometry-mn-renaming-copy",
+    "newStateId": "FILE_PHOT_MN_REN_N122",
+    "screenIdOld": "8-1-1-2-1-file-photometry-mn-renaming-copy",
+    "screenIdNew": "FILE_PHOT_MN_REN_N122",
+    "title": "8-1-1-2-2 File_Photometry_Mn_renaming",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N122"
+    ]
+  },
+  {
+    "oldStateId": "8-1-1-file-group-photometry-mn-select-copy",
+    "newStateId": "8_1_EDIT_FILE_GRP_PHOT_MN_SEL",
+    "screenIdOld": "8-1-1-file-group-photometry-mn-select-copy",
+    "screenIdNew": "8_1_EDIT_FILE_GRP_PHOT_MN_SEL",
+    "title": "8-1-1-edit File_group-Photometry-Mn-select Copy",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "8-1-1-6-file-photometry-mn-import-copy",
+    "newStateId": "FILE_PHOT_MN_IMP_N116",
+    "screenIdOld": "8-1-1-6-file-photometry-mn-import-copy",
+    "screenIdNew": "FILE_PHOT_MN_IMP_N116",
+    "title": "8-1-1-6 File_Photometry_Mn_import Copy",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N116"
+    ]
+  },
+  {
+    "oldStateId": "3-2-1-photometry-e-main-before-zero-copy",
+    "newStateId": "PHOT_E_MAIN_ZERO_DONE",
+    "screenIdOld": "3-2-1-photometry-e-main-before-zero-copy",
+    "screenIdNew": "PHOT_E_MAIN_ZERO_DONE",
+    "title": "3-2-3 Photometry-E-Main-zero-done",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-3-1-photometry-t-main-before-zero-copy",
+    "newStateId": "PHOT_T_MAIN_ZERO_DONE",
+    "screenIdOld": "3-3-1-photometry-t-main-before-zero-copy",
+    "screenIdNew": "PHOT_T_MAIN_ZERO_DONE",
+    "title": "3-3-3 Photometry-T-Main-zero-done",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-parameter-mode-copy-copy-copy-copy-copy-2",
+    "newStateId": "PHOT_PAR_MODE_E_IN_GAIN_OK",
+    "screenIdOld": "photometry-parameter-mode-copy-copy-copy-copy-copy-2",
+    "screenIdNew": "PHOT_PAR_MODE_E_IN_GAIN_OK",
+    "title": "3-5-1-3-2 Photometry-parameters-mode-E-inputed gain",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "3-1-1-photometry-a-main-before-zero-copy",
+    "newStateId": "3_1_EDIT_N3_PHOT_A_MAIN_PREZERO",
+    "screenIdOld": "3-1-1-photometry-a-main-before-zero-copy",
+    "screenIdNew": "3_1_EDIT_N3_PHOT_A_MAIN_PREZERO",
+    "title": "3-1-1-edit n=3 Photometry-A-Main-before zero",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-parameter-mode-copy-copy-copy-copy-copy-copy-copy-copy",
+    "newStateId": "PHOT_A_MEAS_N9_FXD_SEL",
+    "screenIdOld": "photometry-parameter-mode-copy-copy-copy-copy-copy-copy-copy-copy",
+    "screenIdNew": "PHOT_A_MEAS_N9_FXD_SEL",
+    "title": "3-6-1-4-2 Photometry-A-n-9-measurement-fixed-selected",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-parameter-mode-copy-copy-copy-copy-copy-copy-copy-copy-2",
+    "newStateId": "PHOT_A_MEAS_N3_FXD_SEL",
+    "screenIdOld": "photometry-parameter-mode-copy-copy-copy-copy-copy-copy-copy-copy-2",
+    "screenIdNew": "PHOT_A_MEAS_N3_FXD_SEL",
+    "title": "3-6-1-4-1 Photometry-A-n-3-measurement-fixed-selected",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-5-2-2-photometry-parameters-parall-measurements-inputed-copy",
+    "newStateId": "PHOT_PAR_PARLL_MEAS_IN_OK",
+    "screenIdOld": "id-3-5-2-2-photometry-parameters-parall-measurements-inputed-copy",
+    "screenIdNew": "PHOT_PAR_PARLL_MEAS_IN_OK",
+    "title": "3-5-2-2 Photometry-parameters-parall measurements-inputed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "photometry-n-1-measurement-copy",
+    "newStateId": "PHOT_A_MEAS_N2_FXD",
+    "screenIdOld": "photometry-n-1-measurement-copy",
+    "screenIdNew": "PHOT_A_MEAS_N2_FXD",
+    "title": "3-6-1-3 Photometry-A-n-2-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-n-1-measurement-copy-copy",
+    "newStateId": "PHOT_A_MEAS_N3_FXD",
+    "screenIdOld": "photometry-n-1-measurement-copy-copy",
+    "screenIdNew": "PHOT_A_MEAS_N3_FXD",
+    "title": "3-6-1-4 Photometry-A-n-3-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "photometry-n-1-measurement-copy-2",
+    "newStateId": "PHOT_A_MEAS_N1_FXD",
+    "screenIdOld": "photometry-n-1-measurement-copy-2",
+    "screenIdNew": "PHOT_A_MEAS_N1_FXD",
+    "title": "3-6-1-2 Photometry-A-n-1-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-1-1-photometry-a-n-1-measurement-not-fixed-copy",
+    "newStateId": "PHOT_T_MEAS_N1_UNFIXED",
+    "screenIdOld": "id-3-6-1-1-photometry-a-n-1-measurement-not-fixed-copy",
+    "screenIdNew": "PHOT_T_MEAS_N1_UNFIXED",
+    "title": "3-6-2-1 Photometry-T-n-1-measurement-not fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-1-2-photometry-a-n-1-measurement-fixed-copy",
+    "newStateId": "PHOT_T_MEAS_N1_FXD",
+    "screenIdOld": "id-3-6-1-2-photometry-a-n-1-measurement-fixed-copy",
+    "screenIdNew": "PHOT_T_MEAS_N1_FXD",
+    "title": "3-6-2-2 Photometry-T-n-1-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-1-3-photometry-a-n-2-measurement-fixed-copy",
+    "newStateId": "PHOT_T_MEAS_N2_FXD",
+    "screenIdOld": "id-3-6-1-3-photometry-a-n-2-measurement-fixed-copy",
+    "screenIdNew": "PHOT_T_MEAS_N2_FXD",
+    "title": "3-6-2-3 Photometry-T-n-2-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-1-4-2-photometry-a-n-9-measurement-fixed-selected-copy",
+    "newStateId": "PHOT_MEAS_N9_SEL_REMEASURE",
+    "screenIdOld": "id-3-6-1-4-2-photometry-a-n-9-measurement-fixed-selected-copy",
+    "screenIdNew": "PHOT_MEAS_N9_SEL_REMEASURE",
+    "title": "3-6-4-2-1 Photometry-n-9-measurement-selected-remeasure",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-4-2-1-photometry-n-9-measurement-selected-remeasure-copy",
+    "newStateId": "PHOT_MEAS_N9_SEL_DEL",
+    "screenIdOld": "id-3-6-4-2-1-photometry-n-9-measurement-selected-remeasure-copy",
+    "screenIdNew": "PHOT_MEAS_N9_SEL_DEL",
+    "title": "3-6-4-2-2 Photometry-n-9-measurement-selected-delete",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-4-2-2-photometry-n-9-measurement-selected-delete-copy",
+    "newStateId": "PHOT_MEAS_N9_SEL_DEL_ALL_NO",
+    "screenIdOld": "id-3-6-4-2-2-photometry-n-9-measurement-selected-delete-copy",
+    "screenIdNew": "PHOT_MEAS_N9_SEL_DEL_ALL_NO",
+    "title": "3-6-4-3-1 Photometry-n-9-measurement-selected-delete_all-no",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-4-2-2-photometry-n-9-measurement-selected-delete-copy-copy",
+    "newStateId": "PHOT_MEAS_N9_SEL_DEL_ALL_YES",
+    "screenIdOld": "id-3-6-4-2-2-photometry-n-9-measurement-selected-delete-copy-copy",
+    "screenIdNew": "PHOT_MEAS_N9_SEL_DEL_ALL_YES",
+    "title": "3-6-4-3-2 Photometry-n-9-measurement-selected-delete_all-yes",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-2-1-photometry-t-n-1-measurement-not-fixed-copy-copy",
+    "newStateId": "PHOT_E_MEAS_N3_FXD",
+    "screenIdOld": "id-3-6-2-1-photometry-t-n-1-measurement-not-fixed-copy-copy",
+    "screenIdNew": "PHOT_E_MEAS_N3_FXD",
+    "title": "3-6-3-4 Photometry-E-n-3-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "id-3-6-3-1-photometry-e-n-1-measurement-not-fixed-copy",
+    "newStateId": "PHOT_E_MEAS_N2_FXD",
+    "screenIdOld": "id-3-6-3-1-photometry-e-n-1-measurement-not-fixed-copy",
+    "screenIdNew": "PHOT_E_MEAS_N2_FXD",
+    "title": "3-6-3-3 Photometry-E-n-2-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-3-3-photometry-e-n-2-measurement-not-fixed-copy-copy",
+    "newStateId": "PHOT_E_MEAS_N1_FXD",
+    "screenIdOld": "3-6-3-3-photometry-e-n-2-measurement-not-fixed-copy-copy",
+    "screenIdNew": "PHOT_E_MEAS_N1_FXD",
+    "title": "3-6-3-2 Photometry-E-n-1-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-2-3-photometry-a-n-2-measurement-fixed-copy-copy",
+    "newStateId": "PHOT_T_MEAS_N3_FXD",
+    "screenIdOld": "3-6-2-3-photometry-a-n-2-measurement-fixed-copy-copy",
+    "screenIdNew": "PHOT_T_MEAS_N3_FXD",
+    "title": "3-6-2-4 Photometry-T-n-3-measurement-fixed",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-4-3-2-photometry-n-9-measurement-selected-delete-all-yes-copy",
+    "newStateId": "PHOT_SAVE_RES_NO",
+    "screenIdOld": "3-6-4-3-2-photometry-n-9-measurement-selected-delete-all-yes-copy",
+    "screenIdNew": "PHOT_SAVE_RES_NO",
+    "title": "3-6-5-1-1 Photometry-save results-no",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-5-1-1-photometry-save-results-no-copy",
+    "newStateId": "PHOT_SAVE_RES_YES",
+    "screenIdOld": "3-6-5-1-1-photometry-save-results-no-copy",
+    "screenIdNew": "PHOT_SAVE_RES_YES",
+    "title": "3-6-5-1-2 Photometry-save results-yes",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-5-1-2-photometry-save-results-yes-copy",
+    "newStateId": "PHOT_STOR_LOC_STOR",
+    "screenIdOld": "3-6-5-1-2-photometry-save-results-yes-copy",
+    "screenIdNew": "PHOT_STOR_LOC_STOR",
+    "title": "3-6-5-2-1 Photometry-storage location-storage",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-5-2-1-photometry-storage-location-storage-copy",
+    "newStateId": "PHOT_STOR_LOC_USB",
+    "screenIdOld": "3-6-5-2-1-photometry-storage-location-storage-copy",
+    "screenIdNew": "PHOT_STOR_LOC_USB",
+    "title": "3-6-5-2-2 Photometry-storage location-usb",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-5-2-2-photometry-storage-location-usb-copy",
+    "newStateId": "PHOT_NAMED_FILE",
+    "screenIdOld": "3-6-5-2-2-photometry-storage-location-usb-copy",
+    "screenIdNew": "PHOT_NAMED_FILE",
+    "title": "3-6-5-3-2 Photometry-named_file",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-5-3-1-photometry-naming-file-copy",
+    "newStateId": "PHOT_NAME_FILE",
+    "screenIdOld": "3-6-5-3-1-photometry-naming-file-copy",
+    "screenIdNew": "PHOT_NAME_FILE",
+    "title": "3-6-5-3-1 Photometry-naming_file",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-5-3-1-photometry-naming-file-copy-copy",
+    "newStateId": "PHOT_PRNT_YES",
+    "screenIdOld": "3-6-5-3-1-photometry-naming-file-copy-copy",
+    "screenIdNew": "PHOT_PRNT_YES",
+    "title": "3-6-5-4-1 Photometry-print-yes",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "3-6-5-4-1-photometry-print-yes-copy",
+    "newStateId": "PHOT_PRNT_NO",
+    "screenIdOld": "3-6-5-4-1-photometry-print-yes-copy",
+    "screenIdNew": "PHOT_PRNT_NO",
+    "title": "3-6-5-4-2 Photometry-print-no",
+    "svgNodeId": null,
+    "subsystem": "photometry",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-quantitative-submode-curves-copy",
+    "newStateId": "QUANT_SMODE_COEF",
+    "screenIdOld": "4-1-quantitative-submode-curves-copy",
+    "screenIdNew": "QUANT_SMODE_COEF",
+    "title": "4-2 Quantitative-submode-coefficients",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-quantitative-submode-coefficients-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_WL",
+    "screenIdOld": "4-2-quantitative-submode-coefficients-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_WL",
+    "title": "4-1-1-1 Quantitative-submode-curves-new-wl",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-quantitative-submode-coefficients-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW",
+    "screenIdOld": "4-2-quantitative-submode-coefficients-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW",
+    "title": "4-1-1 Quantitative-submode-curves-new",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-quantitative-submode-curves-new-copy",
+    "newStateId": "QUANT_SMODE_CRV_LOAD",
+    "screenIdOld": "4-1-1-quantitative-submode-curves-new-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_LOAD",
+    "title": "4-1-2 Quantitative-submode-curves-load",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-1-quantitative-submode-curves-new-wl-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_CUVETTE",
+    "screenIdOld": "4-1-1-1-quantitative-submode-curves-new-wl-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_CUVETTE",
+    "title": "4-1-1-2 Quantitative-submode-curves-new-cuvette",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-2-quantitative-submode-curves-new-cuvette-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_VALUE",
+    "screenIdOld": "4-1-1-2-quantitative-submode-curves-new-cuvette-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_VALUE",
+    "title": "4-1-1-3 Quantitative-submode-curves-new-value",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-3-quantitative-submode-curves-new-value-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD",
+    "screenIdOld": "4-1-1-3-quantitative-submode-curves-new-value-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD",
+    "title": "4-1-1-4 Quantitative-submode-curves-new-standard",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-quantitative-submode-curves-new-standard-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH",
+    "screenIdOld": "4-1-1-4-quantitative-submode-curves-new-standard-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH",
+    "title": "4-1-1-5 Quantitative-submode-curves-new-standard-calc_graphic",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "1-9-diagnostic-warming-copy",
+    "newStateId": "WAITING",
+    "screenIdOld": "1-9-diagnostic-warming-copy",
+    "screenIdNew": "WAITING",
+    "title": "1-9-2 Waiting",
+    "svgNodeId": null,
+    "subsystem": "diagnostic",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-1-quantitative-submode-curves-new-wl-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_IN",
+    "screenIdOld": "4-1-1-1-quantitative-submode-curves-new-wl-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_IN",
+    "title": "4-1-1-1-1 Quantitative-submode-curves-new-inputing",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-1-1-quantitative-submode-curves-new-inputing-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_IN_OK",
+    "screenIdOld": "4-1-1-1-1-quantitative-submode-curves-new-inputing-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_IN_OK",
+    "title": "4-1-1-1-2 Quantitative-submode-curves-new-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-2-quantitative-submode-curves-new-cuvette-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_CUVETTE_IN",
+    "screenIdOld": "4-1-1-2-quantitative-submode-curves-new-cuvette-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_CUVETTE_IN",
+    "title": "4-1-1-2-1 Quantitative-submode-curves-new-cuvette-inputing",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-2-1-quantitative-submode-curves-new-cuvette-inputing-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_CUVETTE_IN_OK",
+    "screenIdOld": "4-1-1-2-1-quantitative-submode-curves-new-cuvette-inputing-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_CUVETTE_IN_OK",
+    "title": "4-1-1-2-2 Quantitative-submode-curves-new-cuvette-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-3-quantitative-submode-curves-new-value-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_VALUE_T",
+    "screenIdOld": "4-1-1-3-quantitative-submode-curves-new-value-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_VALUE_T",
+    "title": "4-1-1-3-2 Quantitative-submode-curves-new-value-T",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-3-quantitative-submode-curves-new-value-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_VALUE_A",
+    "screenIdOld": "4-1-1-3-quantitative-submode-curves-new-value-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_VALUE_A",
+    "title": "4-1-1-3-1 Quantitative-submode-curves-new-value-A",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-quantitative-submode-curves-new-standard-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_NUM_QUANTITY",
+    "screenIdOld": "4-1-1-4-quantitative-submode-curves-new-standard-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_NUM_QUANTITY",
+    "title": "4-1-1-4-1 Quantitative-submode-curves-new-standard-num_quantity",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-1-quantitative-submode-curves-new-standard-quantity-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_NUM_PARALL",
+    "screenIdOld": "4-1-1-4-1-quantitative-submode-curves-new-standard-quantity-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_NUM_PARALL",
+    "title": "4-1-1-4-2 Quantitative-submode-curves-new-standard-num_parall",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-2-quantitative-submode-curves-new-standard-num-parall-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT",
+    "screenIdOld": "4-1-1-4-2-quantitative-submode-curves-new-standard-num-parall-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT",
+    "title": "4-1-1-4-3 Quantitative-submode-curves-new-standard-unit",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-quantitative-submode-curves-new-standard-unit-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_DIL",
+    "screenIdOld": "4-1-1-4-3-quantitative-submode-curves-new-standard-unit-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_DIL",
+    "title": "4-1-1-4-4 Quantitative-submode-curves-new-standard-dilution",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-quantitative-submode-curves-new-standard-calc-graphic-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_TYPE_REG",
+    "screenIdOld": "4-1-1-5-quantitative-submode-curves-new-standard-calc-graphic-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_TYPE_REG",
+    "title": "4-1-1-5-1 Quantitative-submode-curves-new-standard-calc_graphic-type_regression",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-1-quantitative-submode-curves-new-standard-calc-graphic-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUNCTION_REG_AF_C",
+    "screenIdOld": "4-1-1-5-1-quantitative-submode-curves-new-standard-calc-graphic-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUNCTION_REG_AF_C",
+    "title": "4-1-1-5-2-1 Quantitative-submode-curves-new-standard-calc_graphic_function regression-A=f(C)",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-1-quantitative-submode-curves-new-standard-calc-graphic-type-regression-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_TYPE_REG_LIN",
+    "screenIdOld": "4-1-1-5-1-quantitative-submode-curves-new-standard-calc-graphic-type-regression-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_TYPE_REG_LIN",
+    "title": "4-1-1-5-1-1 Quantitative-submode-curves-new-standard-calc_graphic-type_regression-linear",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-1-1-quantitative-submode-curves-new-standard-calc-graphic-type-regression-linear-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_TYPE_REG_LIN_0",
+    "screenIdOld": "4-1-1-5-1-1-quantitative-submode-curves-new-standard-calc-graphic-type-regression-linear-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_TYPE_REG_LIN_0",
+    "title": "4-1-1-5-1-2 Quantitative-submode-curves-new-standard-calc_graphic-type_regression-linear_0",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-1-quantitative-submode-curves-new-standard-calc-graphic-type-regression-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUCTION_REG",
+    "screenIdOld": "4-1-1-5-1-quantitative-submode-curves-new-standard-calc-graphic-type-regression-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUCTION_REG",
+    "title": "4-1-1-5-2 Quantitative-submode-curves-new-standard-calc_graphic-fuction_regression",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-2-quantitative-submode-curves-new-standard-calc-graphic-function-regression-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUNCTION_REG_CF_A",
+    "screenIdOld": "4-1-1-5-2-quantitative-submode-curves-new-standard-calc-graphic-function-regression-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUNCTION_REG_CF_A",
+    "title": "4-1-1-5-2-2 Quantitative-submode-curves-new-standard-calc_graphic_function regression C=f(A)",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-2-2-quantitative-submode-curves-new-standard-calc-graphic-function-regression-c-f-a-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUNCTION_REG_TF_C",
+    "screenIdOld": "4-1-1-5-2-2-quantitative-submode-curves-new-standard-calc-graphic-function-regression-c-f-a-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUNCTION_REG_TF_C",
+    "title": "4-1-1-5-2-3 Quantitative-submode-curves-new-standard-calc_graphic_function regression %T=f(C)",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-2-3-quantitative-submode-curves-new-standard-calc-graphic-function-regression-c-f-t-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUNCTION_REG_CF_T",
+    "screenIdOld": "4-1-1-5-2-3-quantitative-submode-curves-new-standard-calc-graphic-function-regression-c-f-t-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_FUNCTION_REG_CF_T",
+    "title": "4-1-1-5-2-4 Quantitative-submode-curves-new-standard-calc_graphic_function regression C=f(%T)",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-1-1-quantitative-submode-curves-new-standard-num-quantity-inputting-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_NUM_QUANTITY_IN",
+    "screenIdOld": "4-1-1-4-1-1-quantitative-submode-curves-new-standard-num-quantity-inputting-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_NUM_QUANTITY_IN",
+    "title": "4-1-1-4-1-2 Quantitative-submode-curves-new-standard-num_quantity-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-1-2-quantitative-submode-curves-new-standard-num-quantity-inputed-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_NUM_QUANTITY_INPUTTING",
+    "screenIdOld": "4-1-1-4-1-2-quantitative-submode-curves-new-standard-num-quantity-inputed-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_NUM_QUANTITY_INPUTTING",
+    "title": "4-1-1-4-1-1 Quantitative-submode-curves-new-standard-num_quantity-inputting",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-2-quantitative-submode-curves-new-standard-num-parall-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_NUM_PARALL_IN",
+    "screenIdOld": "4-1-1-4-2-quantitative-submode-curves-new-standard-num-parall-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_NUM_PARALL_IN",
+    "title": "4-1-1-4-2-1 Quantitative-submode-curves-new-standard-num_parall-inputing",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-2-1-quantitative-submode-curves-new-standard-num-parall-inputing-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_NUM_PARALL_IN_OK",
+    "screenIdOld": "4-1-1-4-2-1-quantitative-submode-curves-new-standard-num-parall-inputing-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_NUM_PARALL_IN_OK",
+    "title": "4-1-1-4-2-2 Quantitative-submode-curves-new-standard-num_parall-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-quantitative-submode-curves-new-standard-unit-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_N431",
+    "screenIdOld": "4-1-1-4-3-quantitative-submode-curves-new-standard-unit-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_N431",
+    "title": "4-1-1-4-3-1 Quantitative-submode-curves-new-standard-unit-моль/л",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N431"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-1-quantitative-submode-curves-new-standard-unit-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_N432",
+    "screenIdOld": "4-1-1-4-3-1-quantitative-submode-curves-new-standard-unit-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_N432",
+    "title": "4-1-1-4-3-2 Quantitative-submode-curves-new-standard-unit-%",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N432"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-2-quantitative-submode-curves-new-standard-unit-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_N433",
+    "screenIdOld": "4-1-1-4-3-2-quantitative-submode-curves-new-standard-unit-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_N433",
+    "title": "4-1-1-4-3-3 Quantitative-submode-curves-new-standard-unit-мкг/л",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N433"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-3-quantitative-submode-curves-new-standard-unit-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_N434",
+    "screenIdOld": "4-1-1-4-3-3-quantitative-submode-curves-new-standard-unit-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_N434",
+    "title": "4-1-1-4-3-4 Quantitative-submode-curves-new-standard-unit-мг/л",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N434"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-4-quantitative-submode-curves-new-standard-unit-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_N435",
+    "screenIdOld": "4-1-1-4-3-4-quantitative-submode-curves-new-standard-unit-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_N435",
+    "title": "4-1-1-4-3-5 Quantitative-submode-curves-new-standard-unit-мл/л",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N435"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-5-quantitative-submode-curves-new-standard-unit-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_N436",
+    "screenIdOld": "4-1-1-4-3-5-quantitative-submode-curves-new-standard-unit-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_N436",
+    "title": "4-1-1-4-3-6 Quantitative-submode-curves-new-standard-unit-мг/мл",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N436"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-6-quantitative-submode-curves-new-standard-unit-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_N437",
+    "screenIdOld": "4-1-1-4-3-6-quantitative-submode-curves-new-standard-unit-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_N437",
+    "title": "4-1-1-4-3-7 Quantitative-submode-curves-new-standard-unit-г",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N437"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-7-quantitative-submode-curves-new-standard-unit-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_TCU",
+    "screenIdOld": "4-1-1-4-3-7-quantitative-submode-curves-new-standard-unit-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_TCU",
+    "title": "4-1-1-4-3-8 Quantitative-submode-curves-new-standard-unit-TCU",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-3-8-quantitative-submode-curves-new-standard-unit-tcu-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_UNIT_N439",
+    "screenIdOld": "4-1-1-4-3-8-quantitative-submode-curves-new-standard-unit-tcu-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_UNIT_N439",
+    "title": "4-1-1-4-3-9 Quantitative-submode-curves-new-standard-unit-усл_ед",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N439"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-quantitative-submode-curves-new-standard-calc-graphic-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_NEXT",
+    "screenIdOld": "4-1-1-5-quantitative-submode-curves-new-standard-calc-graphic-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_NEXT",
+    "title": "4-1-1-6 Quantitative-submode-curves-new-next",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-2-4-quantitative-submode-curves-new-standard-calc-graphic-function-regression-c-f-t-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ZERO",
+    "screenIdOld": "4-1-1-5-2-4-quantitative-submode-curves-new-standard-calc-graphic-function-regression-c-f-t-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ZERO",
+    "title": "4-1-1-6-1-1 Quantitative-submode-curves-new-zeroing",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-1-2-quantitative-submode-curves-new-standard-num-quantity-inputed-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_1_INPUTTING",
+    "screenIdOld": "4-1-1-4-1-2-quantitative-submode-curves-new-standard-num-quantity-inputed-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_1_INPUTTING",
+    "title": "4-1-1-4-1-3  Quantitative-submode-curves-new-standard-С1-inputting",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-1-3-quantitative-submode-curves-new-standard-1-inputting-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_1_IN",
+    "screenIdOld": "4-1-1-4-1-3-quantitative-submode-curves-new-standard-1-inputting-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_1_IN",
+    "title": "4-1-1-4-1-4  Quantitative-submode-curves-new-standard-С1-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-1-4-quantitative-submode-curves-new-standard-1-inputed-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_2_IN",
+    "screenIdOld": "4-1-1-4-1-4-quantitative-submode-curves-new-standard-1-inputed-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_2_IN",
+    "title": "4-1-1-4-1-5  Quantitative-submode-curves-new-standard-С2-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-1-5-quantitative-submode-curves-new-standard-2-inputed-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_C3_IN",
+    "screenIdOld": "4-1-1-4-1-5-quantitative-submode-curves-new-standard-2-inputed-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_C3_IN",
+    "title": "4-1-1-4-1-6  Quantitative-submode-curves-new-standard-C3-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-1-6-quantitative-submode-curves-new-standard-2-inputed-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_4_IN",
+    "screenIdOld": "4-1-1-4-1-6-quantitative-submode-curves-new-standard-2-inputed-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_4_IN",
+    "title": "4-1-1-4-1-7  Quantitative-submode-curves-new-standard-С4-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-1quantitative-submode-curves-new-st-1-par-1-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_1_PAR_1_MEAS",
+    "screenIdOld": "4-1-2-1-1quantitative-submode-curves-new-st-1-par-1-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_1_PAR_1_MEAS",
+    "title": "4-1-1-6-1-2 Quantitative-submode-curves-new-st_1-par_1-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-2-quantitative-submode-curves-new-st-1-par-1-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_2_PAR_1_MEAS",
+    "screenIdOld": "4-1-2-1-2-quantitative-submode-curves-new-st-1-par-1-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_2_PAR_1_MEAS",
+    "title": "4-1-1-6-1-3 Quantitative-submode-curves-new-st_2-par_1-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-3-quantitative-submode-curves-new-st-2-par-1-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_3_PAR_1_MEAS",
+    "screenIdOld": "4-1-2-1-3-quantitative-submode-curves-new-st-2-par-1-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_3_PAR_1_MEAS",
+    "title": "4-1-1-6-1-4 Quantitative-submode-curves-new-st_3-par_1-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-4-quantitative-submode-curves-new-st-3-par-1-meas-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_4_PAR_1_MEAS",
+    "screenIdOld": "4-1-2-1-4-quantitative-submode-curves-new-st-3-par-1-meas-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_4_PAR_1_MEAS",
+    "title": "4-1-1-6-1-5 Quantitative-submode-curves-new-st_4-par_1-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-5-quantitative-submode-curves-new-st-4-par-1-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_1_PAR_2_MEAS",
+    "screenIdOld": "4-1-2-1-5-quantitative-submode-curves-new-st-4-par-1-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_1_PAR_2_MEAS",
+    "title": "4-1-1-6-1-6 Quantitative-submode-curves-new-st_1-par_2-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-6-quantitative-submode-curves-new-st-1-par-2-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_2_PAR_2_MEAS",
+    "screenIdOld": "4-1-2-1-6-quantitative-submode-curves-new-st-1-par-2-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_2_PAR_2_MEAS",
+    "title": "4-1-1-6-1-7 Quantitative-submode-curves-new-st_2-par_2-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-7-quantitative-submode-curves-new-st-2-par-2-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_3_PAR_2_MEAS",
+    "screenIdOld": "4-1-2-1-7-quantitative-submode-curves-new-st-2-par-2-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_3_PAR_2_MEAS",
+    "title": "4-1-1-6-1-8 Quantitative-submode-curves-new-st_3-par_2-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-8-quantitative-submode-curves-new-st-3-par-2-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_4_PAR_2_MEAS",
+    "screenIdOld": "4-1-2-1-8-quantitative-submode-curves-new-st-3-par-2-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_4_PAR_2_MEAS",
+    "title": "4-1-1-6-1-9 Quantitative-submode-curves-new-st_4-par_2-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-9-quantitative-submode-curves-new-st-4-par-2-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_1_PAR_3_MEAS",
+    "screenIdOld": "4-1-2-1-9-quantitative-submode-curves-new-st-4-par-2-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_1_PAR_3_MEAS",
+    "title": "4-1-1-6-1-10 Quantitative-submode-curves-new-st_1-par_3-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-10-quantitative-submode-curves-new-st-1-par-3-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_2_PAR_3_MEAS",
+    "screenIdOld": "4-1-2-1-10-quantitative-submode-curves-new-st-1-par-3-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_2_PAR_3_MEAS",
+    "title": "4-1-1-6-1-11 Quantitative-submode-curves-new-st_2-par_3-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-11-quantitative-submode-curves-new-st-2-par-3-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_3_PAR_3_MEAS",
+    "screenIdOld": "4-1-2-1-11-quantitative-submode-curves-new-st-2-par-3-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_3_PAR_3_MEAS",
+    "title": "4-1-1-6-1-12 Quantitative-submode-curves-new-st_3-par_3-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-12-quantitative-submode-curves-new-st-2-par-3-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_GRAPH_A_F_C",
+    "screenIdOld": "4-1-2-1-12-quantitative-submode-curves-new-st-2-par-3-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_GRAPH_A_F_C",
+    "title": "4-1-1-6-1-13 Quantitative-submode-curves-new-graphic-A_f(C)",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-13-quantitative-submode-curves-new-st-2-par-4-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ST_2_PAR_4_MEAS",
+    "screenIdOld": "4-1-2-1-13-quantitative-submode-curves-new-st-2-par-4-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ST_2_PAR_4_MEAS",
+    "title": "4-1-1-6-1-14 Quantitative-submode-curves-new-st_2-par_4-meas Copy",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-13-quantitative-submode-curves-new-st-2-par-4-meas-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_PARA_MEAS",
+    "screenIdOld": "4-1-2-1-13-quantitative-submode-curves-new-st-2-par-4-meas-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_PARA_MEAS",
+    "title": "4-1-1-7-1-1 Quantitative-submode-curves-new-analys_parameter_para-meas",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-13-quantitative-submode-curves-new-st-2-par-4-meas-copy-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_SAVE_YES",
+    "screenIdOld": "4-1-2-1-13-quantitative-submode-curves-new-st-2-par-4-meas-copy-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_SAVE_YES",
+    "title": "4-1-1-6-2-1 Quantitative-submode-curves-new-save-yes",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-15-1-quantitative-submode-curves-new-save-yes-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_SAVE_NO",
+    "screenIdOld": "4-1-2-1-15-1-quantitative-submode-curves-new-save-yes-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_SAVE_NO",
+    "title": "4-1-1-6-2-2 Quantitative-submode-curves-new-save-no",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-15-2-quantitative-submode-curves-new-save-no-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_SAVE_YES_STOR",
+    "screenIdOld": "4-1-2-1-15-2-quantitative-submode-curves-new-save-no-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_SAVE_YES_STOR",
+    "title": "4-1-1-6-3-1 Quantitative-submode-curves-new-save-yes-storage",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-15-1-1-quantitative-submode-curves-new-save-yes-location-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_SAVE_YES_NAME",
+    "screenIdOld": "4-1-2-1-15-1-1-quantitative-submode-curves-new-save-yes-location-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_SAVE_YES_NAME",
+    "title": "4-1-1-6-4-1 Quantitative-submode-curves-new-save-yes-naming",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-15-1-1-quantitative-submode-curves-new-save-yes-location-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_SAVE_YES_USB",
+    "screenIdOld": "4-1-2-1-15-1-1-quantitative-submode-curves-new-save-yes-location-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_SAVE_YES_USB",
+    "title": "4-1-1-6-3-2 Quantitative-submode-curves-new-save-yes-USB",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-15-2-1-quantitative-submode-curves-new-save-yes-naming-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_SAVE_YES_NAMED",
+    "screenIdOld": "4-1-2-1-15-2-1-quantitative-submode-curves-new-save-yes-naming-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_SAVE_YES_NAMED",
+    "title": "4-1-1-6-4-2 Quantitative-submode-curves-new-save-yes-named",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-1-1-quantitative-submode-curves-new-analys-parameter-para-meas-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_ANALYS_RES_STATIS",
+    "screenIdOld": "4-1-3-1-1-quantitative-submode-curves-new-analys-parameter-para-meas-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_ANALYS_RES_STATIS",
+    "title": "4-1-1-7-3-2 Quantitative-submode-curves-new-analys_parameter_analys_result-statis",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-1-1-quantitative-submode-curves-new-analys-parameter-para-meas-copy-2",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_ANALYS_RES",
+    "screenIdOld": "4-1-3-1-1-quantitative-submode-curves-new-analys-parameter-para-meas-copy-2",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_ANALYS_RES",
+    "title": "4-1-1-7-2-1 Quantitative-submode-curves-new-analys_parameter_analys_result",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-1-1-quantitative-submode-curves-new-analys-parameter-para-meas-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_PARA_MEA_IN",
+    "screenIdOld": "4-1-3-1-1-quantitative-submode-curves-new-analys-parameter-para-meas-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_PARA_MEA_IN",
+    "title": "4-1-1-7-2-2 Quantitative-submode-curves-new-analys_parameter_para-mea-inputing",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-1-1-1-quantitative-submode-curves-new-analys-parameter-para-mea-inputing-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_PARA_MEA_IN_N723",
+    "screenIdOld": "4-1-3-1-1-1-quantitative-submode-curves-new-analys-parameter-para-mea-inputing-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_PARA_MEA_IN_N723",
+    "title": "4-1-1-7-2-3 Quantitative-submode-curves-new-analys_parameter_para-mea-inputing Copy",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N723"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-1-2-2-quantitative-submode-curves-new-analys-parameter-para-meas-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_ANALYS_RES_NO",
+    "screenIdOld": "4-1-3-1-2-2-quantitative-submode-curves-new-analys-parameter-para-meas-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_ANALYS_RES_NO",
+    "title": "4-1-1-7-3-3 Quantitative-submode-curves-new-analys_parameter_analys_result-no",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-1-2-1-quantitative-submode-curves-new-analys-parameter-para-meas-copy-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_MEAS_ZERO",
+    "screenIdOld": "4-1-3-1-2-1-quantitative-submode-curves-new-analys-parameter-para-meas-copy-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_MEAS_ZERO",
+    "title": "4-1-1-8-1 Quantitative-submode-curves-new-analys_parameter_meas_zeroing",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-2-1-quantitative-submode-curves-new-analys-parameter-meas-zeroing-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_MEAS_PARAL_1",
+    "screenIdOld": "4-1-3-2-1-quantitative-submode-curves-new-analys-parameter-meas-zeroing-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_MEAS_PARAL_1",
+    "title": "4-1-1-8-2 Quantitative-submode-curves-new-analys_parameter_meas_paral-1",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-2-2-quantitative-submode-curves-new-analys-parameter-meas-zeroing-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_MEAS_PAR_2",
+    "screenIdOld": "4-1-3-2-2-quantitative-submode-curves-new-analys-parameter-meas-zeroing-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_MEAS_PAR_2",
+    "title": "4-1-1-8-3 Quantitative-submode-curves-new-analys_parameter_meas_par-2",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-1-2-quantitative-submode-curves-new-analys-parameter-analys-result-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_ANALYS_RES_OK",
+    "screenIdOld": "4-1-3-1-2-quantitative-submode-curves-new-analys-parameter-analys-result-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_PAR_ANALYS_RES_OK",
+    "title": "4-1-1-7-3-1 Quantitative-submode-curves-new-analys_parameter_analys_result Copy",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-2-3-quantitative-submode-curves-new-analys-parameter-meas-par-2-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES",
+    "screenIdOld": "4-1-3-2-3-quantitative-submode-curves-new-analys-parameter-meas-par-2-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES",
+    "title": "4-1-1-9-1 Quantitative-submode-curves-new-analys_save_result-yes",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-4-1-quantitative-submode-curves-new-analys-save-result-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_NO",
+    "screenIdOld": "4-1-4-1-quantitative-submode-curves-new-analys-save-result-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_NO",
+    "title": "4-1-1-9-2 Quantitative-submode-curves-new-analys_save_result-no",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-4-2-quantitative-submode-curves-new-analys-save-result-no-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES_USB",
+    "screenIdOld": "4-1-4-2-quantitative-submode-curves-new-analys-save-result-no-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES_USB",
+    "title": "4-1-1-10-2 Quantitative-submode-curves-new-analys_save_result-yes-USB",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-4-1-2-quantitative-submode-curves-new-analys-save-result-yes-naming-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES_STOR",
+    "screenIdOld": "4-1-4-1-2-quantitative-submode-curves-new-analys-save-result-yes-naming-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES_STOR",
+    "title": "4-1-1-10-1 Quantitative-submode-curves-new-analys_save_result-yes-storage",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-4-1-1-quantitative-submode-curves-new-analys-save-result-yes-storage-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES_STOR_USB_NAME",
+    "screenIdOld": "4-1-4-1-1-quantitative-submode-curves-new-analys-save-result-yes-storage-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES_STOR_USB_NAME",
+    "title": "4-1-1-11-1 Quantitative-submode-curves-new-analys_save_result-yes-storage/USB-naming",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-5-1-quantitative-submode-curves-new-analys-save-result-yes-storage-usb-naming-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES_STOR_USB_NAMED",
+    "screenIdOld": "4-1-5-1-quantitative-submode-curves-new-analys-save-result-yes-storage-usb-naming-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_ANALYS_SAVE_RES_YES_STOR_USB_NAMED",
+    "title": "4-1-1-11-2 Quantitative-submode-curves-new-analys_save_result-yes-storage/USB-named",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-quantitative-submode-curves-load-copy",
+    "newStateId": "QUANT_SMODE_CRV_LOAD_N211",
+    "screenIdOld": "4-1-2-quantitative-submode-curves-load-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_LOAD_N211",
+    "title": "4-1-2-1-1 Quantitative-submode-curves-load",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N211"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-quantitative-submode-curves-load-copy",
+    "newStateId": "QUANT_SMODE_CRV_LOAD_N212",
+    "screenIdOld": "4-1-2-1-quantitative-submode-curves-load-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_LOAD_N212",
+    "title": "4-1-2-1-2 Quantitative-submode-curves-load Copy",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N212"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-6-1-13-quantitative-submode-curves-new-graphic-a-f-c-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_GRAPH_A_F_C_N131",
+    "screenIdOld": "4-1-1-6-1-13-quantitative-submode-curves-new-graphic-a-f-c-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_GRAPH_A_F_C_N131",
+    "title": "4-1-3-1 Quantitative-submode-curves-new-graphic-A_f(C)",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N131"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-4-quantitative-submode-curves-new-standard-copy-3",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_N114",
+    "screenIdOld": "4-1-1-4-quantitative-submode-curves-new-standard-copy-3",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_N114",
+    "title": "4-1-1-4 Quantitative-submode-curves-new-standard Copy",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N114"
+    ]
+  },
+  {
+    "oldStateId": "4-1-3-1-quantitative-submode-curves-new-graphic-a-f-c-copy",
+    "newStateId": "QUANT_SMODE_CRV_LOAD_GRAPH",
+    "screenIdOld": "4-1-3-1-quantitative-submode-curves-new-graphic-a-f-c-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_LOAD_GRAPH",
+    "title": "4-1-2-2 Quantitative-submode-curves-load-graphic",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-2-quantitative-submode-curves-new-standard-calc-graphic-type-regression-copy-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_DIL",
+    "screenIdOld": "4-1-1-5-2-quantitative-submode-curves-new-standard-calc-graphic-type-regression-copy-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_DIL",
+    "title": "4-1-1-5-3 Quantitative-submode-curves-new-standard-calc_graphic-dilution",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-3-quantitative-submode-curves-new-standard-calc-graphic-dilution-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_DIL_IN",
+    "screenIdOld": "4-1-1-5-3-quantitative-submode-curves-new-standard-calc-graphic-dilution-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_DIL_IN",
+    "title": "4-1-1-5-3-1 Quantitative-submode-curves-new-standard-calc_graphic-dilution-inputing",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-5-3-1-quantitative-submode-curves-new-standard-calc-graphic-dilution-inputing-copy",
+    "newStateId": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_DIL_IN_OK",
+    "screenIdOld": "4-1-1-5-3-1-quantitative-submode-curves-new-standard-calc-graphic-dilution-inputing-copy",
+    "screenIdNew": "QUANT_SMODE_CRV_NEW_STD_CALC_GRAPH_DIL_IN_OK",
+    "title": "4-1-1-5-3-2 Quantitative-submode-curves-new-standard-calc_graphic-dilution-inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-1-1-quantitative-submode-curves-new-copy-2",
+    "newStateId": "QUANT_SMODE_COEF_NEW",
+    "screenIdOld": "4-1-1-quantitative-submode-curves-new-copy-2",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW",
+    "title": "4-2-1-1 Quantitative-submode-coefficients-new",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-quantitative-submode-coefficients-new-copy",
+    "newStateId": "QUANT_SMODE_COEF_IN_COEFF_A_LIN",
+    "screenIdOld": "4-2-1-1-quantitative-submode-coefficients-new-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_IN_COEFF_A_LIN",
+    "title": "4-2-1-2-1-1 Quantitative-submode-coefficients-inputing_coeff-A-linear",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-quantitative-submode-coefficients-new-copy-2",
+    "newStateId": "QUANT_SMODE_COEF_NEW_TYPE_REG",
+    "screenIdOld": "4-2-1-1-quantitative-submode-coefficients-new-copy-2",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW_TYPE_REG",
+    "title": "4-2-1-1-1 Quantitative-submode-coefficients-new-type_regression",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-1-quantitative-submode-coefficients-new-copy-copy",
+    "newStateId": "QUANT_SMODE_COEF_NEW_MODE_LIN",
+    "screenIdOld": "4-2-1-1-1-quantitative-submode-coefficients-new-copy-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW_MODE_LIN",
+    "title": "4-2-1-1-1-1 Quantitative-submode-coefficients-new-modes-linear",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-2-2-quantitative-submode-coefficients-new-modes-linear-0-copy",
+    "newStateId": "QUANT_SMODE_COEF_NEW_MODE_LIN_0",
+    "screenIdOld": "4-2-1-1-2-2-quantitative-submode-coefficients-new-modes-linear-0-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW_MODE_LIN_0",
+    "title": "4-2-1-1-1-2 Quantitative-submode-coefficients-new-modes-linear_0",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-1-2-quantitative-submode-coefficients-new-modes-linear-0-copy-copy",
+    "newStateId": "QUANT_SMODE_COEF_NEW_MODE_A",
+    "screenIdOld": "4-2-1-1-1-2-quantitative-submode-coefficients-new-modes-linear-0-copy-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW_MODE_A",
+    "title": "4-2-1-1-2-1 Quantitative-submode-coefficients-new-modes-A",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-1-2-quantitative-submode-coefficients-new-modes-linear-0-copy-copy-copy",
+    "newStateId": "QUANT_SMODE_COEF_NEW_MODE_T",
+    "screenIdOld": "4-2-1-1-1-2-quantitative-submode-coefficients-new-modes-linear-0-copy-copy-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW_MODE_T",
+    "title": "4-2-1-1-2-2 Quantitative-submode-coefficients-new-modes-T",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-2-1-quantitative-submode-coefficients-inputing-coeff-a-linear-copy",
+    "newStateId": "QUANT_SMODE_COEF_LOAD",
+    "screenIdOld": "4-2-1-2-1-quantitative-submode-coefficients-inputing-coeff-a-linear-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_LOAD",
+    "title": "4-2-2 Quantitative-submode-coefficients-load",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-2-1-quantitative-submode-coefficients-inputing-coeff-a-linear-copy-2",
+    "newStateId": "QUANT_SMODE_COEF_IN_COEFF_A_LIN_0",
+    "screenIdOld": "4-2-1-2-1-quantitative-submode-coefficients-inputing-coeff-a-linear-copy-2",
+    "screenIdNew": "QUANT_SMODE_COEF_IN_COEFF_A_LIN_0",
+    "title": "4-2-1-2-3-1 Quantitative-submode-coefficients-inputing_coeff-A-linear_0",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-2-1-quantitative-submode-coefficients-inputing-coeff-a-linear-copy-3",
+    "newStateId": "QUANT_SMODE_COEF_IN_COEFF_T_LIN",
+    "screenIdOld": "4-2-1-2-1-quantitative-submode-coefficients-inputing-coeff-a-linear-copy-3",
+    "screenIdNew": "QUANT_SMODE_COEF_IN_COEFF_T_LIN",
+    "title": "4-2-1-2-2-1 Quantitative-submode-coefficients-inputing_coeff-T-linear",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-2-1-1-quantitative-submode-coefficients-inputing-coeff-a-linear-copy",
+    "newStateId": "QUANT_SMODE_COEF_IN_COEFF_A_LIN_OK",
+    "screenIdOld": "4-2-1-2-1-1-quantitative-submode-coefficients-inputing-coeff-a-linear-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_IN_COEFF_A_LIN_OK",
+    "title": "4-2-1-2-1-2 Quantitative-submode-coefficients-inputed_coeff-A-linear",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-2-2-1-quantitative-submode-coefficients-inputing-coeff-t-linear-copy",
+    "newStateId": "QUANT_SMODE_COEF_IN_COEFF_T_LIN_OK",
+    "screenIdOld": "4-2-1-2-2-1-quantitative-submode-coefficients-inputing-coeff-t-linear-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_IN_COEFF_T_LIN_OK",
+    "title": "4-2-1-2-2-2 Quantitative-submode-coefficients-inputed_coeff-T-linear Copy",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-2-3-1-quantitative-submode-coefficients-inputing-coeff-a-linear-0-copy",
+    "newStateId": "QUANT_SMODE_COEF_IN_COEFF_A_LIN_0_OK",
+    "screenIdOld": "4-2-1-2-3-1-quantitative-submode-coefficients-inputing-coeff-a-linear-0-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_IN_COEFF_A_LIN_0_OK",
+    "title": "4-2-1-2-3-2 Quantitative-submode-coefficients-inputed_coeff-A-linear_0",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-2-3-2-quantitative-submode-coefficients-inputed-coeff-a-linear-0-copy",
+    "newStateId": "QUANT_SMODE_COEF_PARR_MEAS_IN",
+    "screenIdOld": "4-2-1-2-3-2-quantitative-submode-coefficients-inputed-coeff-a-linear-0-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_PARR_MEAS_IN",
+    "title": "4-2-1-3-1 Quantitative-submode-coefficients-parr_meas_inputing",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-3-1-quantitative-submode-coefficients-parr-meas-inputing-copy",
+    "newStateId": "QUANT_SMODE_COEF_PARR_MEAS_IN_OK",
+    "screenIdOld": "4-2-1-3-1-quantitative-submode-coefficients-parr-meas-inputing-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_PARR_MEAS_IN_OK",
+    "title": "4-2-1-3-2 Quantitative-submode-coefficients-parr_meas_inputed",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-1-quantitative-submode-coefficients-new-type-regression-copy",
+    "newStateId": "QUANT_SMODE_COEF_NEW_MODE",
+    "screenIdOld": "4-2-1-1-1-quantitative-submode-coefficients-new-type-regression-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW_MODE",
+    "title": "4-2-1-1-2 Quantitative-submode-coefficients-new-modes",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-2-quantitative-submode-coefficients-new-modes-copy-2",
+    "newStateId": "QUANT_SMODE_COEF_NEW_WL",
+    "screenIdOld": "4-2-1-1-2-quantitative-submode-coefficients-new-modes-copy-2",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW_WL",
+    "title": "4-2-1-1-3 Quantitative-submode-coefficients-new-wl",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-2-1-1-2-quantitative-submode-coefficients-new-modes-copy-copy",
+    "newStateId": "QUANT_SMODE_COEF_NEW_NEXT",
+    "screenIdOld": "4-2-1-1-2-quantitative-submode-coefficients-new-modes-copy-copy",
+    "screenIdNew": "QUANT_SMODE_COEF_NEW_NEXT",
+    "title": "4-2-1-1-4 Quantitative-submode-coefficients-new-next",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-1-1-quantitative-submode-curves-load-copy",
+    "newStateId": "QUANT_SMODE_COEFF_LOAD",
+    "screenIdOld": "4-1-2-1-1-quantitative-submode-curves-load-copy",
+    "screenIdNew": "QUANT_SMODE_COEFF_LOAD",
+    "title": "4-2-2-1-2 Quantitative-submode-coeff-load Copy",
+    "svgNodeId": null,
+    "subsystem": "quantitative",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-copy",
+    "newStateId": "SET_D2_LAMP",
+    "screenIdOld": "7-1-1-copy",
+    "screenIdNew": "SET_D2_LAMP",
+    "title": "7-1-3 Settings-D2_lamp",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-settings-dark-current-copy",
+    "newStateId": "SET_W_LAMP",
+    "screenIdOld": "7-1-1-settings-dark-current-copy",
+    "screenIdNew": "SET_W_LAMP",
+    "title": "7-1-2 Settings-W_lamp",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-3-settings-d2-lamp-copy",
+    "newStateId": "SET_FILE_SYS",
+    "screenIdOld": "7-1-3-settings-d2-lamp-copy",
+    "screenIdNew": "SET_FILE_SYS",
+    "title": "7-1-4 Settings-Files_system",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-4-settings-d2-lamp-peripheriae-copy",
+    "newStateId": "SET_CHANGE_LAMP",
+    "screenIdOld": "7-1-4-settings-d2-lamp-peripheriae-copy",
+    "screenIdNew": "SET_CHANGE_LAMP",
+    "title": "7-1-5 Settings-Change_lamp",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-4-settings-d2-lamp-peripheriae-copy-copy",
+    "newStateId": "SET_DATA_TIME",
+    "screenIdOld": "7-1-4-settings-d2-lamp-peripheriae-copy-copy",
+    "screenIdNew": "SET_DATA_TIME",
+    "title": "7-1-6 Settings-Data_Time",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-6-settings-d2-lamp-peripheriae-copy-copy-copy",
+    "newStateId": "SET_CAL",
+    "screenIdOld": "7-1-6-settings-d2-lamp-peripheriae-copy-copy-copy",
+    "screenIdNew": "SET_CAL",
+    "title": "7-1-7 Settings-Calibration_λ",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-7-settings-d2-lamp-peripheriae-copy-copy-copy-copy",
+    "newStateId": "SET_ABOUT_SYS",
+    "screenIdOld": "7-1-7-settings-d2-lamp-peripheriae-copy-copy-copy-copy",
+    "screenIdNew": "SET_ABOUT_SYS",
+    "title": "7-1-9 Settings-About_system",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-2-settings-w-lamp-copy",
+    "newStateId": "SET_W_LAMP_ON",
+    "screenIdOld": "7-1-2-settings-w-lamp-copy",
+    "screenIdNew": "SET_W_LAMP_ON",
+    "title": "7-1-2-1 Settings-W_lamp-on",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-3-settings-d2-lamp-copy-2",
+    "newStateId": "SET_D2_LAMP_ON",
+    "screenIdOld": "7-1-3-settings-d2-lamp-copy-2",
+    "screenIdNew": "SET_D2_LAMP_ON",
+    "title": "7-1-3-1 Settings-D2_lamp-on",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-3-1-settings-d2-lamp-on-copy",
+    "newStateId": "SET_D2_LAMP_OFF",
+    "screenIdOld": "7-1-3-1-settings-d2-lamp-on-copy",
+    "screenIdNew": "SET_D2_LAMP_OFF",
+    "title": "7-1-3-2 Settings-D2_lamp-off",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-2-1-settings-w-lamp-on-copy",
+    "newStateId": "SET_W_LAMP_OFF",
+    "screenIdOld": "7-1-2-1-settings-w-lamp-on-copy",
+    "screenIdNew": "SET_W_LAMP_OFF",
+    "title": "7-1-2-1 Settings-W_lamp-off",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-4-settings-peripheriae-copy",
+    "newStateId": "SET_FILE_SYS_N141",
+    "screenIdOld": "7-1-4-settings-peripheriae-copy",
+    "screenIdNew": "SET_FILE_SYS_N141",
+    "title": "7-1-4-1 Settings-Files_system",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N141"
+    ]
+  },
+  {
+    "oldStateId": "7-1-5-1-settings-change-lamp-inputting-copy",
+    "newStateId": "SET_CHANGE_LAMP_IN",
+    "screenIdOld": "7-1-5-1-settings-change-lamp-inputting-copy",
+    "screenIdNew": "SET_CHANGE_LAMP_IN",
+    "title": "7-1-5-1 Settings-Change_lamp-inputing",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-5-2-settings-change-lamp-inputed-copy",
+    "newStateId": "SET_CHANGE_LAMP_IN_OK",
+    "screenIdOld": "7-1-5-2-settings-change-lamp-inputed-copy",
+    "screenIdNew": "SET_CHANGE_LAMP_IN_OK",
+    "title": "7-1-5-2 Settings-Change_lamp-inputed",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "7-1-4-1-settings-files-system-copy",
+    "newStateId": "SET_DATA_TIME_IN_MONDAY",
+    "screenIdOld": "7-1-4-1-settings-files-system-copy",
+    "screenIdNew": "SET_DATA_TIME_IN_MONDAY",
+    "title": "7-1-6-1 Settings-Data_Time-inputing-monday",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-6-1-settings-data-time-inputing-copy",
+    "newStateId": "SET_DATA_TIME_IN_TUESDAY",
+    "screenIdOld": "7-1-6-1-settings-data-time-inputing-copy",
+    "screenIdNew": "SET_DATA_TIME_IN_TUESDAY",
+    "title": "7-1-6-2 Settings-Data_Time-inputing-tuesday",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-6-1-settings-data-time-inputing-copy-copy",
+    "newStateId": "SET_DATA_TIME_IN_WESNESDAY",
+    "screenIdOld": "7-1-6-1-settings-data-time-inputing-copy-copy",
+    "screenIdNew": "SET_DATA_TIME_IN_WESNESDAY",
+    "title": "7-1-6-3 Settings-Data_Time-inputing-wesnesday",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-6-1-settings-data-time-inputing-copy-copy-copy",
+    "newStateId": "SET_DATA_TIME_IN_THURSDAY",
+    "screenIdOld": "7-1-6-1-settings-data-time-inputing-copy-copy-copy",
+    "screenIdNew": "SET_DATA_TIME_IN_THURSDAY",
+    "title": "7-1-6-4 Settings-Data_Time-inputing-thursday",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-6-1-settings-data-time-inputing-copy-copy-copy-copy",
+    "newStateId": "SET_DATA_TIME_IN_FRIDAY",
+    "screenIdOld": "7-1-6-1-settings-data-time-inputing-copy-copy-copy-copy",
+    "screenIdNew": "SET_DATA_TIME_IN_FRIDAY",
+    "title": "7-1-6-5 Settings-Data_Time-inputing-friday",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-6-1-settings-data-time-inputing-copy-copy-copy-copy-copy",
+    "newStateId": "SET_DATA_TIME_IN_SATURDAY",
+    "screenIdOld": "7-1-6-1-settings-data-time-inputing-copy-copy-copy-copy-copy",
+    "screenIdNew": "SET_DATA_TIME_IN_SATURDAY",
+    "title": "7-1-6-6 Settings-Data_Time-inputing-saturday",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-6-1-settings-data-time-inputing-copy-copy-copy-copy-copy-copy",
+    "newStateId": "SET_DATA_TIME_IN",
+    "screenIdOld": "7-1-6-1-settings-data-time-inputing-copy-copy-copy-copy-copy-copy",
+    "screenIdNew": "SET_DATA_TIME_IN",
+    "title": "7-1-6-7 Settings-Data_Time-inputing Copy Copy Copy Copy Copy Copy",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-settings-dark-current-copy-2",
+    "newStateId": "SET_DARKCURR_MEASUR_PROC",
+    "screenIdOld": "7-1-1-settings-dark-current-copy-2",
+    "screenIdNew": "SET_DARKCURR_MEASUR_PROC",
+    "title": "7-1-1-1 Settings-Dark_current_measur_process",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-1-settings-dark-current-measur-process-copy",
+    "newStateId": "SET_DARKCURR_MEASURED",
+    "screenIdOld": "7-1-1-1-settings-dark-current-measur-process-copy",
+    "screenIdNew": "SET_DARKCURR_MEASURED",
+    "title": "7-1-1-2 Settings-Dark_current_measured",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-2-settings-dark-current-measured-copy",
+    "newStateId": "SET_DARKCURR_MEASURED_OK",
+    "screenIdOld": "7-1-1-2-settings-dark-current-measured-copy",
+    "screenIdNew": "SET_DARKCURR_MEASURED_OK",
+    "title": "7-1-1-3 Settings-Dark_current_measured Copy",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-2-settings-dark-current-measured-copy-copy",
+    "newStateId": "SET_DARKCURR_MEASURED_N114",
+    "screenIdOld": "7-1-1-2-settings-dark-current-measured-copy-copy",
+    "screenIdNew": "SET_DARKCURR_MEASURED_N114",
+    "title": "7-1-1-4 Settings-Dark_current_measured Copy Copy",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N114"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-4-settings-dark-current-measured-copy-copy-copy",
+    "newStateId": "SET_DARKCURR_MEASURED_N115",
+    "screenIdOld": "7-1-1-4-settings-dark-current-measured-copy-copy-copy",
+    "screenIdNew": "SET_DARKCURR_MEASURED_N115",
+    "title": "7-1-1-5 Settings-Dark_current_measured Copy Copy Copy",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N115"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-5-settings-dark-current-measured-copy-copy-copy-copy",
+    "newStateId": "SET_DARKCURR_MEASURED_N116",
+    "screenIdOld": "7-1-1-5-settings-dark-current-measured-copy-copy-copy-copy",
+    "screenIdNew": "SET_DARKCURR_MEASURED_N116",
+    "title": "7-1-1-6 Settings-Dark_current_measured Copy Copy Copy Copy",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N116"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-6-settings-dark-current-measured-copy-copy-copy-copy-copy",
+    "newStateId": "SET_DARKCURR_MEASURED_N117",
+    "screenIdOld": "7-1-1-6-settings-dark-current-measured-copy-copy-copy-copy-copy",
+    "screenIdNew": "SET_DARKCURR_MEASURED_N117",
+    "title": "7-1-1-7 Settings-Dark_current_measured Copy Copy Copy Copy Copy",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N117"
+    ]
+  },
+  {
+    "oldStateId": "7-1-1-7-settings-dark-current-measured-copy-copy-copy-copy-copy-copy",
+    "newStateId": "SET_DARKCURR_MEASURED_2",
+    "screenIdOld": "7-1-1-7-settings-dark-current-measured-copy-copy-copy-copy-copy-copy",
+    "screenIdNew": "SET_DARKCURR_MEASURED_2",
+    "title": "7-1-1-7 Settings-Dark_current_measured Copy Copy Copy Copy Copy Copy",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-numeric-suffix-from:SET_DARKCURR_MEASURED"
+    ],
+    "requiresUserDecision": true,
+    "conflictNote": "ID collision: \"SET_DARKCURR_MEASURED\" already claimed by \"7-1-1-1-settings-dark-current-measur-process-copy\". Auto-suffixed to \"SET_DARKCURR_MEASURED_2\". Both num-prefix and type-suffix strategies exhausted."
+  },
+  {
+    "oldStateId": "7-1-7-settings-d2-lamp-calibration-copy",
+    "newStateId": "SET_CAL_PROC",
+    "screenIdOld": "7-1-7-settings-d2-lamp-calibration-copy",
+    "screenIdNew": "SET_CAL_PROC",
+    "title": "7-1-7-1 Settings-Calibration_λ-process",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-7-1-settings-calibration-process-copy",
+    "newStateId": "SET_CAL_OK",
+    "screenIdOld": "7-1-7-1-settings-calibration-process-copy",
+    "screenIdNew": "SET_CAL_OK",
+    "title": "7-1-7-2 Settings-Calibration_λ-success",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-7-2-settings-calibration-success-copy",
+    "newStateId": "SET_CAL_MISTAKE",
+    "screenIdOld": "7-1-7-2-settings-calibration-success-copy",
+    "screenIdNew": "SET_CAL_MISTAKE",
+    "title": "7-1-7-3 Settings-Calibration_λ-mistake",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-8-settings-d2-lamp-peripheriae-copy-copy-copy-copy-copy",
+    "newStateId": "SET_SYS_DEFAULT",
+    "screenIdOld": "7-1-8-settings-d2-lamp-peripheriae-copy-copy-copy-copy-copy",
+    "screenIdNew": "SET_SYS_DEFAULT",
+    "title": "7-1-8 Settings-System_Default",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-8-settings-system-default-copy",
+    "newStateId": "SET_SYS_DEFAULT_YES",
+    "screenIdOld": "7-1-8-settings-system-default-copy",
+    "screenIdNew": "SET_SYS_DEFAULT_YES",
+    "title": "7-1-8-1 Settings-System_Default_yes",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-8-1-settings-system-default-yes-copy-2",
+    "newStateId": "SET_SYS_DEFAULT_YES_N182",
+    "screenIdOld": "7-1-8-1-settings-system-default-yes-copy-2",
+    "screenIdNew": "SET_SYS_DEFAULT_YES_N182",
+    "title": "7-1-8-2 Settings-System_Default_yes Copy",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N182"
+    ]
+  },
+  {
+    "oldStateId": "pc-connected-copy",
+    "newStateId": "PC_DISCONN",
+    "screenIdOld": "pc-connected-copy",
+    "screenIdNew": "PC_DISCONN",
+    "title": "PC disconnected",
+    "svgNodeId": null,
+    "subsystem": "shared",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "7-1-9-settings-about-system-copy",
+    "newStateId": "SET_ABOUT_SYS_N191",
+    "screenIdOld": "7-1-9-settings-about-system-copy",
+    "screenIdNew": "SET_ABOUT_SYS_N191",
+    "title": "7-1-9-1 Settings-About_system",
+    "svgNodeId": null,
+    "subsystem": "settings",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-num-prefix-suffix:N191"
+    ]
+  },
+  {
+    "oldStateId": "screen-255",
+    "newStateId": "KIN_PAR_MODE",
+    "screenIdOld": "screen",
+    "screenIdNew": "screen",
+    "title": "5-1-1 Kinetic-parameter-mode",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-1-kinetic-parameter-mode-copy",
+    "newStateId": "KIN_PAR_LAYERS",
+    "screenIdOld": "2-1-4-1-1-kinetic-parameter-mode-copy",
+    "screenIdNew": "KIN_PAR_LAYERS",
+    "title": "5-1-2 Kinetic-parameter-layers",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-2-kinetic-parameter-layers-copy",
+    "newStateId": "KIN_PAR_TIME",
+    "screenIdOld": "2-1-4-1-2-kinetic-parameter-layers-copy",
+    "screenIdNew": "KIN_PAR_TIME",
+    "title": "5-1-3 Kinetic-parameter-time",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-3-kinetic-parameter-time-copy",
+    "newStateId": "KIN_PAR_NEXT",
+    "screenIdOld": "2-1-4-1-3-kinetic-parameter-time-copy",
+    "screenIdNew": "KIN_PAR_NEXT",
+    "title": "5-1-4 Kinetic-parameter-next",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-4-kinetic-parameter-next-copy",
+    "newStateId": "KIN_PAR_MODE_A",
+    "screenIdOld": "2-1-4-1-4-kinetic-parameter-next-copy",
+    "screenIdNew": "KIN_PAR_MODE_A",
+    "title": "5-1-1-1 Kinetic-parameter-mode-A",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-4-kinetic-parameter-next-copy-copy",
+    "newStateId": "KIN_PAR_MODE_T",
+    "screenIdOld": "2-1-4-1-4-kinetic-parameter-next-copy-copy",
+    "screenIdNew": "KIN_PAR_MODE_T",
+    "title": "5-1-1-2 Kinetic-parameter-mode-T",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-4-kinetic-parameter-next-copy-copy-copy",
+    "newStateId": "KIN_PAR_MODE_E",
+    "screenIdOld": "2-1-4-1-4-kinetic-parameter-next-copy-copy-copy",
+    "screenIdNew": "KIN_PAR_MODE_E",
+    "title": "5-1-1-3 Kinetic-parameter-mode-E",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy",
+    "newStateId": "KIN_PAR_LAYERS_LOW_INPUTTING_A",
+    "screenIdOld": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_LOW_INPUTTING_A",
+    "title": "5-1-2-1-1 Kinetic-parameter-layers-low-inputting-A",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy-copy",
+    "newStateId": "KIN_PAR_LAYERS_LOW_IN_A",
+    "screenIdOld": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_LOW_IN_A",
+    "title": "5-1-2-1-2 Kinetic-parameter-layers-low-inputed-A",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy-copy-copy",
+    "newStateId": "KIN_PAR_LAYERS_HIGH_INPUTTING_A",
+    "screenIdOld": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy-copy-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_HIGH_INPUTTING_A",
+    "title": "5-1-2-1-3 Kinetic-parameter-layers-high-inputting-A",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy-copy-copy-copy-copy",
+    "newStateId": "KIN_PAR_LAYERS_LOW_INPUTTING_T",
+    "screenIdOld": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy-copy-copy-copy-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_LOW_INPUTTING_T",
+    "title": "5-1-2-1-2-1 Kinetic-parameter-layers-low-inputting-%T",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy-copy-copy-copy-copy-copy-copy",
+    "newStateId": "KIN_PAR_LAYERS_HIGH_INPUTTING_T",
+    "screenIdOld": "2-1-4-1-1-3-kinetic-parameter-mode-e-copy-copy-copy-copy-copy-copy-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_HIGH_INPUTTING_T",
+    "title": "5-1-2-1-2-2 Kinetic-parameter-layers-high-inputting-%T",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-2-7-kinetic-parameter-layers-high-inputting-t-copy",
+    "newStateId": "KIN_PAR_LAYERS_HIGH_IN_T",
+    "screenIdOld": "2-1-4-1-2-7-kinetic-parameter-layers-high-inputting-t-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_HIGH_IN_T",
+    "title": "5-1-2-1-2-3 Kinetic-parameter-layers-high-inputed-%T",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-2-8-kinetic-parameter-layers-high-inputed-t-copy",
+    "newStateId": "KIN_PAR_LAYERS_LOW_INPUTTING_E",
+    "screenIdOld": "2-1-4-1-2-8-kinetic-parameter-layers-high-inputed-t-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_LOW_INPUTTING_E",
+    "title": "5-1-2-1-3-1 Kinetic-parameter-layers-low-inputting-E",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-2-9-kinetic-parameter-layers-low-inputting-e-copy",
+    "newStateId": "KIN_PAR_LAYERS_LOW_IN_E",
+    "screenIdOld": "2-1-4-1-2-9-kinetic-parameter-layers-low-inputting-e-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_LOW_IN_E",
+    "title": "5-1-2-1-3-2 Kinetic-parameter-layers-low-inputed_E",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-2-11-kinetic-parameter-layers-high-inputting-e-copy",
+    "newStateId": "KIN_PAR_LAYERS_HIGH_IN_E",
+    "screenIdOld": "2-1-4-1-2-11-kinetic-parameter-layers-high-inputting-e-copy",
+    "screenIdNew": "KIN_PAR_LAYERS_HIGH_IN_E",
+    "title": "5-1-2-1-3-3 Kinetic-parameter-layers-high-inputed-E",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-2-9-kinetic-parameter-layers-high-inputed-e-copy",
+    "newStateId": "KIN_PAR_TIME_INPUTTING_TIMESTEP",
+    "screenIdOld": "2-1-4-1-2-9-kinetic-parameter-layers-high-inputed-e-copy",
+    "screenIdNew": "KIN_PAR_TIME_INPUTTING_TIMESTEP",
+    "title": "5-1-3-1 Kinetic-parameter-time-inputting-timestep",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-2-9-kinetic-parameter-layers-high-inputed-e-copy-copy",
+    "newStateId": "KIN_PAR_TIME_IN_TIMESTEP",
+    "screenIdOld": "2-1-4-1-2-9-kinetic-parameter-layers-high-inputed-e-copy-copy",
+    "screenIdNew": "KIN_PAR_TIME_IN_TIMESTEP",
+    "title": "5-1-3-2 Kinetic-parameter-time-inputed-timestep",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-2-9-kinetic-parameter-layers-high-inputed-e-copy-copy-copy",
+    "newStateId": "KIN_PAR_TIME_IN_TIME_ALL",
+    "screenIdOld": "2-1-4-1-2-9-kinetic-parameter-layers-high-inputed-e-copy-copy-copy",
+    "screenIdNew": "KIN_PAR_TIME_IN_TIME_ALL",
+    "title": "5-1-3-3 Kinetic-parameter-time-inputed-time_all",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "4-1-2-2-quantitative-submode-curves-load-graphic-copy",
+    "newStateId": "KIN_MEAS_RES_GRAPHICS_A_F_T",
+    "screenIdOld": "4-1-2-2-quantitative-submode-curves-load-graphic-copy",
+    "screenIdNew": "KIN_MEAS_RES_GRAPHICS_A_F_T",
+    "title": "2-1-4-2-4-1 Kinetic-measurement-result-graphics-A-f(t)",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-2-4-1-kinetic-measurement-result-graphics-a-f-c-copy",
+    "newStateId": "KIN_MEAS_RES_GRAPHICS_T_F_T",
+    "screenIdOld": "2-1-4-2-4-1-kinetic-measurement-result-graphics-a-f-c-copy",
+    "screenIdNew": "KIN_MEAS_RES_GRAPHICS_T_F_T",
+    "title": "2-1-4-2-4-2 Kinetic-measurement-result-graphics-T-f(t)",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "2-1-4-1-3-3-kinetic-parameter-time-inputed-time-all-copy",
+    "newStateId": "KIN_MEAS_RES_TABLE",
+    "screenIdOld": "2-1-4-1-3-3-kinetic-parameter-time-inputed-time-all-copy",
+    "screenIdNew": "KIN_MEAS_RES_TABLE",
+    "title": "5-3-2 Kinetic-measurement-result-table",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "5-3-2-kinetic-measurement-result-table-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_MODE",
+    "screenIdOld": "5-3-2-kinetic-measurement-result-table-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_MODE",
+    "title": "6-1-1 Mutliwavelength-parameter-mode",
+    "svgNodeId": null,
+    "subsystem": "kinetics",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-1-mutliwavelength-parameter-mode-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL",
+    "screenIdOld": "6-1-1-mutliwavelength-parameter-mode-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL",
+    "title": "6-1-2 Mutliwavelength-parameter-number_wl",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-mutliwavelength-parameter-number-wl-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NEXT",
+    "screenIdOld": "6-1-2-mutliwavelength-parameter-number-wl-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NEXT",
+    "title": "6-1-3 Mutliwavelength-parameter-next",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-mutliwavelength-parameter-number-wl-copy-2",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN",
+    "screenIdOld": "6-1-2-mutliwavelength-parameter-number-wl-copy-2",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN",
+    "title": "6-1-2-1-1 Mutliwavelength-parameter-number_wl-inputing",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-1-1-mutliwavelength-parameter-number-wl-inputing-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_OK",
+    "screenIdOld": "6-1-2-1-1-mutliwavelength-parameter-number-wl-inputing-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_OK",
+    "title": "6-1-2-1-2 Mutliwavelength-parameter-number_wl-inputed",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "6-1-1-mutliwavelength-parameter-mode-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_MODE_A",
+    "screenIdOld": "6-1-1-mutliwavelength-parameter-mode-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_MODE_A",
+    "title": "6-1-1-1 Mutliwavelength-parameter-mode-A",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-1-1-mutliwavelength-parameter-mode-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_MODE_T",
+    "screenIdOld": "6-1-1-1-mutliwavelength-parameter-mode-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_MODE_T",
+    "title": "6-1-1-2 Mutliwavelength-parameter-mode-%T",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-1-1-mutliwavelength-parameter-mode-copy-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_MODE_E",
+    "screenIdOld": "6-1-1-1-mutliwavelength-parameter-mode-copy-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_MODE_E",
+    "title": "6-1-1-3 Mutliwavelength-parameter-mode_E",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-1-2-mutliwavelength-parameter-number-wl-inputed-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_1",
+    "screenIdOld": "6-1-2-1-2-mutliwavelength-parameter-number-wl-inputed-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_1",
+    "title": "6-1-2-2-1 Mutliwavelength-parameter-number_wl-inputed_1",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-2-1-mutliwavelength-parameter-number-wl-inputed-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_2",
+    "screenIdOld": "6-1-2-2-1-mutliwavelength-parameter-number-wl-inputed-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_2",
+    "title": "6-1-2-2-2 Mutliwavelength-parameter-number_wl-inputed_2",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-2-2-mutliwavelength-parameter-number-wl-inputed-2-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_3",
+    "screenIdOld": "6-1-2-2-2-mutliwavelength-parameter-number-wl-inputed-2-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_3",
+    "title": "6-1-2-2-3 Mutliwavelength-parameter-number_wl-inputed_3",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-2-2-mutliwavelength-parameter-number-wl-inputed-3-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_4",
+    "screenIdOld": "6-1-2-2-2-mutliwavelength-parameter-number-wl-inputed-3-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_4",
+    "title": "6-1-2-2-4 Mutliwavelength-parameter-number_wl-inputed_4",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-2-1-mutliwavelength-parameter-number-wl-inputed-1-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_WL",
+    "screenIdOld": "6-1-2-2-1-mutliwavelength-parameter-number-wl-inputed-1-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_WL",
+    "title": "6-1-2-2-1-1 Mutliwavelength-parameter-number_wl-inputing_wl",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-1-2-2-1-1-mutliwavelength-parameter-number-wl-inputing-wl-copy",
+    "newStateId": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_WL_OK",
+    "screenIdOld": "6-1-2-2-1-1-mutliwavelength-parameter-number-wl-inputing-wl-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_PAR_NUMBER_WL_IN_WL_OK",
+    "title": "6-1-2-2-1-2 Mutliwavelength-parameter-number_wl-inputed_wl",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived",
+      "collision-resolved-by-type-suffix"
+    ]
+  },
+  {
+    "oldStateId": "6-1-3-mutliwavelength-parameter-next-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_ZERO_262_2",
+    "screenIdOld": "6-1-3-mutliwavelength-parameter-next-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_ZERO_262_2",
+    "title": "6-2-1 Mutliwavelength-measurement_zero_262.2",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-1-mutliwavelength-measurement-zori-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_ZERO_SET_WL",
+    "screenIdOld": "6-2-1-mutliwavelength-measurement-zori-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_ZERO_SET_WL",
+    "title": "6-2-2 Mutliwavelength-measurement_zero_set wl",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-2-mutliwavelength-measurement-zori-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_ZERO_431_4",
+    "screenIdOld": "6-2-2-mutliwavelength-measurement-zori-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_ZERO_431_4",
+    "title": "6-2-3 Mutliwavelength-measurement_zero_431.4",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-3-mutliwavelength-measurement-zero-431-4-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_ZERO_585_6",
+    "screenIdOld": "6-2-3-mutliwavelength-measurement-zero-431-4-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_ZERO_585_6",
+    "title": "6-2-4 Mutliwavelength-measurement_zero_585.6",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-4-mutliwavelength-measurement-zero-431-4-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_ZERO_685_5",
+    "screenIdOld": "6-2-4-mutliwavelength-measurement-zero-431-4-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_ZERO_685_5",
+    "title": "6-2-5 Mutliwavelength-measurement_zero_685.5",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-5-mutliwavelength-measurement-zero-685-5-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_262_2",
+    "screenIdOld": "6-2-5-mutliwavelength-measurement-zero-685-5-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_262_2",
+    "title": "6-2-6 Mutliwavelength-measurement_meas_262.2",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-5-mutliwavelength-measurement-zero-685-5-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_ZERO_WL_TRANSIT",
+    "screenIdOld": "6-2-5-mutliwavelength-measurement-zero-685-5-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_ZERO_WL_TRANSIT",
+    "title": "6-2-7 Mutliwavelength-measurement_zero_wl_transit",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-5-mutliwavelength-measurement-zero-685-5-copy-copy-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_431_4",
+    "screenIdOld": "6-2-5-mutliwavelength-measurement-zero-685-5-copy-copy-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_431_4",
+    "title": "6-2-8 Mutliwavelength-measurement_meas_431.4",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-9-mutliwavelength-measurement-zero-685-5-copy-copy-copy-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_585_5_MEAS",
+    "screenIdOld": "6-2-9-mutliwavelength-measurement-zero-685-5-copy-copy-copy-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_585_5_MEAS",
+    "title": "6-2-9 Mutliwavelength-measurement_585.5_meas",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  },
+  {
+    "oldStateId": "6-2-10-mutliwavelength-measurement-zero-685-5-copy-copy-copy-copy-copy-copy",
+    "newStateId": "MUTLIWAVELENGTH_MEAS_685_5",
+    "screenIdOld": "6-2-10-mutliwavelength-measurement-zero-685-5-copy-copy-copy-copy-copy-copy",
+    "screenIdNew": "MUTLIWAVELENGTH_MEAS_685_5",
+    "title": "6-2-10 Mutliwavelength-measurement_meas 685,5",
+    "svgNodeId": null,
+    "subsystem": "multiwave",
+    "confidence": "low",
+    "evidence": [
+      "origin:user",
+      "title-derived"
+    ]
+  }
+]

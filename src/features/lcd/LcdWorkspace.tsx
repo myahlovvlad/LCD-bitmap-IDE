@@ -25,6 +25,7 @@ import { ValidationPanel } from '../validation/ValidationPanel';
 import { GlyphCGenerator } from './GlyphCGenerator';
 import { ScreenDslStudio } from '../screen-dsl-studio';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
+import { ScreenLayerManager } from '../fsm/ScreenLayerManager';
 
 type LcdToolPanel = 'editor' | 'pixel-import' | 'glyph-c' | 'templates' | 'screen-dsl';
 const SCREEN_TEMPLATES_KEY = 'lcd-bitmap-ide.screen-templates.v1';
@@ -52,6 +53,8 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
     selectedScreenId,
     selectScreen,
     createScreen,
+    updateFsmStates,
+    updateFsmLayers,
     duplicateScreen,
     renameScreen,
     resizeScreen,
@@ -69,12 +72,21 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
   const templateInputRef = useRef<HTMLInputElement>(null);
   const [layout, setLayout] = useState<LcdWorkspaceLayout>(readWorkspaceLayout);
   const [sidebarResize, setSidebarResize] = useState<SidebarResize | null>(null);
+  const [selectedLinkedStateIds, setSelectedLinkedStateIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (requestedScreenId && project?.screens[requestedScreenId]) {
       selectScreen(requestedScreenId);
     }
   }, [project, requestedScreenId, selectScreen]);
+
+  useEffect(() => {
+    if (!project || !selectedScreenId) {
+      setSelectedLinkedStateIds([]);
+      return;
+    }
+    setSelectedLinkedStateIds(project.fsm.stateOrder.filter((stateId) => project.fsm.states[stateId]?.screenId === selectedScreenId));
+  }, [project, selectedScreenId]);
 
   useEffect(() => {
     localStorage.setItem(LCD_LAYOUT_KEY, JSON.stringify(layout));
@@ -104,6 +116,8 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
   const linkedStates = screen
     ? project.fsm.stateOrder.map((id) => project.fsm.states[id]).filter((state) => state.screenId === screen.id)
     : [];
+  const screenLayerIds = [...new Set([...(project.fsm.layerOrder ?? []), ...project.fsm.stateOrder.map((stateId) => project.fsm.states[stateId]?.subsystem || 'user')])];
+  const screenLayers = screenLayerIds.map((id) => project.fsm.layers?.[id] ?? { id, name: id === 'user' ? 'Общий слой' : id, color: '#64748b' });
   const auxiliaryPanel = toolPanel === 'pixel-import' ? (
     <PixelImporter
       language={language}
@@ -348,15 +362,35 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
         </section>
         <section className="inspector-card sidebar-content">
           <h3>{labels.linkedFsmStates}</h3>
-          {linkedStates.length === 0 ? <p>{labels.screenNotLinked}</p> : linkedStates.map((state) => (
-            <button
-              key={state.id}
-              type="button"
-              onClick={() => navigate({ mode: 'fsm', stateId: state.id })}
-            >
-              <Workflow size={14} /> {state.title}
-            </button>
-          ))}
+          {linkedStates.length === 0 ? <p>{labels.screenNotLinked}</p> : <>
+            <p className="screen-layer-binding-hint">{labels.screenLayerBindingHint}</p>
+            {linkedStates.map((state) => (
+              <div className="screen-layer-state-row" key={state.id}>
+                <label title={labels.includeInLayerAssignment}>
+                  <input
+                    type="checkbox"
+                    checked={selectedLinkedStateIds.includes(state.id)}
+                    onChange={() => setSelectedLinkedStateIds((current) => current.includes(state.id)
+                      ? current.filter((stateId) => stateId !== state.id)
+                      : [...current, state.id])}
+                  />
+                </label>
+                <button type="button" onClick={() => navigate({ mode: 'fsm', stateId: state.id })}>
+                  <Workflow size={14} /> {state.title}
+                </button>
+                <small>{state.subsystem || labels.generalLayerOption}</small>
+              </div>
+            ))}
+            <ScreenLayerManager
+              layers={screenLayers}
+              selectedStateIds={selectedLinkedStateIds}
+              states={project.fsm.states}
+              presets={project.fsm.visibilityPresets ?? {}}
+              labels={labels}
+              onUpdateStates={updateFsmStates}
+              onUpdateLayers={(layers, presets) => updateFsmLayers(Object.fromEntries(layers.map((layer) => [layer.id, layer])), layers.map((layer) => layer.id), presets)}
+            />
+          </>}
         </section>
       </aside>
       {showTutorial ? (

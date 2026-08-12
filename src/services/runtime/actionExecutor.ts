@@ -65,9 +65,10 @@ export async function executeProcedure(
         }
         const def = ctx.cliCatalog[cmdId];
         const command = def?.command ?? cmdId;
+        const commandWithArgs = [command, ...(step.cliArgs ?? []).map((argument) => argument.trim()).filter(Boolean)].join(' ');
 
-        audit(index, 'cli', `Sending: ${command}`, true);
-        const result = await ctx.transport.sendCommand(command);
+        audit(index, 'cli', `Sending: ${commandWithArgs}`, true);
+        const result = await ctx.transport.sendCommand(commandWithArgs);
 
         if (!result.ok) {
           audit(index, 'cli', `Command failed: ${result.error}`, false);

@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-08-12T08:12:48.236Z",
+  "lcdproj": {
+    "screens": 299,
+    "fsmStates": 299,
+    "transitions": 605,
+    "transitionOrder": 605,
+    "events": 27,
+    "panelElements": 25,
+    "tags": 23,
+    "procedures": 11,
+    "cliCommands": 17,
+    "alarms": 10,
+    "layers": 10,
+    "visibilityPresets": 0,
+    "subsystems": 9
+  },
+  "svg": {
+    "totalNodes": 234,
+    "byFile": {
+      "01_Full_diagram.svg": 83,
+      "02_Photometry.svg": 29,
+      "03_Quantitative_analysis.svg": 40,
+      "04_Multiwavelength_mode.svg": 23,
+      "05_Kinetics.svg": 23,
+      "06_Settings_and_files.svg": 36
+    }
+  },
+  "idMigration": {
+    "total": 299,
+    "properOriginalStates": 9,
+    "copyGeneratedStates": 290,
+    "autoRenames": 298,
+    "ambiguous": 1,
+    "highConfidence": 8,
+    "mediumConfidence": 1,
+    "lowConfidence": 289
+  }
+}

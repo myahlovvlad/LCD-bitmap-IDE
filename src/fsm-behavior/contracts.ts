@@ -58,6 +58,12 @@ export interface GuardEvaluationContext {
   readonly status: string;
   readonly value: number;
   readonly timeout_ms: number;
+  /**
+   * Runtime values, normally supplied by the instrument tag context.  Legacy
+   * ECROS projects use dotted ids (for example `alarm.lamp == true`), so these
+   * must remain addressable verbatim rather than being reduced to JS fields.
+   */
+  readonly values?: Readonly<Record<string, BehaviorScalarValue>>;
 }
 
 export type GuardEvaluation = (invocation: GuardInvocationV1, context: GuardEvaluationContext) => boolean;

@@ -54,6 +54,7 @@ export function setMcpMainWindow(win: BrowserWindow): void { _mainWindow = win; 
 
 const sseClients = new Set<ServerResponse>();
 let mcpServer: Server | null = null;
+let mcpIpcHandlersRegistered = false;
 
 const pendingMutations = new Map<string, {
   resolve: (result: unknown) => void;
@@ -62,27 +63,43 @@ const pendingMutations = new Map<string, {
 }>();
 
 export function startMcpServer(ipcMain: IpcMain): Server {
-  ipcMain.on('api:project-state', (_event, state: { project: unknown }) => {
-    _projectCache = state.project;
-    notifySseClients({ method: 'notifications/resources/updated', params: { uri: 'project://current' } });
-  });
-  ipcMain.on('api:mutate-res', (_e, { requestId, result, error }: { requestId: string; result?: unknown; error?: string }) => {
-    const pending = pendingMutations.get(requestId);
-    if (!pending) return;
-    clearTimeout(pending.timer);
-    pendingMutations.delete(requestId);
-    if (error) pending.reject(new Error(error));
-    else pending.resolve(result);
-  });
+  if (mcpServer) return mcpServer;
+  if (!mcpIpcHandlersRegistered) {
+    mcpIpcHandlersRegistered = true;
+    ipcMain.on('api:project-state', (_event, state: { project: unknown }) => {
+      _projectCache = state.project;
+      notifySseClients({ method: 'notifications/resources/updated', params: { uri: 'project://current' } });
+    });
+    ipcMain.on('api:mutate-res', (_e, { requestId, result, error }: { requestId: string; result?: unknown; error?: string }) => {
+      const pending = pendingMutations.get(requestId);
+      if (!pending) return;
+      clearTimeout(pending.timer);
+      pendingMutations.delete(requestId);
+      if (error) pending.reject(new Error(error));
+      else pending.resolve(result);
+    });
+  }
 
-  mcpServer = createServer(handleMcpRequest);
-  mcpServer.listen(MCP_PORT, '127.0.0.1', () => {
+  const server = createServer(handleMcpRequest);
+  server.once('error', (error: NodeJS.ErrnoException) => {
+    console.warn(`[mcp] disabled: ${error.code ?? error.message}`);
+    if (mcpServer === server) mcpServer = null;
+  });
+  mcpServer = server;
+  server.listen(MCP_PORT, '127.0.0.1', () => {
     console.log(`[mcp] MCP server (HTTP/SSE) listening on http://127.0.0.1:${MCP_PORT}`);
   });
-  return mcpServer;
+  return server;
 }
 
-export function stopMcpServer(): void { mcpServer?.close(); mcpServer = null; }
+export function stopMcpServer(): void {
+  mcpServer?.close();
+  mcpServer = null;
+  for (const pending of pendingMutations.values()) clearTimeout(pending.timer);
+  pendingMutations.clear();
+  for (const client of sseClients) client.end();
+  sseClients.clear();
+}
 
 async function mutate(action: string, payload: unknown): Promise<unknown> {
   if (!_mainWindow) throw new Error('No renderer window available');

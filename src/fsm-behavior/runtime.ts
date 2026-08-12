@@ -19,7 +19,11 @@ export function evaluateTypedGuard(condition: string | null, context: GuardEvalu
     return { matched: true, behavior };
   }
   if (behavior.kind === 'opaque') {
-    const legacyContext: Record<string, string | number | boolean> = { ...context };
+    const { values, ...baseContext } = context;
+    const legacyContext: Record<string, string | number | boolean | null> = {
+      ...baseContext,
+      ...(values ?? {})
+    };
     return { matched: evaluateLegacyCondition(behavior.source, legacyContext), behavior };
   }
   if (behavior.kind === 'invalid') {
@@ -34,12 +38,14 @@ export function effectsFromTransition(transition: Pick<FsmTransition, 'backendPr
   return backend.kind === 'typed-effects' ? backend.effects : [];
 }
 
-export function evaluateLegacyCondition(expression: string, context: Record<string, string | number | boolean>): boolean {
+export function evaluateLegacyCondition(expression: string, context: Record<string, string | number | boolean | null>): boolean {
   const trimmed = expression.trim();
   if (!trimmed) {
     return true;
   }
-  const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*(==|!=|>=|<=|>|<)\s*(.+)$/);
+  // Preserve dotted tag ids used by the imported instrument FSM, e.g.
+  // `alarm.lamp == true` and `device.error == true`.
+  const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_.-]*)\s*(==|!=|>=|<=|>|<)\s*(.+)$/);
   if (!match) {
     return Boolean(context[trimmed]);
   }

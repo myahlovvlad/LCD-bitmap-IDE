@@ -55,8 +55,10 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
     this.project = project;
     this.transport = options.transport;
     this.bypass = options.bypassProcedures ?? false;
-    this.inner = new ProjectRuntimeEngine(project);
     this.tags = new MutableTagContext(defaultTagValues(project.tags ?? {}));
+    this.inner = new ProjectRuntimeEngine(project, {
+      getGuardValues: () => this.tags.snapshot()
+    });
   }
 
   // ---- RuntimeEngine interface (delegates to inner) ----
@@ -77,6 +79,7 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
   }
   getAvailableButtons(): ControlPanelButton[] { return this.inner.getAvailableButtons(); }
   isButtonAllowed(button: ControlPanelButton): boolean { return this.inner.isButtonAllowed(button); }
+  getButtonBlockReason(button: ControlPanelButton): string | null { return this.inner.getButtonBlockReason(button); }
 
   /**
    * Synchronous sendEvent for backward compatibility.
@@ -259,7 +262,8 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
       button_id: this.activeButtonId ?? '',
       status: 'READY',
       value: 1,
-      timeout_ms: transition.trigger.timerMs ?? 0
+      timeout_ms: transition.trigger.timerMs ?? 0,
+      values: this.tags.snapshot()
     });
     return matched;
   }

@@ -234,11 +234,11 @@ export function TextRegistryWorkspace(): React.ReactElement {
             <Download size={14} />
             CSV
           </button>
-          <button type="button" onClick={() => importRef.current?.click()} title="Импорт CSV, JSON или XLSX">
-            <Upload size={14} /> Импорт
+          <button type="button" onClick={() => importRef.current?.click()} title={labels.importCsvJsonXlsx}>
+            <Upload size={14} /> {labels.importButtonLabel}
           </button>
-          <button type="button" onClick={promoteRepeatedText} title="Сделать повторяющиеся русские строки глобальными">
-            <RefreshCw size={14} /> Синхронизировать повторы
+          <button type="button" onClick={promoteRepeatedText} title={labels.promoteRepeatedText}>
+            <RefreshCw size={14} /> {labels.syncRepeatsButton}
           </button>
           <button type="button" className="hmi-help-button" onClick={() => setShowTutorial(true)} title={language === 'ru' ? 'Обучение' : 'Training'}><HelpCircle size={15} /></button>
           <input

@@ -73,7 +73,10 @@ export function HmiHandoffWorkspace(): React.ReactElement {
     : null;
   const selectedProcedureCommands = (selectedProcedure?.steps ?? [])
     .filter((step) => step.type === 'cli' && Boolean(step.cliCommandId))
-    .map((step) => step.cliCommandId as string);
+    .map((step) => ({
+      commandId: step.cliCommandId as string,
+      argument: step.cliArgs?.map((argument) => argument.trim()).filter(Boolean).join(' ') || undefined
+    }));
   const fontRenderer = useMemo(() => new FontRenderer(fontGlyphs), [fontGlyphs]);
   const serialApi = window.spectroDesigner?.spectrophotometerSerial;
 
@@ -121,9 +124,9 @@ export function HmiHandoffWorkspace(): React.ReactElement {
     setSerialBusy(true);
     try {
       const log: string[] = [];
-      for (const commandId of selectedProcedureCommands) {
-        const result = await serialApi.command({ commandId });
-        log.push(`${commandId}: ${result.raw.trim()}`);
+      for (const command of selectedProcedureCommands) {
+        const result = await serialApi.command(command);
+        log.push(`${command.commandId}${command.argument ? ` ${command.argument}` : ''}: ${result.raw.trim()}`);
       }
       setSerialLog((lines) => [...lines, ...log]);
     } catch (error) {

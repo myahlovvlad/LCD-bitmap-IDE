@@ -11,6 +11,7 @@ import {
   Monitor,
   Network,
   PanelTop,
+  PanelsTopLeft,
   Package,
   Play,
   PlayCircle,
@@ -65,6 +66,7 @@ const ScreenDslStudio = lazy(() => import('../features/screen-dsl-studio/ScreenD
 const SettingsWorkspace = lazy(() => import('../features/settings/SettingsWorkspace').then((module) => ({ default: module.SettingsWorkspace })));
 const TextRegistryWorkspace = lazy(() => import('../features/text-registry/TextRegistryWorkspace').then((module) => ({ default: module.TextRegistryWorkspace })));
 const HmiHandoffWorkspace = lazy(() => import('../features/hmi-handoff/HmiHandoffWorkspace').then((module) => ({ default: module.HmiHandoffWorkspace })));
+const HmiDesignerWorkspace = lazy(() => import('../features/hmi-designer/HmiDesignerWorkspace').then((module) => ({ default: module.HmiDesignerWorkspace })));
 
 interface Toast {
   id: string;
@@ -399,6 +401,7 @@ function AppShell(): React.ReactElement {
         <WorkspaceButton mode="fsm" active={location.mode === 'fsm'} onClick={() => navigateTo({ mode: 'fsm' })} icon={<Workflow size={17} />} label={labels.fsmEditor} />
         <WorkspaceButton mode="lcd" active={location.mode === 'lcd'} onClick={() => navigateTo({ mode: 'lcd' })} icon={<Monitor size={17} />} label={labels.lcdEditor} />
         <WorkspaceButton mode="control-panel" active={location.mode === 'control-panel'} onClick={() => navigateTo({ mode: 'control-panel' })} icon={<PanelTop size={17} />} label={labels.controlPanel} />
+        <WorkspaceButton mode="hmi" active={location.mode === 'hmi'} onClick={() => navigateTo({ mode: 'hmi' })} icon={<PanelsTopLeft size={17} />} label={labels.hmiDesigner} />
         <WorkspaceButton mode="tags" active={location.mode === 'tags'} onClick={() => navigate({ mode: 'tags' })} icon={<Tag size={17} />} label={labels.tagsWorkspace} />
         <WorkspaceButton mode="procedures" active={location.mode === 'procedures'} onClick={() => navigate({ mode: 'procedures' })} icon={<Terminal size={17} />} label={labels.proceduresWorkspace} />
         <WorkspaceButton mode="alarms" active={location.mode === 'alarms'} onClick={() => navigate({ mode: 'alarms' })} icon={<AlertCircle size={17} />} label={labels.alarmsWorkspace} />
@@ -414,6 +417,7 @@ function AppShell(): React.ReactElement {
           {location.mode === 'fsm' ? <FsmWorkspace requestedStateId={location.stateId} /> : null}
           {location.mode === 'lcd' ? <LcdWorkspace requestedScreenId={location.screenId} /> : null}
           {location.mode === 'control-panel' ? <ControlPanelWorkspace requestedElementId={location.elementId} /> : null}
+          {location.mode === 'hmi' ? <HmiDesignerWorkspace requestedStateId={location.stateId} requestedElementId={location.elementId} /> : null}
           {location.mode === 'tags' ? <TagEditorWorkspace /> : null}
           {location.mode === 'procedures' ? <ProcedureEditorWorkspace /> : null}
           {location.mode === 'alarms' ? <AlarmWorkspace /> : null}

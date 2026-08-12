@@ -8,6 +8,8 @@ import type {
   BackendProcess,
   ControlPanelElement,
   FsmEvent,
+  FsmLayer,
+  FsmLayerVisibilityPreset,
   FsmState,
   FsmTransition,
   LcdBitmapProject,
@@ -39,6 +41,10 @@ export function applyProjectCommandMutation(
       return addFsmState(workspace, context);
     case 'fsm.state.update':
       return updateFsmState(workspace, command.payload.stateId, command.payload.updates, context);
+    case 'fsm.states.update':
+      return updateFsmStates(workspace, command.payload.updates, context);
+    case 'fsm.layers.update':
+      return updateFsmLayers(workspace, command.payload, context);
     case 'fsm.state.delete':
       return deleteFsmState(workspace, command.payload.stateId, context);
     case 'fsm.state.ensureScreen':
@@ -85,6 +91,8 @@ export function applyProjectCommandMutation(
       return addControlElement(workspace, command.payload.elementType, context);
     case 'controlPanel.element.update':
       return updateControlElement(workspace, command.payload.elementId, command.payload.updates, context);
+    case 'controlPanel.elements.update':
+      return updateControlElements(workspace, command.payload.updates, context);
     case 'controlPanel.elements.delete':
       return deleteControlElements(workspace, command.payload.elementIds, context);
     case 'controlPanel.elements.group':
@@ -241,6 +249,76 @@ function updateFsmState(
     screens: nextScreens,
     fsm: { ...project.fsm, states: { ...project.fsm.states, [stateId]: nextState } }
   }, [{ kind: 'updated', entityType: 'fsm-state', entityId: stateId, path: `/fsm/states/${stateId}`, before: state, after: nextState }]);
+}
+
+/** Apply coordinated state edits in one command/history entry.  Layer rename,
+ * deletion and LCD screen-to-layer binding use this path to stay responsive on
+ * projects with hundreds of screens. */
+function updateFsmStates(
+  workspace: ApplicationWorkspace,
+  updatesByStateId: Record<string, Partial<FsmState>>,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const nextStates = { ...project.fsm.states };
+  let nextScreens = project.screens;
+  const changes: SemanticChange[] = [];
+
+  for (const [stateId, updates] of Object.entries(updatesByStateId)) {
+    const state = project.fsm.states[stateId];
+    if (!state) continue;
+    const stateType = updates.stateType ?? state.stateType;
+    const nextState: FsmState = {
+      ...state,
+      ...updates,
+      id: stateId,
+      initial: stateType === 'initial' ? true : updates.initial ?? state.initial,
+      terminal: stateType === 'success' || stateType === 'failure' ? true : updates.terminal ?? state.terminal
+    };
+    if (sameJson(state, nextState)) continue;
+    nextStates[stateId] = nextState;
+    if (state.screenId && project.screens[state.screenId] && typeof updates.title === 'string') {
+      nextScreens = {
+        ...nextScreens,
+        [state.screenId]: { ...nextScreens[state.screenId], name: updates.title, updatedAt: context.now() }
+      };
+    }
+    changes.push({ kind: 'updated', entityType: 'fsm-state', entityId: stateId, path: `/fsm/states/${stateId}`, before: state, after: nextState });
+  }
+  if (changes.length === 0) return noChange(workspace);
+  return changedProject(workspace, {
+    ...project,
+    meta: { ...project.meta, updatedAt: context.now() },
+    screens: nextScreens,
+    fsm: { ...project.fsm, states: nextStates }
+  }, changes);
+}
+
+function updateFsmLayers(
+  workspace: ApplicationWorkspace,
+  payload: Extract<ProjectCommand, { type: 'fsm.layers.update' }>['payload'],
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const layers: Record<string, FsmLayer> = Object.fromEntries(Object.entries(payload.layers)
+    .filter(([id, layer]) => Boolean(id.trim()) && Boolean(layer.name.trim()))
+    .map(([id, layer]) => [id, { ...layer, id, name: layer.name.trim().slice(0, 80), color: layer.color || '#475569' }]));
+  if (!layers.user) layers.user = { id: 'user', name: 'Общий слой', color: '#64748b', icon: 'layers' };
+  const layerOrder = [...new Set(payload.layerOrder.filter((id) => Boolean(layers[id])))];
+  if (!layerOrder.includes('user')) layerOrder.unshift('user');
+  const visibilityPresets: Record<string, FsmLayerVisibilityPreset> = {};
+  for (const [id, preset] of Object.entries(payload.visibilityPresets)) {
+    const name = preset.name.trim().slice(0, 80);
+    if (name) visibilityPresets[id] = { ...preset, id, name, layerIds: preset.layerIds.filter((layerId) => Boolean(layers[layerId])) };
+  }
+  const before = { layers: project.fsm.layers ?? {}, layerOrder: project.fsm.layerOrder ?? [], visibilityPresets: project.fsm.visibilityPresets ?? {} };
+  const after = { layers, layerOrder, visibilityPresets };
+  if (sameJson(before, after)) return noChange(workspace);
+  return changedProject(workspace, {
+    ...project,
+    meta: { ...project.meta, updatedAt: context.now() },
+    fsm: { ...project.fsm, ...after }
+  }, [{ kind: 'updated', entityType: 'fsm-layer', entityId: 'catalog', path: '/fsm/layers', before, after }]);
 }
 
 function deleteFsmState(workspace: ApplicationWorkspace, stateId: string, context: ApplicationCommandContext): ProjectMutationResult {
@@ -773,6 +851,30 @@ function updateControlElement(workspace: ApplicationWorkspace, elementId: string
     meta: { ...project.meta, updatedAt: context.now() },
     controlPanel: { ...project.controlPanel, elements: { ...project.controlPanel.elements, [elementId]: nextElement } }
   }, [{ kind: 'updated', entityType: 'control-panel-element', entityId: elementId, path: `/controlPanel/elements/${elementId}`, before: element, after: nextElement }]);
+}
+
+function updateControlElements(
+  workspace: ApplicationWorkspace,
+  updatesById: Record<string, Partial<ControlPanelElement>>,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const elements = { ...project.controlPanel.elements };
+  const changes: SemanticChange[] = [];
+  for (const [id, updates] of Object.entries(updatesById)) {
+    const before = project.controlPanel.elements[id];
+    if (!before) continue;
+    const after = { ...before, ...updates, id: before.id, type: before.type } as ControlPanelElement;
+    if (sameJson(before, after)) continue;
+    elements[id] = after;
+    changes.push({ kind: 'updated', entityType: 'control-panel-element', entityId: id, path: `/controlPanel/elements/${id}`, before, after });
+  }
+  if (!changes.length) return noChange(workspace);
+  return changedProject(workspace, {
+    ...project,
+    meta: { ...project.meta, updatedAt: context.now() },
+    controlPanel: { ...project.controlPanel, elements }
+  }, changes);
 }
 
 function deleteControlElements(workspace: ApplicationWorkspace, elementIds: string[], context: ApplicationCommandContext): ProjectMutationResult {

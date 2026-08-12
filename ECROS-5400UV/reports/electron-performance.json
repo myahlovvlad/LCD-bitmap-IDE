@@ -1,0 +1,36 @@
+{
+  "measuredAt": "2026-08-12T09:39:11.079Z",
+  "applicationStartupMs": 7751.48,
+  "renderer": {
+    "flowNodes": 308,
+    "visibleFlowNodes": 290,
+    "stateNodes": 299,
+    "flowEdges": 605,
+    "lcdRendererInstances": 1,
+    "jsHeapBytes": 60300000,
+    "totalJsHeapBytes": 123000000,
+    "fsmCanvas": {
+      "width": 676.7999877929688,
+      "height": 414.3999938964844
+    },
+    "viewportTransform": "translate(102.88px, -111.69px) scale(0.03)",
+    "firstNode": {
+      "x": 417.67999267578125,
+      "y": 246.7100067138672,
+      "width": 6.240039348602295,
+      "height": 3.779980421066284
+    }
+  },
+  "main": {
+    "memory": {
+      "residentSet": 113236,
+      "private": 85124,
+      "shared": 544
+    },
+    "cpu": {
+      "cumulativeCPUUsage": 0.764953,
+      "percentCPUUsage": 0,
+      "idleWakeupsPerSecond": 0
+    }
+  }
+}

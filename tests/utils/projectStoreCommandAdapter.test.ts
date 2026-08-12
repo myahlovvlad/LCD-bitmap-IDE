@@ -45,6 +45,43 @@ describe('project store command adapter', () => {
     expect(state.project?.fsm.states.diagnostics?.title).toBe('Diagnostics Menu');
   });
 
+  it('updates layer membership for several FSM states as one undoable command', () => {
+    const store = useProjectStore.getState();
+    const firstStateId = store.project!.fsm.stateOrder[0];
+    store.createScreen('Diagnostics');
+
+    useProjectStore.getState().updateFsmStates({
+      [firstStateId]: { subsystem: 'startup' },
+      diagnostics: { subsystem: 'startup' }
+    });
+    let state = useProjectStore.getState();
+
+    expect(state.project?.fsm.states[firstStateId].subsystem).toBe('startup');
+    expect(state.project?.fsm.states.diagnostics.subsystem).toBe('startup');
+    expect(state.revision).toBe(2);
+    expect(state.undoStack).toHaveLength(2);
+
+    state.undo();
+    state = useProjectStore.getState();
+    expect(state.project?.fsm.states[firstStateId].subsystem).not.toBe('startup');
+    expect(state.project?.fsm.states.diagnostics.subsystem).toBe('user');
+  });
+
+  it('persists empty screen layers and visibility presets independently of states', () => {
+    const store = useProjectStore.getState();
+    store.updateFsmLayers({
+      user: { id: 'user', name: 'General', color: '#64748b' },
+      laboratory: { id: 'laboratory', name: 'Laboratory', color: '#2563eb', description: 'Measurement views' }
+    }, ['user', 'laboratory'], {
+      lab: { id: 'lab', name: 'Laboratory view', layerIds: ['laboratory'] }
+    });
+    const state = useProjectStore.getState();
+
+    expect(state.project?.fsm.layers?.laboratory).toMatchObject({ name: 'Laboratory', color: '#2563eb' });
+    expect(state.project?.fsm.layerOrder).toEqual(['user', 'laboratory']);
+    expect(state.project?.fsm.visibilityPresets?.lab.layerIds).toEqual(['laboratory']);
+  });
+
   it('deletes a screen, detaches its FSM state, and preserves first selection', () => {
     useProjectStore.getState().createScreen('Diagnostics');
     useProjectStore.getState().deleteScreen('diagnostics');

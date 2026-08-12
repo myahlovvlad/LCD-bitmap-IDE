@@ -56,14 +56,24 @@ export interface ELKLayoutOptions {
   paddingY?: number;
 }
 
+export interface ElkEdgeRoute {
+  id: string;
+  points: Array<{ x: number; y: number }>;
+}
+
+export interface ElkLayoutResult {
+  positions: Map<string, { x: number; y: number }>;
+  routes: Map<string, ElkEdgeRoute>;
+}
+
 const elk = new ELK();
 
-export async function computeElkLayout(
+export async function computeElkLayoutWithRoutes(
   nodes: Node[],
   edges: Edge[],
   subsystemField: (nodeId: string) => string,
   opts: ELKLayoutOptions = {}
-): Promise<Map<string, { x: number; y: number }>> {
+): Promise<ElkLayoutResult> {
   const {
     direction = 'LR',
     nodeWidth = 220,
@@ -109,7 +119,9 @@ export async function computeElkLayout(
       'elk.spacing.edgeEdge':             '8',
       'elk.layered.spacing.nodeNodeBetweenLayers': String(paddingX * 1.5),
       'elk.padding':                      `[top=${paddingY},left=${paddingX},bottom=${paddingY},right=${paddingX}]`,
-      'elk.separateConnectedComponents':  'true',
+      // Keeping components in one layout pass avoids the very tall, sparse
+      // columns that result when every isolated screen gets its own canvas.
+      'elk.separateConnectedComponents':  'false',
       'elk.layered.considerModelOrder.strategy': 'PREFER_EDGES',
     },
     children: elkNodes,
@@ -124,7 +136,27 @@ export async function computeElkLayout(
       positions.set(child.id, { x: child.x, y: child.y });
     }
   }
-  return positions;
+  const routes = new Map<string, ElkEdgeRoute>();
+  for (const edge of result.edges ?? []) {
+    const section = edge.sections?.[0];
+    if (!section?.startPoint || !section?.endPoint) continue;
+    routes.set(edge.id, {
+      id: edge.id,
+      points: [section.startPoint, ...(section.bendPoints ?? []), section.endPoint]
+        .map((point) => ({ x: point.x, y: point.y }))
+    });
+  }
+  return { positions, routes };
+}
+
+/** Compatibility helper for callers that only persist node coordinates. */
+export async function computeElkLayout(
+  nodes: Node[],
+  edges: Edge[],
+  subsystemField: (nodeId: string) => string,
+  opts: ELKLayoutOptions = {}
+): Promise<Map<string, { x: number; y: number }>> {
+  return (await computeElkLayoutWithRoutes(nodes, edges, subsystemField, opts)).positions;
 }
 
 export function getSubsystemColor(subsystem: string): string {

@@ -13,6 +13,7 @@ export type WorkspaceMode =
   | 'fsm'
   | 'lcd'
   | 'control-panel'
+  | 'hmi'
   | 'preview'
   | 'tags'
   | 'procedures'
@@ -27,6 +28,7 @@ export type WorkspaceLocation =
   | { mode: 'fsm'; stateId?: string; transitionId?: string }
   | { mode: 'lcd'; screenId?: string }
   | { mode: 'control-panel'; elementId?: string }
+  | { mode: 'hmi'; stateId?: string; elementId?: string }
   | { mode: 'preview'; stateId?: string }
   | { mode: 'tags'; tagId?: string }
   | { mode: 'procedures'; procedureId?: string }
@@ -99,6 +101,23 @@ export interface FsmState {
   terminal: boolean;
 }
 
+/** Persistent screen-layer catalogue. State.subsystem is retained as the
+ * layer id for compatibility with existing .lcdproj files and exporters. */
+export interface FsmLayer {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  description?: string;
+  locked?: boolean;
+}
+
+export interface FsmLayerVisibilityPreset {
+  id: string;
+  name: string;
+  layerIds: string[];
+}
+
 export type FsmTransitionMechanism = 'event' | 'button' | 'timer' | 'fact';
 
 export interface FsmTransitionTrigger {
@@ -132,6 +151,9 @@ export interface FsmModel {
   events: Record<string, FsmEvent>;
   eventOrder: string[];
   graphLayout: Record<string, GraphPosition>;
+  layers?: Record<string, FsmLayer>;
+  layerOrder?: string[];
+  visibilityPresets?: Record<string, FsmLayerVisibilityPreset>;
 }
 
 export interface BackendProcess {

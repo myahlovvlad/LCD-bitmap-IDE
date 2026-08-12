@@ -6,6 +6,8 @@ export type RuntimeActionType = 'cli' | 'delay' | 'setTag' | 'guard' | 'audit';
 export interface RuntimeAction {
   type: RuntimeActionType;
   cliCommandId?: string;
+  /** Raw CLI argument tokens appended to cliCommandId in order. */
+  cliArgs?: string[];
   delayMs?: number;
   tagId?: string;
   value?: ValueExpression;

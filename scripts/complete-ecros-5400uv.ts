@@ -62,10 +62,10 @@ async function completeProject(input: LcdBitmapProject): Promise<LcdBitmapProjec
     transitions[id] = {
       id, from, to, kind: opts.kind ?? 'navigation', condition: opts.condition ?? null,
       source: opts.source ?? 'ecros-5400uv-reconstruction', backendProcessId: opts.backendProcessId ?? null,
-      // The forward route leaves on the right.  Returns and alarm branches use
-      // dedicated lower/upper lanes, so they never cut through the main route.
-      sourceHandle: opts.sourceHandle ?? (eventName === 'ESC' || eventName === 'ERR' ? 's-bottom' : eventName === 'UP' ? 's-top' : 's-right'),
-      targetHandle: opts.targetHandle ?? (eventName === 'ESC' ? 't-bottom' : eventName === 'ERR' ? 't-top' : eventName === 'UP' ? 't-top' : 't-left'),
+      // The primary route reads from top to bottom.  Return and alarm branches
+      // occupy their own side lanes so they do not cut through that route.
+      sourceHandle: opts.sourceHandle ?? (eventName === 'ESC' ? 's-left' : eventName === 'ERR' ? 's-right' : eventName === 'UP' ? 's-top' : 's-bottom'),
+      targetHandle: opts.targetHandle ?? (eventName === 'ESC' ? 't-right' : eventName === 'ERR' ? 't-left' : 't-top'),
       trigger: {
         eventId, mechanism: opts.trigger?.mechanism ?? (eventName === 'A' ? 'timer' : eventName === 'ERR' ? 'fact' : 'button'),
         buttonId: opts.trigger?.buttonId ?? buttonFor(eventId), timerMs: opts.trigger?.timerMs ?? (eventName === 'A' ? 500 : null),
@@ -114,6 +114,16 @@ async function completeProject(input: LcdBitmapProject): Promise<LcdBitmapProjec
   for (const subsystem of ['photometry', 'quantitative', 'kinetics', 'multiwave', 'settings', 'files'] as const) {
     const route = orderedNormal(grouped[subsystem] ?? [], states, root[subsystem]);
     addChain(route, 'OK');
+    // Every operator step has an explicit reverse route.  This is intentionally
+    // modelled as a separate transition: the panel can therefore disable
+    // "Выход" where no return is valid, while the FSM keeps both directions
+    // visible and exportable.
+    for (let index = 1; index < route.length; index++) {
+      add(route[index], route[index - 1], 'ESC', {
+        sourceHandle: 's-left',
+        targetHandle: 't-right'
+      });
+    }
     if (route.at(-1) && mainRoot) add(route.at(-1), mainRoot, 'ESC');
     if (root[subsystem] && mainRoot && subsystem === 'files') add(mainRoot, root[subsystem], 'FILE');
   }

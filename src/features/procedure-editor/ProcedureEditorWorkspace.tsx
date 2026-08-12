@@ -17,7 +17,7 @@ const STEP_TYPES: RuntimeActionType[] = ['cli', 'delay', 'setTag', 'guard', 'aud
 
 function defaultStep(type: RuntimeActionType): RuntimeAction {
   switch (type) {
-    case 'cli': return { type: 'cli', cliCommandId: '' };
+    case 'cli': return { type: 'cli', cliCommandId: '', cliArgs: [] };
     case 'delay': return { type: 'delay', delayMs: 200 };
     case 'setTag': return { type: 'setTag', tagId: '', value: { kind: 'literal', value: '' } };
     case 'guard': return { type: 'guard', value: { kind: 'literal', value: true } };
@@ -330,7 +330,7 @@ function summarizeStep(step: RuntimeAction, catalog: Record<string, CliCommandDe
   switch (step.type) {
     case 'cli': {
       const cmd = step.cliCommandId ? catalog[step.cliCommandId]?.command ?? step.cliCommandId : '—';
-      return cmd;
+      return [cmd, ...(step.cliArgs ?? []).filter(Boolean)].join(' ');
     }
     case 'delay': return `${step.delayMs ?? 0} ms`;
     case 'setTag': return `${step.tagId ?? '?'} = ${expressionSummary(step.value)}`;
@@ -390,6 +390,34 @@ function StepEditor({
               }
             </p>
           ) : null}
+          <div className="hmi-form-row procedure-cli-args">
+            <span className="hmi-form-label">{labels.procedureCliArgs}</span>
+            <div className="procedure-cli-args-list">
+              {(step.cliArgs ?? []).map((argument, index) => (
+                <div key={index} className="procedure-cli-arg-row">
+                  <input
+                    className="hmi-form-input"
+                    value={argument}
+                    placeholder={`Аргумент ${index + 1}`}
+                    onChange={(event) => {
+                      const cliArgs = [...(step.cliArgs ?? [])];
+                      cliArgs[index] = event.target.value;
+                      onChange({ cliArgs });
+                    }}
+                  />
+                  <button
+                    type="button"
+                    aria-label={`Удалить аргумент ${index + 1}`}
+                    title={labels.removeCliArg}
+                    onClick={() => onChange({ cliArgs: (step.cliArgs ?? []).filter((_, itemIndex) => itemIndex !== index) })}
+                  >×</button>
+                </div>
+              ))}
+              <button type="button" className="procedure-add-argument" onClick={() => onChange({ cliArgs: [...(step.cliArgs ?? []), ''] })}>
+                {labels.addCliArg}
+              </button>
+            </div>
+          </div>
         </>
       ) : null}
 

@@ -15,6 +15,8 @@ import {
   type ControlPanelElement,
   type ControlPanelModel,
   type FsmEvent,
+  type FsmLayer,
+  type FsmLayerVisibilityPreset,
   type FsmTransition,
   type LcdBitmapProject,
   type LcdScreen,
@@ -257,6 +259,7 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
       }
     }
   ]));
+  const layerCatalog = normalizeLayerCatalog(states, project.fsm.layers, project.fsm.layerOrder, project.fsm.visibilityPresets);
   const normalized: LcdBitmapProject = {
     ...project,
     meta: { ...project.meta, schemaVersion: PROJECT_SCHEMA_VERSION },
@@ -267,7 +270,8 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
       transitions,
       stateOrder: project.fsm.stateOrder.filter((id) => Boolean(states[id])),
       transitionOrder: project.fsm.transitionOrder.filter((id) => Boolean(transitions[id])),
-      eventOrder: project.fsm.eventOrder.filter((id) => Boolean(project.fsm.events[id]))
+      eventOrder: project.fsm.eventOrder.filter((id) => Boolean(project.fsm.events[id])),
+      ...layerCatalog
     },
     controlPanel: project.controlPanel ?? createDefaultControlPanel(project.display.width, project.display.height, Object.values(project.fsm.events)),
     backendProcesses: project.backendProcesses ?? {},
@@ -287,6 +291,44 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
     validatedAt: new Date().toISOString()
   };
   return normalized;
+}
+
+function normalizeLayerCatalog(
+  states: Record<string, { subsystem: string }>,
+  current: Record<string, FsmLayer> | undefined,
+  currentOrder: string[] | undefined,
+  presets: Record<string, FsmLayerVisibilityPreset> | undefined
+): Pick<NonNullable<LcdBitmapProject['fsm']>, 'layers' | 'layerOrder' | 'visibilityPresets'> {
+  const known = Object.fromEntries(Object.entries(current ?? {}).map(([id, layer]) => [id, {
+    ...layer,
+    id,
+    name: layer.name?.trim() || id,
+    color: layer.color || layerColor(id)
+  }]));
+  const stateLayerIds = [...new Set(Object.values(states).map((state) => state.subsystem?.trim() || 'user'))];
+  for (const id of stateLayerIds) {
+    if (!known[id]) known[id] = { id, name: layerName(id), color: layerColor(id), icon: 'layers' };
+  }
+  if (!known.user) known.user = { id: 'user', name: 'Общий слой', color: '#64748b', icon: 'layers' };
+  const layerOrder = [...new Set([...(currentOrder ?? []), ...stateLayerIds, 'user'].filter((id) => Boolean(known[id])))];
+  const visibilityPresets = Object.fromEntries(Object.entries(presets ?? {}).map(([id, preset]) => [id, {
+    ...preset,
+    id,
+    layerIds: preset.layerIds.filter((layerId) => Boolean(known[layerId]))
+  }]));
+  return { layers: known, layerOrder, visibilityPresets };
+}
+
+function layerName(id: string): string {
+  if (id === 'user') return 'Общий слой';
+  return id.replace(/[-_]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function layerColor(id: string): string {
+  const colors = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626'];
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return colors[hash % colors.length];
 }
 
 function readV5Payload(input: unknown): ProjectSnapshotV5 | null {

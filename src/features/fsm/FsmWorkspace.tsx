@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
   BaseEdge,
@@ -7,11 +7,9 @@ import {
   Controls,
   EdgeLabelRenderer,
   MarkerType,
-  MiniMap,
   ReactFlow,
   getBezierPath,
   getSmoothStepPath,
-  useNodesState,
   type Connection,
   type Edge,
   type EdgeProps,
@@ -22,18 +20,19 @@ import {
 import { Copy, Expand, HelpCircle, LayoutGrid, Minimize2, Monitor, Plus, Search, Trash2 } from 'lucide-react';
 import { useWorkspaceRouter } from '../../app/WorkspaceRouter';
 import { LCDCanvas } from '../../renderer/components/LCDCanvas';
-import { StateNode } from '../../renderer/components/StateNode';
+import { StateNode, type FsmStateNodeData } from '../../renderer/components/StateNode';
 import { FontRenderer } from '../../renderer/core/fonts';
-import { buildCompactGraphLayout } from '../../renderer/core/compactGraphLayout';
-import { computeElkLayout, computeSwimlaneBounds, getSubsystemColor, getSubsystemLabel, type SubsystemBand } from '../../renderer/core/elkLayout';
+import { computeElkLayoutWithRoutes, computeSwimlaneBounds, getSubsystemColor, getSubsystemLabel, type SubsystemBand } from '../../renderer/core/elkLayout';
 import { UI_TEXT, type UiText } from '../../renderer/config/i18n';
 import { copyToClipboard } from '../../renderer/utils/clipboard';
 import { useProjectStore } from '../../renderer/store/projectStore';
-import type { ControlPanelButton, FsmEvent, FsmState, FsmTransition, LcdBitmapProject } from '../../domain/project';
+import type { ControlPanelButton, FsmEvent, FsmLayer, FsmState, FsmTransition, LcdBitmapProject } from '../../domain/project';
+import type { LanguageCode } from '../../domain/localization';
 import { ValidationPanel } from '../validation/ValidationPanel';
 import { FsmScriptStudio } from '../fsm-script/FsmScriptStudio';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
-import { FsmWebGlGraph } from './FsmWebGlGraph';
+import { ScreenLayerManager } from './ScreenLayerManager';
+const FsmWebGlGraph = lazy(() => import('./FsmWebGlGraph').then((module) => ({ default: module.FsmWebGlGraph })));
 
 /** Swimlane background band — rendered as a ReactFlow node at zIndex -1. */
 function SwimlaneBandNode({ data }: { data: SubsystemBand }): React.ReactElement {
@@ -89,6 +88,38 @@ function edgeDisplayLabel(project: LcdBitmapProject, transition: FsmTransition):
   return button?.type === 'button' && button.label.trim() ? button.label : 'Auto';
 }
 
+/** One entry state per subsystem makes the default canvas a readable system map.
+ * The full 299-screen graph remains available through the "Все экраны" mode. */
+function collectOverviewStateIds(project: LcdBitmapProject): Set<string> {
+  const incoming = new Map<string, FsmTransition[]>();
+  for (const transition of Object.values(project.fsm.transitions)) {
+    const routes = incoming.get(transition.to) ?? [];
+    routes.push(transition);
+    incoming.set(transition.to, routes);
+  }
+  const result = new Set(project.fsm.stateOrder.filter((id) => project.fsm.states[id]?.initial));
+  const groups = new Map<string, string[]>();
+  for (const id of project.fsm.stateOrder) {
+    const subsystem = project.fsm.states[id]?.subsystem;
+    if (!subsystem) continue;
+    const group = groups.get(subsystem) ?? [];
+    group.push(id);
+    groups.set(subsystem, group);
+  }
+  for (const [subsystem, ids] of groups) {
+    // Keep the actual common trunk in the overview.  This turns the start-up
+    // sequence and mode selector into a connected, readable path instead of
+    // a set of unrelated subsystem entry cards.
+    if (subsystem === 'diagnostic' || subsystem === 'main-menu') {
+      ids.filter((id) => project.fsm.states[id]?.stateType !== 'failure').forEach((id) => result.add(id));
+    }
+    const entry = ids.find((id) => (incoming.get(id) ?? []).some((route) => project.fsm.states[route.from]?.subsystem !== subsystem))
+      ?? [...ids].sort((a, b) => (project.fsm.graphLayout[a]?.y ?? 0) - (project.fsm.graphLayout[b]?.y ?? 0))[0];
+    if (entry) result.add(entry);
+  }
+  return result;
+}
+
 interface FsmWorkspaceLayout {
   leftWidth: number;
   rightWidth: number;
@@ -119,6 +150,8 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
     selectTransition,
     addFsmState,
     updateFsmState,
+    updateFsmStates,
+    updateFsmLayers,
     deleteFsmState,
     addFsmTransition,
     updateFsmTransition,
@@ -142,12 +175,23 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   const [swimlaneBands, setSwimlaneBands] = useState<SubsystemBand[]>([]);
   const [showSwimlanes, setShowSwimlanes] = useState(true);
   const [presentation, setPresentation] = useState<CanvasPresentation>('2d');
-  const [layoutTemplate, setLayoutTemplate] = useState<LayoutTemplate>('hierarchy');
+  const [layoutTemplate, setLayoutTemplate] = useState<LayoutTemplate>('tree');
   const [contextMenu, setContextMenu] = useState<FsmContextMenu | null>(null);
   const [focusedSubsystem, setFocusedSubsystem] = useState<string | null>(null);
+  // The catalogue and the canvas must agree: all imported states are visible
+  // by default.  "Overview" is a deliberate, optional simplification.
+  const [overviewMode, setOverviewMode] = useState(false);
+  const [overviewOverrides, setOverviewOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenInspectorOpen, setFullscreenInspectorOpen] = useState(false);
+  const [visibleSubsystems, setVisibleSubsystems] = useState<string[]>([]);
+  const [selectedStateIds, setSelectedStateIds] = useState<string[]>([]);
+  const [edgeRoutes, setEdgeRoutes] = useState<Map<string, Array<{ x: number; y: number }>>>(new Map());
   const workspaceRef = useRef<HTMLElement | null>(null);
-  const reactFlowInstanceRef = useRef<{ fitView: (opts?: { padding?: number; duration?: number }) => void } | null>(null);
+  const groupDragRef = useRef<{ stateIds: string[]; anchorId: string; anchorPosition: { x: number; y: number }; positions: Record<string, { x: number; y: number }> } | null>(null);
+  const fsmClipboardRef = useRef<Array<{ state: FsmState; position: { x: number; y: number } }>>([]);
+  const reactFlowInstanceRef = useRef<{ fitView: (opts?: { padding?: number; duration?: number; nodes?: Node[] }) => void } | null>(null);
+  const labels = UI_TEXT[language];
 
   const toggleFullscreen = async (): Promise<void> => {
     const target = workspaceRef.current;
@@ -164,21 +208,26 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       const subsystemOf = (id: string): string =>
         project.fsm.states[id]?.subsystem ?? 'user';
 
-      const flowNodes = project.fsm.stateOrder.map((id) => ({
+      const candidateStateIds = focusedSubsystem
+        ? project.fsm.stateOrder.filter((id) => project.fsm.states[id]?.subsystem === focusedSubsystem || project.fsm.states[id]?.initial)
+        : overviewMode ? [...collectOverviewStateIds(project)] : project.fsm.stateOrder;
+      const layoutStateIds = candidateStateIds.filter((id) => activeSubsystems.has(project.fsm.states[id]?.subsystem ?? 'user'));
+      const included = new Set(layoutStateIds);
+      const flowNodes = layoutStateIds.map((id) => ({
         id,
         type: 'stateNode',
         position: project.fsm.graphLayout[id] ?? { x: 0, y: 0 },
         data: {}
       }));
-      const flowEdges = project.fsm.transitionOrder.map((tid) => {
-        const t = project.fsm.transitions[tid];
-        return { id: tid, source: t.from, target: t.to };
-      });
+      const flowEdges = project.fsm.transitionOrder
+        .map((tid) => project.fsm.transitions[tid])
+        .filter((transition) => included.has(transition.from) && included.has(transition.to))
+        .map((transition) => ({ id: transition.id, source: transition.from, target: transition.to }));
 
-      const positions = await computeElkLayout(flowNodes, flowEdges, subsystemOf, {
+      const { positions, routes } = await computeElkLayoutWithRoutes(flowNodes, flowEdges, subsystemOf, {
         direction: template === 'tree' ? 'TB' : 'LR',
         nodeWidth: 220,
-        nodeHeight: 72,
+        nodeHeight: 112,
         paddingX: 80,
         paddingY: 60,
       });
@@ -188,8 +237,9 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         layoutMap[id] = pos;
       }
       updateGraphPositions(layoutMap);
+      setEdgeRoutes(new Map([...routes].map(([id, route]) => [id, route.points])));
 
-      const bands = computeSwimlaneBounds(positions, project.fsm.stateOrder, subsystemOf, 220, 72, 24);
+      const bands = computeSwimlaneBounds(positions, layoutStateIds, subsystemOf, 220, 112, 24);
       setSwimlaneBands(bands);
       setShowSwimlanes(true);
       // Fit viewport to show all nodes after layout
@@ -217,8 +267,80 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   useEffect(() => {
     if (requestedStateId && project?.fsm.states[requestedStateId]) {
       selectState(requestedStateId);
+      setSelectedStateIds([requestedStateId]);
     }
   }, [project, requestedStateId, selectState]);
+
+  useEffect(() => {
+    if (!selectedStateId) return;
+    setSelectedStateIds((current) => current.includes(selectedStateId) ? current : [selectedStateId]);
+  }, [selectedStateId]);
+
+  useEffect(() => {
+    const isTextInput = (target: EventTarget | null): boolean => target instanceof HTMLElement && Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (!project || isTextInput(event.target)) return;
+      const command = event.ctrlKey || event.metaKey;
+      if (command && event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        setSelectedStateIds(project.fsm.stateOrder);
+        return;
+      }
+      if (event.key === 'Escape') {
+        setSelectedStateIds([]);
+        selectState(null);
+        selectTransition(null);
+        return;
+      }
+      if (command && event.key.toLowerCase() === 'c' && selectedStateIds.length) {
+        event.preventDefault();
+        fsmClipboardRef.current = selectedStateIds.flatMap((stateId) => {
+          const state = project.fsm.states[stateId];
+          const position = project.fsm.graphLayout[stateId];
+          return state && position ? [{ state, position }] : [];
+        });
+        return;
+      }
+      if (command && event.key.toLowerCase() === 'v' && fsmClipboardRef.current.length && editing) {
+        event.preventDefault();
+        const createdIds: string[] = [];
+        const positions: Record<string, { x: number; y: number }> = {};
+        for (const entry of fsmClipboardRef.current) {
+          addFsmState();
+          const id = useProjectStore.getState().selectedStateId;
+          if (!id) continue;
+          createdIds.push(id);
+          updateFsmState(id, { ...entry.state, id, title: `${entry.state.title} — копия`, screenId: null, initial: false, terminal: false });
+          positions[id] = { x: entry.position.x + 36, y: entry.position.y + 36 };
+        }
+        if (createdIds.length) {
+          updateGraphPositions(positions);
+          setSelectedStateIds(createdIds);
+          selectState(createdIds.at(-1) ?? null);
+        }
+        return;
+      }
+      if (editing && event.key === 'Delete' && selectedStateIds.length) {
+        event.preventDefault();
+        if (window.confirm(`Удалить выбранные состояния (${selectedStateIds.length})?`)) {
+          selectedStateIds.forEach((stateId) => deleteFsmState(stateId));
+          setSelectedStateIds([]);
+        }
+        return;
+      }
+      if (editing && event.shiftKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) && selectedStateIds.length) {
+        event.preventDefault();
+        const delta = event.key === 'ArrowLeft' ? { x: -10, y: 0 } : event.key === 'ArrowRight' ? { x: 10, y: 0 } : event.key === 'ArrowUp' ? { x: 0, y: -10 } : { x: 0, y: 10 };
+        updateGraphPositions(Object.fromEntries(selectedStateIds.map((stateId) => {
+          const position = project.fsm.graphLayout[stateId] ?? { x: 0, y: 0 };
+          return [stateId, { ...position, x: position.x + delta.x, y: position.y + delta.y }];
+        })));
+        setEdgeRoutes(new Map());
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [addFsmState, deleteFsmState, editing, project, selectState, selectTransition, selectedStateIds, updateFsmState, updateGraphPositions]);
 
   // Imported layouts are rendered with the same orthogonal routing as a newly
   // applied ELK template.  This avoids a visually different, crossing-prone
@@ -231,7 +353,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       if (position) positions.set(id, position);
     }
     const subsystemOf = (id: string): string => project.fsm.states[id]?.subsystem ?? 'user';
-    setSwimlaneBands(computeSwimlaneBounds(positions, project.fsm.stateOrder, subsystemOf, 220, 72, 24));
+    setSwimlaneBands(computeSwimlaneBounds(positions, project.fsm.stateOrder, subsystemOf, 220, 112, 24));
   }, [project]);
 
   useEffect(() => {
@@ -253,24 +375,149 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
     };
   });
 
-  const isVisibleOnCanvas = (stateId: string): boolean => !focusedSubsystem
-    || project?.fsm.states[stateId]?.subsystem === focusedSubsystem
-    || project?.fsm.states[stateId]?.initial === true;
+  // Fullscreen changes the grid width after the browser fires
+  // `fullscreenchange`.  Fit on the next two frames so React Flow measures the
+  // final canvas, not the old zero-height/zero-width intermediate rectangle.
+  useEffect(() => {
+    if (!isFullscreen || presentation !== '2d') return;
+    let first = 0;
+    let second = 0;
+    const refreshViewport = (): void => {
+      first = requestAnimationFrame(() => {
+        second = requestAnimationFrame(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0 }));
+      });
+    };
+    refreshViewport();
+    window.addEventListener('resize', refreshViewport);
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+      window.removeEventListener('resize', refreshViewport);
+    };
+  }, [isFullscreen, fullscreenInspectorOpen, presentation]);
+
+  const overviewStateIds = useMemo(() => project ? collectOverviewStateIds(project) : new Set<string>(), [project]);
+  const layerList = useMemo<FsmLayer[]>(() => {
+    if (!project) return [];
+    const catalog = project.fsm.layers ?? {};
+    const ids = [...new Set([...(project.fsm.layerOrder ?? []), ...project.fsm.stateOrder.map((id) => project.fsm.states[id]?.subsystem ?? 'user')])];
+    return ids.map((id) => catalog[id] ?? { id, name: getSubsystemLabel(id), color: getSubsystemColor(id), icon: 'layers' });
+  }, [project]);
+  const subsystems = useMemo(() => layerList.map((layer) => layer.id), [layerList]);
+  const activeSubsystems = useMemo(() => new Set(visibleSubsystems.length ? visibleSubsystems : subsystems), [subsystems, visibleSubsystems]);
+  const overviewLayout = useMemo(() => {
+    const layout = new Map<string, { x: number; y: number }>();
+    const diagnostic = project?.fsm.stateOrder.filter((id) => overviewStateIds.has(id) && project.fsm.states[id]?.subsystem === 'diagnostic') ?? [];
+    const menu = project?.fsm.stateOrder.filter((id) => overviewStateIds.has(id) && project.fsm.states[id]?.subsystem === 'main-menu') ?? [];
+    const modules = project?.fsm.stateOrder.filter((id) => overviewStateIds.has(id) && !['diagnostic', 'main-menu'].includes(project.fsm.states[id]?.subsystem ?? '')) ?? [];
+    diagnostic.forEach((id, index) => layout.set(id, { x: 530, y: 55 + index * 135 }));
+    const menuY = 85 + diagnostic.length * 135;
+    menu.forEach((id, index) => layout.set(id, { x: 70 + index * 245, y: menuY }));
+    const moduleY = menuY + 190;
+    modules.forEach((id, index) => layout.set(id, { x: 70 + (index % 5) * 245, y: moduleY + Math.floor(index / 5) * 165 }));
+    return layout;
+  }, [project, overviewStateIds]);
+  const isVisibleOnCanvas = (stateId: string): boolean => {
+    const subsystem = project?.fsm.states[stateId]?.subsystem ?? 'user';
+    if (focusedSubsystem) return subsystem === focusedSubsystem;
+    if (!activeSubsystems.has(subsystem)) return false;
+    return !overviewMode || overviewStateIds.has(stateId);
+  };
+  const canvasStateIds = useMemo(
+    () => project?.fsm.stateOrder.filter(isVisibleOnCanvas) ?? [],
+    [project, focusedSubsystem, overviewMode, overviewStateIds, activeSubsystems]
+  );
+  // Position updates happen for every drag.  A fitView must respond only to a
+  // change in the represented graph, not to a node changing x/y.
+  const canvasStateSignature = useMemo(
+    () => canvasStateIds.join('\u0000'),
+    [canvasStateIds]
+  );
+
+  const stateNodeData = useMemo(() => {
+    if (!project) return new Map<string, FsmStateNodeData>();
+    const buttonsByEvent = new Map<string, string[]>();
+    for (const element of Object.values(project.controlPanel.elements)) {
+      if (element.type === 'button' && element.fsmEventId) {
+        const labels = buttonsByEvent.get(element.fsmEventId) ?? [];
+        labels.push(element.label);
+        buttonsByEvent.set(element.fsmEventId, labels);
+      }
+    }
+    const eventIdsByState = new Map<string, Set<string>>();
+    for (const transition of Object.values(project.fsm.transitions)) {
+      const ids = eventIdsByState.get(transition.from) ?? new Set<string>();
+      ids.add(transition.trigger.eventId);
+      eventIdsByState.set(transition.from, ids);
+    }
+    return new Map(project.fsm.stateOrder.map((id) => {
+      const state = project.fsm.states[id];
+      const eventIds = eventIdsByState.get(id) ?? new Set<string>();
+      const allowedButtons = [...eventIds].flatMap((eventId) => buttonsByEvent.get(eventId) ?? []);
+      const stateMark = state.initial || state.stateType === 'initial'
+        ? { kind: 'initial', label: labels.initialState }
+        : state.stateType === 'failure'
+          ? { kind: 'failure', label: labels.failureState }
+          : state.terminal || state.stateType === 'success'
+            ? { kind: 'success', label: labels.successState }
+            : { kind: 'process', label: labels.processState };
+      return [id, {
+        compact: true,
+        state,
+        screenName: state.screenId ? project.screens[state.screenId]?.name ?? null : null,
+        allowedButtons: [...new Set(allowedButtons)],
+        stateMark,
+      } satisfies FsmStateNodeData];
+    }));
+  }, [project, labels]);
 
   const calculatedNodes = useMemo<Node[]>(() => project
-    ? project.fsm.stateOrder.filter(isVisibleOnCanvas).map((stateId) => {
+    ? canvasStateIds.map((stateId) => {
         const state = project.fsm.states[stateId];
-        const position = project.fsm.graphLayout[stateId] ?? { x: 80, y: 80 };
+        const position = (!focusedSubsystem && overviewMode ? overviewOverrides[stateId] ?? overviewLayout.get(stateId) : undefined)
+          ?? project.fsm.graphLayout[stateId] ?? { x: 80, y: 80 };
         return {
           id: stateId,
           type: 'stateNode',
           position: { x: position.x, y: position.y },
-          selected: stateId === selectedStateId,
-          data: { compact: true, showPreview: false, label: state.title }
+          // React Flow owns the transient selection flag.  Feeding a new
+          // selected value back into the controlled node list from
+          // onSelectionChange creates a selection -> nodes -> selection loop
+          // for marquee and multi-select gestures.
+          zIndex: 1,
+          data: stateNodeData.get(stateId) ?? { compact: true, state, allowedButtons: [], stateMark: { kind: 'process', label: labels.processState } }
         };
       })
-    : [], [project, selectedStateId, focusedSubsystem]);
-  const swimlaneNodes = useMemo<Node[]>(() => showSwimlanes
+    : [], [project, canvasStateIds, focusedSubsystem, overviewMode, overviewLayout, overviewOverrides, stateNodeData, labels.processState]);
+
+  // Swimlane bands are intentionally excluded from fitView: a tall layer
+  // background must never push every actual state node outside the viewport.
+  // The delayed resize fit also covers fullscreen and sidebar changes.
+  useEffect(() => {
+    if (presentation !== '2d' || !calculatedNodes.length) return;
+    let first = 0;
+    let second = 0;
+    let delayed: ReturnType<typeof globalThis.setTimeout> | undefined;
+    const fit = (): void => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+      first = requestAnimationFrame(() => {
+        second = requestAnimationFrame(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0, nodes: calculatedNodes }));
+      });
+    };
+    fit();
+    // React Flow receives controlled nodes one render after the workspace;
+    // retry after they have dimensions, otherwise fitView sees an empty box.
+    delayed = globalThis.setTimeout(fit, 260);
+    window.addEventListener('resize', fit);
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+      if (delayed !== undefined) globalThis.clearTimeout(delayed);
+      window.removeEventListener('resize', fit);
+    };
+  }, [presentation, canvasStateSignature]);
+  const swimlaneNodes = useMemo<Node[]>(() => showSwimlanes && !overviewMode
     ? swimlaneBands.filter((band) => !focusedSubsystem || band.subsystem === focusedSubsystem).map((band) => ({
         id: `__swimlane_${band.subsystem}`,
         type: 'swimlaneBand',
@@ -284,23 +531,25 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         width: band.width,
         height: band.height,
       }))
-    : [], [showSwimlanes, swimlaneBands, focusedSubsystem]);
+    : [], [showSwimlanes, swimlaneBands, focusedSubsystem, overviewMode]);
 
   const allNodes = useMemo<Node[]>(() => [...swimlaneNodes, ...calculatedNodes], [swimlaneNodes, calculatedNodes]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(allNodes);
-  useEffect(() => setNodes(allNodes), [allNodes, setNodes]);
+  const canvasTransitions = useMemo(() => {
+    if (!project) return [] as FsmTransition[];
+    const included = new Set(canvasStateIds);
+    return project.fsm.transitionOrder
+      .map((id) => project.fsm.transitions[id])
+      .filter((transition): transition is FsmTransition => Boolean(transition) && included.has(transition.from) && included.has(transition.to));
+  }, [project, canvasStateIds]);
 
   const edges = useMemo<Edge[]>(() => {
     if (!project) {
       return [];
     }
-    const transitions = project.fsm.transitionOrder
-      .map((id) => project.fsm.transitions[id])
-      .filter((transition): transition is FsmTransition => Boolean(transition) && isVisibleOnCanvas(transition.from) && isVisibleOnCanvas(transition.to));
-    // Pairs of opposite-direction transitions between the same two states would
-    // otherwise render on top of each other (identical smoothstep geometry).
-    // Detect mirrored pairs so each direction can be curved apart visually.
+    const transitions = canvasTransitions;
+    // Never drop a real transition to make the drawing look cleaner.  The
+    // router and the selected-edge foreground treatment carry dense routes.
     const pairKey = (a: string, b: string): string => [a, b].sort().join('::');
     const pairCounts = new Map<string, number>();
     for (const transition of transitions) {
@@ -322,16 +571,20 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           transition.condition ? `[${transition.condition}]` : ''
         ].filter(Boolean).join(' '),
         type: 'fsmTransition',
-        data: { curveSign: isBidirectionalPair ? (transition.from < transition.to ? 1 : -1) : 0 },
+          data: {
+          curveSign: isBidirectionalPair ? (transition.from < transition.to ? 1 : -1) : 0,
+          reverse: transition.trigger.eventId === 'UI.ESC',
+          route: edgeRoutes.get(transition.id)
+        },
         sourceHandle: transition.sourceHandle ?? (transition.from === transition.to ? 's-right' : 's-right'),
         targetHandle: transition.targetHandle ?? (transition.from === transition.to ? 't-right' : 't-left'),
         markerEnd: { type: MarkerType.ArrowClosed },
-        selected: transition.id === selectedTransitionId
+        selected: transition.id === selectedTransitionId,
+        zIndex: transition.id === selectedTransitionId ? 90 : 0
       };
     });
-  }, [project, selectedTransitionId, focusedSubsystem]);
+  }, [project, selectedTransitionId, canvasTransitions, edgeRoutes]);
 
-  const labels = UI_TEXT[language];
   if (!project) {
     return <section className="workspace-empty">{labels.noProjectLoaded}</section>;
   }
@@ -389,7 +642,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   return (
     <section
       ref={workspaceRef}
-      className={`workspace-root fsm-workspace fsm-workspace-resizable${isFullscreen ? ' fsm-fullscreen' : ''}`}
+      className={`workspace-root fsm-workspace fsm-workspace-resizable${isFullscreen ? ' fsm-fullscreen' : ''}${isFullscreen && fullscreenInspectorOpen ? ' fsm-fullscreen-inspector-open' : ''}`}
       aria-label={labels.fsmEditor}
       data-testid="fsm-workspace"
       style={{ gridTemplateColumns: `${layout.leftWidth}px 6px minmax(430px, 1fr) 6px ${layout.rightWidth}px` }}
@@ -397,7 +650,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       onPointerUp={() => setSidebarResize(null)}
       onPointerCancel={() => setSidebarResize(null)}
     >
-      <aside className="workspace-sidebar">
+      <aside className="workspace-sidebar fsm-state-catalog">
         <header className="workspace-section-header">
           <h2>{labels.states}</h2>
           <button type="button" onClick={addFsmState} title={labels.addState} data-testid="fsm-add-state"><Plus size={16} /></button>
@@ -420,7 +673,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                   type="button"
                   className="entity-row"
                   data-testid={`fsm-state-select-${stateId}`}
-                  onClick={() => selectState(stateId)}
+                  onClick={() => { setSelectedStateIds([stateId]); selectState(stateId); }}
                 >
                   <strong>{state.title}</strong>
                   <small>{state.id}</small>
@@ -465,7 +718,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       </aside>
 
       <div
-        className="workspace-splitter"
+        className="workspace-splitter fsm-left-splitter"
         role="separator"
         aria-label={labels.resizeFsmStates}
         aria-orientation="vertical"
@@ -475,14 +728,15 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         }}
       />
 
-      <main className="workspace-canvas-column">
+      <main className="workspace-canvas-column fsm-graph-column">
         <header className="workspace-toolbar">
           <button type="button" className={editing ? 'active' : ''} onClick={() => setEditing((value) => !value)}>
             {labels.editGraph}
           </button>
           <button
             type="button"
-            onClick={() => updateGraphPositions(buildCompactGraphLayout(project.fsm.stateOrder, legacyStateMap(project.fsm.states)))}
+            onClick={() => void runElkLayout(layoutTemplate)}
+            title={labels.rebuildWithoutCrossings}
           >
             <LayoutGrid size={16} /> {labels.autoArrange}
           </button>
@@ -497,26 +751,84 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
             {elkRunning ? 'ELK…' : 'ELK Layout'}
           </button>
           <label className="fsm-layout-template">
-            <span>Шаблон</span>
+            <span>{labels.layoutTemplate}</span>
             <select value={layoutTemplate} onChange={(event) => setLayoutTemplate(event.target.value as LayoutTemplate)}>
-              <option value="hierarchy">Иерархия L→R</option>
-              <option value="tree">Дерево T→B</option>
-              <option value="lanes">Дорожки модулей</option>
+              <option value="hierarchy">{labels.layoutHierarchy}</option>
+              <option value="tree">{labels.layoutTree}</option>
+              <option value="lanes">{labels.layoutLanes}</option>
             </select>
           </label>
+          <details className="fsm-layer-filter">
+            <summary>{labels.screenLayersFilter} · {activeSubsystems.size}/{subsystems.length}</summary>
+            <div role="group" aria-label={labels.subsystemsOnCanvas}>
+              <button type="button" onClick={() => setVisibleSubsystems([])}>{labels.allSubsystems}</button>
+              {subsystems.map((subsystem, index) => {
+                const visible = activeSubsystems.has(subsystem);
+                return <label key={subsystem}>
+                  <input
+                    type="checkbox"
+                    // Keep the accessible control name stable even when a
+                    // user calls a layer "Project".  The project-name field
+                    // must remain the unique form control named "Project".
+                    aria-label={`Layer visibility ${index + 1}`}
+                    checked={visible}
+                    onChange={() => setVisibleSubsystems((current) => {
+                      const base = current.length ? current : subsystems;
+                      const next = visible ? base.filter((item) => item !== subsystem) : [...base, subsystem];
+                      return next.length ? next : base;
+                    })}
+                  />
+                  {layerList.find((layer) => layer.id === subsystem)?.name ?? getSubsystemLabel(subsystem)}
+                </label>;
+              })}
+              <ScreenLayerManager
+                layers={layerList}
+                selectedStateIds={selectedStateIds.length ? selectedStateIds : selectedStateId ? [selectedStateId] : []}
+                states={project.fsm.states}
+                presets={project.fsm.visibilityPresets ?? {}}
+                labels={labels}
+                onUpdateStates={updateFsmStates}
+                onUpdateLayers={(layers, presets) => updateFsmLayers(Object.fromEntries(layers.map((layer) => [layer.id, layer])), layers.map((layer) => layer.id), presets)}
+              />
+              {Object.values(project.fsm.visibilityPresets ?? {}).map((preset) => <button
+                key={preset.id}
+                type="button"
+                onClick={() => setVisibleSubsystems(preset.layerIds)}
+              >{preset.name}</button>)}
+            </div>
+          </details>
+          <span className="fsm-selection-hint" title={labels.fsmSelectionHintTitle}>
+            {selectedStateIds.length > 1 ? `Группа: ${selectedStateIds.length}` : 'Shift + щелчок / рамка'}
+          </span>
+          <button type="button" className={overviewMode && !focusedSubsystem ? 'active' : ''} onClick={() => { setFocusedSubsystem(null); setOverviewMode(true); }} title={labels.overviewButtonTitle}>
+            {labels.overviewButton}
+          </button>
+          <button type="button" className={!overviewMode && !focusedSubsystem ? 'active' : ''} onClick={() => { setFocusedSubsystem(null); setOverviewMode(false); }} title={labels.allScreensButtonTitle}>
+            {labels.allScreensButton}
+          </button>
           <button type="button" className={presentation === '3d' ? 'active' : ''} onClick={() => {
             if (presentation === '2d') { assign3dDepths(); setPresentation('3d'); }
             else setPresentation('2d');
           }}>
             {presentation === '2d' ? '3D' : '2D'}
           </button>
-          {presentation === '3d' ? <button type="button" onClick={assign3dDepths} title="Распределить подсистемы по оси Z">Глубина Z</button> : null}
-          <button type="button" onClick={() => void toggleFullscreen()} title="На весь экран (F11)" data-testid="fsm-fullscreen">
+          {presentation === '3d' ? <button type="button" onClick={assign3dDepths} title={labels.distributeSubsystemsZ}>{labels.depthZButton}</button> : null}
+          <button type="button" onClick={() => void toggleFullscreen()} title={labels.fullscreenButtonTitle} data-testid="fsm-fullscreen">
             {isFullscreen ? <Minimize2 size={16} /> : <Expand size={16} />}
             {isFullscreen ? 'Окно' : 'На весь экран'}
           </button>
+          {isFullscreen ? (
+            <button
+              type="button"
+              className={fullscreenInspectorOpen ? 'active' : ''}
+              onClick={() => setFullscreenInspectorOpen((value) => !value)}
+              aria-expanded={fullscreenInspectorOpen}
+            >
+              {fullscreenInspectorOpen ? 'Скрыть свойства' : 'Свойства'}
+            </button>
+          ) : null}
           {focusedSubsystem ? (
-            <button type="button" onClick={() => setFocusedSubsystem(null)}>Все ветви</button>
+            <button type="button" onClick={() => { setFocusedSubsystem(null); setOverviewMode(true); }}>{labels.backToOverviewButton}</button>
           ) : null}
           {showSwimlanes ? (
             <button type="button" className="active" onClick={() => setShowSwimlanes(false)} title={labels.hideSubsystems}>
@@ -539,14 +851,17 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           <section className={`fsm-canvas fsm-canvas-${presentation}`}>
             {presentation === '3d' ? (
               <>
-                <FsmWebGlGraph
-                  states={project.fsm.states}
-                  stateIds={project.fsm.stateOrder.filter(isVisibleOnCanvas)}
-                  transitions={project.fsm.transitionOrder.map((id) => project.fsm.transitions[id]).filter((transition): transition is FsmTransition => Boolean(transition) && isVisibleOnCanvas(transition.from) && isVisibleOnCanvas(transition.to))}
-                  positions={project.fsm.graphLayout}
-                  selectedStateId={selectedStateId}
-                  onSelectState={selectState}
-                />
+                <Suspense fallback={<div className="fsm-webgl-loading">{labels.loading3dView}</div>}>
+                  <FsmWebGlGraph
+                    states={project.fsm.states}
+                    stateIds={canvasStateIds}
+                    transitions={canvasTransitions}
+                    positions={project.fsm.graphLayout}
+                    selectedStateId={selectedStateId}
+                    onSelectState={selectState}
+                    ariaLabel={labels.webGlFsmGraphAria}
+                  />
+                </Suspense>
                 {selectedState ? (
                   <label className="fsm-webgl-depth-control">
                     <span>Z · {selectedState.title}</span>
@@ -560,15 +875,27 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                 ) : null}
               </>
             ) : <ReactFlow
-              nodes={nodes}
+              nodes={allNodes}
               edges={edges.map((e) => ({ ...e, type: showSwimlanes ? 'fsmTransitionOrtho' : 'fsmTransition' }))}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               connectionMode={ConnectionMode.Loose}
-              onNodesChange={onNodesChange}
+              onSelectionChange={({ nodes: selectedNodes }) => {
+                const stateIds = selectedNodes
+                  .filter((node) => !node.id.startsWith('__swimlane_') && Boolean(project.fsm.states[node.id]))
+                  .map((node) => node.id);
+                setSelectedStateIds((current) => sameStateSelection(current, stateIds) ? current : stateIds);
+              }}
               onConnect={handleConnect}
-              onNodeClick={(_, node) => selectState(node.id)}
-              onEdgeClick={(_, edge) => selectTransition(edge.id)}
+              onNodeClick={(_, node) => {
+                if (!selectedStateIds.includes(node.id)) setSelectedStateIds([node.id]);
+                selectState(node.id);
+                if (isFullscreen) setFullscreenInspectorOpen(true);
+              }}
+              onEdgeClick={(_, edge) => {
+                selectTransition(edge.id);
+                if (isFullscreen) setFullscreenInspectorOpen(true);
+              }}
               onNodeContextMenu={(event, node) => {
                 event.preventDefault();
                 setContextMenu({ x: event.clientX, y: event.clientY, stateId: node.id });
@@ -581,16 +908,49 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                 event.preventDefault();
                 setContextMenu({ x: event.clientX, y: event.clientY });
               }}
-              onPaneClick={() => setContextMenu(null)}
-              onInit={(instance) => { reactFlowInstanceRef.current = instance as { fitView: (opts?: { padding?: number; duration?: number }) => void }; }}
-              onNodeDragStop={(_, node) => updateGraphPosition(node.id, node.position)}
+              onPaneClick={() => { setContextMenu(null); setSelectedStateIds([]); }}
+              onInit={(instance) => {
+                reactFlowInstanceRef.current = instance as { fitView: (opts?: { padding?: number; duration?: number; nodes?: Node[] }) => void };
+                globalThis.setTimeout(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0, nodes: calculatedNodes }), 260);
+              }}
+              onNodeDragStart={(_, node) => {
+                const stateIds = selectedStateIds.includes(node.id) ? selectedStateIds : [node.id];
+                if (!selectedStateIds.includes(node.id)) setSelectedStateIds([node.id]);
+                const positions = Object.fromEntries(stateIds.map((stateId) => {
+                  const position = (overviewMode && !focusedSubsystem ? overviewOverrides[stateId] : undefined)
+                    ?? project.fsm.graphLayout[stateId]
+                    ?? { x: 80, y: 80 };
+                  return [stateId, { x: position.x, y: position.y }];
+                }));
+                groupDragRef.current = { stateIds, anchorId: node.id, anchorPosition: { ...node.position }, positions };
+              }}
+              onNodeDragStop={(_, node) => {
+                const drag = groupDragRef.current;
+                const delta = drag && drag.anchorId === node.id
+                  ? { x: node.position.x - drag.anchorPosition.x, y: node.position.y - drag.anchorPosition.y }
+                  : { x: 0, y: 0 };
+                const positions = drag
+                  ? Object.fromEntries(drag.stateIds.map((stateId) => {
+                    const origin = drag.positions[stateId];
+                    return [stateId, { ...origin, x: origin.x + delta.x, y: origin.y + delta.y }];
+                  }))
+                  : { [node.id]: node.position };
+                if (overviewMode && !focusedSubsystem) {
+                  setOverviewOverrides((current) => ({ ...current, ...positions }));
+                }
+                setEdgeRoutes(new Map());
+                updateGraphPositions(positions);
+                groupDragRef.current = null;
+              }}
               nodesConnectable={editing}
-              nodesDraggable
+              nodesDraggable={true}
+              selectionOnDrag
+              panOnDrag={[1, 2]}
+              minZoom={0.03}
               fitView
             >
               <Background />
               <Controls />
-              <MiniMap pannable zoomable nodeColor={(node) => getSubsystemColor(project.fsm.states[node.id]?.subsystem ?? 'user')} />
             </ReactFlow>}
           </section>
         )}
@@ -606,33 +966,34 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           {contextMenu.stateId && project.fsm.states[contextMenu.stateId] ? (() => {
             const state = project.fsm.states[contextMenu.stateId];
             return <>
-              <button type="button" role="menuitem" onClick={() => { selectState(state.id); setContextMenu(null); }}>Изменить состояние</button>
-              <button type="button" role="menuitem" onClick={() => { ensureStateScreen(state.id); selectState(state.id); setContextMenu(null); }}>Создать/открыть экран</button>
-              <button type="button" role="menuitem" onClick={() => { void copyToClipboard(state.id); setContextMenu(null); }}>Копировать ID</button>
-              <button type="button" role="menuitem" onClick={() => { duplicateState(state); setContextMenu(null); }}>Дублировать</button>
-              <button type="button" role="menuitem" onClick={() => { setFocusedSubsystem(state.subsystem); setContextMenu(null); }}>Показать ветвь «{state.subsystem}»</button>
-              <button type="button" role="menuitem" className="danger" onClick={() => { deleteFsmState(state.id); setContextMenu(null); }}>Удалить</button>
+              <button type="button" role="menuitem" onClick={() => { selectState(state.id); setContextMenu(null); }}>{labels.ctxEditState}</button>
+              <button type="button" role="menuitem" onClick={() => { ensureStateScreen(state.id); selectState(state.id); setContextMenu(null); }}>{labels.ctxCreateOpenScreen}</button>
+              <button type="button" role="menuitem" onClick={() => { void copyToClipboard(state.id); setContextMenu(null); }}>{labels.copyId}</button>
+              <button type="button" role="menuitem" onClick={() => { duplicateState(state); setContextMenu(null); }}>{labels.duplicate}</button>
+              <button type="button" role="menuitem" onClick={() => { setOverviewMode(false); setFocusedSubsystem(state.subsystem); setContextMenu(null); }}>{labels.ctxShowBranch} «{state.subsystem}»</button>
+              <button type="button" role="menuitem" className="danger" onClick={() => { deleteFsmState(state.id); setContextMenu(null); }}>{labels.delete}</button>
             </>;
           })() : null}
           {contextMenu.transitionId && project.fsm.transitions[contextMenu.transitionId] ? (
             <>
-              <button type="button" role="menuitem" onClick={() => { selectTransition(contextMenu.transitionId!); setContextMenu(null); }}>Изменить переход и подпись</button>
-              <button type="button" role="menuitem" onClick={() => { void copyToClipboard(contextMenu.transitionId!); setContextMenu(null); }}>Копировать ID</button>
-              <button type="button" role="menuitem" className="danger" onClick={() => { deleteFsmTransition(contextMenu.transitionId!); setContextMenu(null); }}>Удалить</button>
+              <button type="button" role="menuitem" onClick={() => { selectTransition(contextMenu.transitionId!); setContextMenu(null); }}>{labels.ctxEditTransition}</button>
+              <button type="button" role="menuitem" onClick={() => { void copyToClipboard(contextMenu.transitionId!); setContextMenu(null); }}>{labels.copyId}</button>
+              <button type="button" role="menuitem" className="danger" onClick={() => { deleteFsmTransition(contextMenu.transitionId!); setContextMenu(null); }}>{labels.delete}</button>
             </>
           ) : null}
           {!contextMenu.stateId && !contextMenu.transitionId ? (
             <>
-              <button type="button" role="menuitem" onClick={() => { addFsmState(); setContextMenu(null); }}>Добавить состояние</button>
-              <button type="button" role="menuitem" onClick={() => { void runElkLayout('tree'); setContextMenu(null); }}>Выстроить вертикальное дерево</button>
-              <button type="button" role="menuitem" onClick={() => { setFocusedSubsystem(null); setContextMenu(null); }}>Показать все ветви</button>
+              <button type="button" role="menuitem" onClick={() => { addFsmState(); setContextMenu(null); }}>{labels.addState}</button>
+              <button type="button" role="menuitem" onClick={() => { void runElkLayout('tree'); setContextMenu(null); }}>{labels.ctxArrangeTree}</button>
+              <button type="button" role="menuitem" onClick={() => { setFocusedSubsystem(null); setOverviewMode(true); setContextMenu(null); }}>{labels.ctxShowOverview}</button>
+              <button type="button" role="menuitem" onClick={() => { setFocusedSubsystem(null); setOverviewMode(false); setContextMenu(null); }}>{labels.ctxShowAllScreens}</button>
             </>
           ) : null}
         </div>
       ) : null}
 
       <div
-        className="workspace-splitter"
+        className="workspace-splitter fsm-right-splitter"
         role="separator"
         aria-label={labels.resizeFsmInspector}
         aria-orientation="vertical"
@@ -642,29 +1003,34 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         }}
       />
 
-      <aside className="workspace-inspector">
+      <aside className="workspace-inspector fsm-transition-sidebar">
         {selectedTransition ? (
-          <TransitionInspector
-            transition={selectedTransition}
-            labels={labels}
-            onUpdate={(updates) => updateFsmTransition(selectedTransition.id, updates)}
-            onDelete={() => deleteFsmTransition(selectedTransition.id)}
-            onCreateEvent={(name) => {
-              addFsmEvent(name, { scope: 'state', sourceStateId: selectedTransition.from });
-              const newEventId = useProjectStore.getState().project?.fsm.eventOrder.at(-1);
-              if (newEventId) {
-                updateFsmTransition(selectedTransition.id, { trigger: { ...selectedTransition.trigger, eventId: newEventId } });
-              }
-            }}
-            onRenameEvent={(eventId, name) => updateFsmEvent(eventId, { name })}
-            onUpdateEvent={(eventId, updates) => updateFsmEvent(eventId, updates)}
-            onUpdateBackendDescription={(processId, description) => updateBackendProcess(processId, { description })}
-          />
+          <>
+            <TransitionLinkPreview transition={selectedTransition} language={language} fontGlyphs={fontGlyphs} labels={labels} />
+            <TransitionValidation transition={selectedTransition} project={project} />
+            <TransitionInspector
+              transition={selectedTransition}
+              labels={labels}
+              onUpdate={(updates) => updateFsmTransition(selectedTransition.id, updates)}
+              onDelete={() => deleteFsmTransition(selectedTransition.id)}
+              onCreateEvent={(name) => {
+                addFsmEvent(name, { scope: 'state', sourceStateId: selectedTransition.from });
+                const newEventId = useProjectStore.getState().project?.fsm.eventOrder.at(-1);
+                if (newEventId) {
+                  updateFsmTransition(selectedTransition.id, { trigger: { ...selectedTransition.trigger, eventId: newEventId } });
+                }
+              }}
+              onRenameEvent={(eventId, name) => updateFsmEvent(eventId, { name })}
+              onUpdateEvent={(eventId, updates) => updateFsmEvent(eventId, updates)}
+              onUpdateBackendDescription={(processId, description) => updateBackendProcess(processId, { description })}
+            />
+          </>
         ) : selectedState ? (
           <>
             <StateInspector
               state={selectedState}
               labels={labels}
+              layers={layerList}
               onUpdate={(updates) => updateFsmState(selectedState.id, updates)}
               onDelete={() => deleteFsmState(selectedState.id)}
             />
@@ -764,7 +1130,11 @@ function FsmTransitionEdge({
 }: EdgeProps & { ortho?: boolean }): React.ReactElement {
   const isSelfLoop = source === target;
   const curveSign = (data as { curveSign?: number } | undefined)?.curveSign ?? 0;
-  const [edgePath, labelX, labelY] = isSelfLoop
+  const isReverse = (data as { reverse?: boolean } | undefined)?.reverse ?? false;
+  const route = (data as { route?: Array<{ x: number; y: number }> } | undefined)?.route;
+  const [edgePath, labelX, labelY] = route && route.length > 1 && !isSelfLoop
+    ? routePath(route)
+    : isSelfLoop
     ? [buildSelfLoopPath(sourceX, sourceY), sourceX + 86, sourceY - 64]
     : ortho
       ? getSmoothStepPath({
@@ -790,12 +1160,12 @@ function FsmTransitionEdge({
         id={id}
         path={edgePath}
         markerEnd={markerEnd}
-        className={selected ? 'fsm-edge fsm-edge-selected' : 'fsm-edge'}
+        className={`${selected ? 'fsm-edge fsm-edge-selected' : 'fsm-edge'}${isReverse ? ' fsm-edge-reverse' : ''}`}
       />
       {label ? (
         <EdgeLabelRenderer>
           <div
-            className="fsm-edge-label"
+            className={isReverse ? 'fsm-edge-label fsm-edge-label-reverse' : 'fsm-edge-label'}
             style={{
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`
             }}
@@ -808,6 +1178,12 @@ function FsmTransitionEdge({
   );
 }
 
+function routePath(points: Array<{ x: number; y: number }>): [string, number, number] {
+  const path = points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ');
+  const middle = points[Math.floor(points.length / 2)];
+  return [path, middle.x, middle.y];
+}
+
 function buildSelfLoopPath(sourceX: number, sourceY: number): string {
   const right = sourceX + 92;
   const top = sourceY - 72;
@@ -818,11 +1194,13 @@ function buildSelfLoopPath(sourceX: number, sourceY: number): string {
 function StateInspector({
   state,
   labels,
+  layers,
   onUpdate,
   onDelete
 }: {
   state: FsmState;
   labels: UiText;
+  layers: FsmLayer[];
   onUpdate: (updates: Partial<FsmState>) => void;
   onDelete: () => void;
 }): React.ReactElement {
@@ -830,7 +1208,13 @@ function StateInspector({
     <section className="inspector-card">
       <h3>{labels.stateProperties}</h3>
       <label>{labels.title}<input value={state.title} onChange={(event) => onUpdate({ title: event.target.value })} /></label>
-      <label>{labels.subsystem}<input value={state.subsystem} onChange={(event) => onUpdate({ subsystem: event.target.value })} /></label>
+      <label>
+        {labels.screenLayerAssignment}
+        <select aria-label={labels.screenLayerAssignment} value={state.subsystem || 'user'} onChange={(event) => onUpdate({ subsystem: event.target.value })}>
+          <option value="user">{labels.generalLayerOption}</option>
+          {layers.filter((layer) => layer.id !== 'user').map((layer) => <option key={layer.id} value={layer.id}>{layer.name}</option>)}
+        </select>
+      </label>
       <label>
         {labels.stateMark}
         <select value={state.stateType} onChange={(event) => onUpdate({ stateType: event.target.value })}>
@@ -908,6 +1292,91 @@ function RouteEditor({
 
 const NEW_EVENT_SENTINEL = '__new-event__';
 
+/** Visual verification aid: selecting an arrow always reveals both linked
+ * display states, rather than forcing the operator to locate them on a large
+ * FSM canvas. */
+function TransitionLinkPreview({
+  transition,
+  language,
+  fontGlyphs,
+  labels
+}: {
+  transition: FsmTransition;
+  language: LanguageCode;
+  fontGlyphs: ReturnType<typeof useProjectStore.getState>['fontGlyphs'];
+  labels: UiText;
+}): React.ReactElement {
+  const project = useProjectStore((state) => state.project)!;
+  const selectState = useProjectStore((state) => state.selectState);
+  const from = project.fsm.states[transition.from];
+  const to = project.fsm.states[transition.to];
+  const button = transition.trigger.buttonId ? project.controlPanel.elements[transition.trigger.buttonId] : null;
+  const caption = button?.type === 'button'
+    ? button.label
+    : transition.labelMode === 'auto' ? 'Auto' : project.fsm.events[transition.trigger.eventId]?.name ?? 'Auto';
+  const backendProcess = transition.backendProcessId ? project.backendProcesses[transition.backendProcessId] : null;
+  const cliCommands = backendProcess?.commands.map((command) => project.cliCatalog?.[command]?.command ?? command) ?? [];
+  const cards = [
+    { title: 'Исходное состояние', state: from },
+    { title: 'Целевое состояние', state: to }
+  ];
+  return (
+    <section className="transition-link-preview" aria-label={labels.transitionLinkedScreensAria}>
+      <header>
+        <h3>{labels.transitionCheck}</h3>
+        <span className="transition-link-event">{caption}</span>
+      </header>
+      <p className="transition-link-direction">{from?.title ?? transition.from} <b>→</b> {to?.title ?? transition.to}</p>
+      <div className="transition-link-screens">
+        {cards.map(({ title, state }) => {
+          const screen = state?.screenId ? project.screens[state.screenId] : null;
+          return (
+            <article key={title}>
+              <small>{title}</small>
+              <button type="button" onClick={() => state && selectState(state.id)} title={labels.selectStateOnCanvas}>
+                <strong>{state?.title ?? 'Состояние отсутствует'}</strong>
+                {screen ? (
+                  <LCDCanvas
+                    canvasData={{ stateId: screen.id, width: screen.width, height: screen.height, objects: screen.objects, selectedObjectIds: [], updatedAt: screen.updatedAt }}
+                    language={language}
+                    scale={1}
+                    className="transition-link-lcd"
+                    fontRenderer={new FontRenderer(fontGlyphs)}
+                  />
+                ) : <em>{labels.lcdNotLinked}</em>}
+              </button>
+            </article>
+          );
+        })}
+      </div>
+      <small className="transition-link-meta">{transition.kind} · {transition.trigger.mechanism ?? 'event'}{transition.condition ? ` · ${transition.condition}` : ''}</small>
+      {cliCommands.length ? (
+        <section className="transition-cli-command" aria-label={labels.cliTransitionCommandsAria}>
+          <strong>{labels.cliPrefixLabel} {backendProcess?.name}</strong>
+          {cliCommands.map((command) => <code key={command}>{command}</code>)}
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function TransitionValidation({ transition, project }: { transition: FsmTransition; project: LcdBitmapProject }): React.ReactElement {
+  const checks = [
+    { label: 'Исходное состояние', valid: Boolean(project.fsm.states[transition.from]) },
+    { label: 'Целевое состояние', valid: Boolean(project.fsm.states[transition.to]) },
+    { label: 'Событие', valid: Boolean(project.fsm.events[transition.trigger.eventId]) },
+    { label: 'Условие', valid: transition.kind !== 'guarded' || Boolean(transition.condition?.trim()) },
+    { label: 'Backend-процесс', valid: transition.kind !== 'backend' || Boolean(transition.backendProcessId && project.backendProcesses[transition.backendProcessId]) },
+  ];
+  const valid = checks.every((check) => check.valid);
+  return (
+    <section className={`transition-validation ${valid ? 'valid' : 'invalid'}`} aria-live="polite">
+      <header><strong>{valid ? 'Переход готов' : 'Требуется проверка'}</strong><span>{checks.filter((check) => check.valid).length}/{checks.length}</span></header>
+      <ul>{checks.map((check) => <li key={check.label}>{check.valid ? '✓' : '!' } {check.label}</li>)}</ul>
+    </section>
+  );
+}
+
 function TransitionInspector({
   transition,
   labels,
@@ -954,6 +1423,31 @@ function TransitionInspector({
   return (
     <section className="inspector-card">
       <h3>{labels.transitionProperties}</h3>
+      <label>
+        {labels.transitionSourceState}
+        <select
+          value={transition.from}
+          onChange={(event) => {
+            const from = event.target.value;
+            onUpdate({ from });
+            if (currentEvent?.scope === 'state') {
+              onUpdateEvent(currentEvent.id, { scope: 'state', sourceStateId: from });
+            }
+          }}
+        >
+          {project.fsm.stateOrder.map((stateId) => (
+            <option key={stateId} value={stateId}>{project.fsm.states[stateId]?.title ?? stateId}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        {labels.transitionTargetState}
+        <select value={transition.to} onChange={(event) => onUpdate({ to: event.target.value })}>
+          {project.fsm.stateOrder.map((stateId) => (
+            <option key={stateId} value={stateId}>{project.fsm.states[stateId]?.title ?? stateId}</option>
+          ))}
+        </select>
+      </label>
       <label>
         {labels.event}
         <select
@@ -1061,13 +1555,13 @@ function TransitionInspector({
         </label>
       ) : null}
       <label>
-        Подпись на ребре
+        {labels.edgeLabelSelect}
         <select
           value={transition.labelMode ?? (boundButtonLabel ? 'button' : 'auto')}
           onChange={(event) => onUpdate({ labelMode: event.target.value as FsmTransition['labelMode'] })}
         >
-          <option value="button" disabled={!boundButtonLabel}>Название кнопки{boundButtonLabel ? `: ${boundButtonLabel}` : ''}</option>
-          <option value="event">Название события</option>
+          <option value="button" disabled={!boundButtonLabel}>{labels.edgeLabelButton}{boundButtonLabel ? `: ${boundButtonLabel}` : ''}</option>
+          <option value="event">{labels.edgeLabelEvent}</option>
           <option value="auto">Auto</option>
         </select>
       </label>
@@ -1183,25 +1677,6 @@ function BackendDescriptionInput({
   );
 }
 
-function legacyStateMap(states: Record<string, FsmState>): Record<string, {
-  id: string;
-  runtimeId: string | null;
-  legacyIds: string[];
-  title: string;
-  subsystem: string;
-  stateType: string;
-  origin: string;
-  sourceLcd: string[];
-  initial: boolean;
-  final: boolean;
-}> {
-  return Object.fromEntries(Object.values(states).map((state) => [state.id, {
-    ...state,
-    sourceLcd: [],
-    final: state.terminal
-  }]));
-}
-
 function readFsmWorkspaceLayout(): FsmWorkspaceLayout {
   try {
     const value = JSON.parse(localStorage.getItem(FSM_LAYOUT_KEY) ?? '{}') as Partial<FsmWorkspaceLayout>;
@@ -1216,4 +1691,8 @@ function readFsmWorkspaceLayout(): FsmWorkspaceLayout {
 
 function clampSidebarWidth(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, Math.round(value)));
+}
+
+function sameStateSelection(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((id, index) => id === right[index]);
 }

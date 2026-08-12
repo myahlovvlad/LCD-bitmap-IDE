@@ -12,6 +12,8 @@ import type {
   BackendProcess,
   ControlPanelElement,
   FsmEvent,
+  FsmLayer,
+  FsmLayerVisibilityPreset,
   FsmState,
   FsmTransition,
   LcdBitmapProject,
@@ -54,6 +56,15 @@ export type FsmStateAddCommand = BaseProjectCommand<'fsm.state.add', Record<stri
 export type FsmStateUpdateCommand = BaseProjectCommand<
   'fsm.state.update',
   { stateId: string; updates: Partial<FsmState> }
+>;
+/** One undoable operation for layer membership changes affecting many states. */
+export type FsmStatesUpdateCommand = BaseProjectCommand<
+  'fsm.states.update',
+  { updates: Record<string, Partial<FsmState>> }
+>;
+export type FsmLayersUpdateCommand = BaseProjectCommand<
+  'fsm.layers.update',
+  { layers: Record<string, FsmLayer>; layerOrder: string[]; visibilityPresets: Record<string, FsmLayerVisibilityPreset> }
 >;
 export type FsmStateDeleteCommand = BaseProjectCommand<'fsm.state.delete', { stateId: string }>;
 export type FsmStateEnsureScreenCommand = BaseProjectCommand<'fsm.state.ensureScreen', { stateId: string }>;
@@ -121,6 +132,10 @@ export type ControlPanelElementAddCommand = BaseProjectCommand<
 export type ControlPanelElementUpdateCommand = BaseProjectCommand<
   'controlPanel.element.update',
   { elementId: string; updates: Partial<ControlPanelElement> }
+>;
+export type ControlPanelElementsUpdateCommand = BaseProjectCommand<
+  'controlPanel.elements.update',
+  { updates: Record<string, Partial<ControlPanelElement>> }
 >;
 export type ControlPanelElementsDeleteCommand = BaseProjectCommand<
   'controlPanel.elements.delete',
@@ -192,6 +207,8 @@ export type ProjectCommand =
   | ProjectUpdateDisplayConfigCommand
   | FsmStateAddCommand
   | FsmStateUpdateCommand
+  | FsmStatesUpdateCommand
+  | FsmLayersUpdateCommand
   | FsmStateDeleteCommand
   | FsmStateEnsureScreenCommand
   | FsmTransitionAddCommand
@@ -215,6 +232,7 @@ export type ProjectCommand =
   | ScreenDslApplyCommand
   | ControlPanelElementAddCommand
   | ControlPanelElementUpdateCommand
+  | ControlPanelElementsUpdateCommand
   | ControlPanelElementsDeleteCommand
   | ControlPanelElementsGroupCommand
   | ControlPanelElementsUngroupCommand
