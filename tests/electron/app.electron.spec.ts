@@ -28,12 +28,16 @@ test('opens the production Electron renderer and displays the full LCD', async (
     ).not.toBeNull();
     const demoButton = window.getByRole('button', { name: /Demo|Демо|Open demo|Открыть демо/ }).first();
     // A packaged build may restore the last project from its Electron user
-    // profile. Both the startup screen and an already restored workspace are
-    // valid smoke-test entry points.
+    // profile. Wait for either valid entry point before choosing the demo: the
+    // preload bridge becomes available before the asynchronous splash screen
+    // has finished rendering its start actions.
+    await expect(
+      window.locator('.workspace-navigation, button:has-text("Open demo"), button:has-text("Открыть демо"), button:has-text("打开演示")').first()
+    ).toBeVisible({ timeout: 30_000 });
     if (await demoButton.isVisible().catch(() => false)) {
       await demoButton.click();
     }
-    await expect(window.locator('.workspace-navigation')).toBeVisible();
+    await expect(window.locator('.workspace-navigation')).toBeVisible({ timeout: 30_000 });
     await window.setViewportSize({ width: 1536, height: 864 });
     await window.locator('.workspace-navigation button[data-workspace="lcd"]').click();
     const controls = window.locator('.lcd-editor > .flex-1');
