@@ -13,6 +13,7 @@ export * from './profiles/legacyTargetProfile';
 export * from './profiles/targetProfile';
 export * from './target-ir/targetIr';
 export * from './lowering/lowerToTargetIr';
+export * from './encoding/displayEncoder';
 export * from './backends/codegenBackend';
 export * from './backends/legacyCBackend';
 export * from './artifacts/codegenArtifacts';

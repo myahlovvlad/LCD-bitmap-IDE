@@ -6,6 +6,7 @@ import type {
   Glyph,
   GlyphSet,
   GraphPosition,
+  LanguageCode,
   SavedMeasurement
 } from '../domain';
 import type {
@@ -50,6 +51,10 @@ export type ProjectUpdateMetadataCommand = BaseProjectCommand<
 export type ProjectUpdateDisplayConfigCommand = BaseProjectCommand<
   'project.updateDisplayConfig',
   { display: DisplayConfig }
+>;
+export type ProjectSetAuthoringLanguageCommand = BaseProjectCommand<
+  'project.setAuthoringLanguage',
+  { language: LanguageCode }
 >;
 
 export type FsmStateAddCommand = BaseProjectCommand<'fsm.state.add', Record<string, never>>;
@@ -205,6 +210,7 @@ export type MeasurementDeleteCommand = BaseProjectCommand<'measurement.delete', 
 export type ProjectCommand =
   | ProjectUpdateMetadataCommand
   | ProjectUpdateDisplayConfigCommand
+  | ProjectSetAuthoringLanguageCommand
   | FsmStateAddCommand
   | FsmStateUpdateCommand
   | FsmStatesUpdateCommand

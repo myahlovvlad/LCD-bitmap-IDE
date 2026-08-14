@@ -8,6 +8,12 @@ export class FsmWorkspacePage {
     await expect(this.page.getByTestId('fsm-script-studio')).toBeVisible();
   }
 
+  async enableEditing(): Promise<void> {
+    const toggle = this.page.getByTestId('fsm-edit-mode');
+    if (await toggle.getAttribute('aria-pressed') !== 'true') await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  }
+
   async expectStateTitle(stateId: string, title: string | RegExp): Promise<void> {
     await expect(this.page.getByTestId(`fsm-state-card-${stateId}`)).toContainText(title);
   }

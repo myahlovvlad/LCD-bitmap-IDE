@@ -88,8 +88,7 @@ function edgeDisplayLabel(project: LcdBitmapProject, transition: FsmTransition):
   return button?.type === 'button' && button.label.trim() ? button.label : 'Auto';
 }
 
-/** One entry state per subsystem makes the default canvas a readable system map.
- * The full 299-screen graph remains available through the "Все экраны" mode. */
+/** One entry state per subsystem makes the default canvas a readable system map. */
 function collectOverviewStateIds(project: LcdBitmapProject): Set<string> {
   const incoming = new Map<string, FsmTransition[]>();
   for (const transition of Object.values(project.fsm.transitions)) {
@@ -107,12 +106,6 @@ function collectOverviewStateIds(project: LcdBitmapProject): Set<string> {
     groups.set(subsystem, group);
   }
   for (const [subsystem, ids] of groups) {
-    // Keep the actual common trunk in the overview.  This turns the start-up
-    // sequence and mode selector into a connected, readable path instead of
-    // a set of unrelated subsystem entry cards.
-    if (subsystem === 'diagnostic' || subsystem === 'main-menu') {
-      ids.filter((id) => project.fsm.states[id]?.stateType !== 'failure').forEach((id) => result.add(id));
-    }
     const entry = ids.find((id) => (incoming.get(id) ?? []).some((route) => project.fsm.states[route.from]?.subsystem !== subsystem))
       ?? [...ids].sort((a, b) => (project.fsm.graphLayout[a]?.y ?? 0) - (project.fsm.graphLayout[b]?.y ?? 0))[0];
     if (entry) result.add(entry);
@@ -224,13 +217,17 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         .filter((transition) => included.has(transition.from) && included.has(transition.to))
         .map((transition) => ({ id: transition.id, source: transition.from, target: transition.to }));
 
-      const { positions, routes } = await computeElkLayoutWithRoutes(flowNodes, flowEdges, subsystemOf, {
+      const { positions: elkPositions, routes } = await computeElkLayoutWithRoutes(flowNodes, flowEdges, subsystemOf, {
         direction: template === 'tree' ? 'TB' : 'LR',
         nodeWidth: 220,
         nodeHeight: 112,
         paddingX: 80,
         paddingY: 60,
       });
+
+      const positions = template === 'lanes'
+        ? arrangePositionsInLanes(elkPositions, layoutStateIds, subsystemOf)
+        : elkPositions;
 
       const layoutMap: Record<string, { x: number; y: number }> = {};
       for (const [id, pos] of positions) {
@@ -322,7 +319,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       }
       if (editing && event.key === 'Delete' && selectedStateIds.length) {
         event.preventDefault();
-        if (window.confirm(`Удалить выбранные состояния (${selectedStateIds.length})?`)) {
+        if (confirmFsmDelete('state', selectedStateIds.length)) {
           selectedStateIds.forEach((stateId) => deleteFsmState(stateId));
           setSelectedStateIds([]);
         }
@@ -407,14 +404,17 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   const activeSubsystems = useMemo(() => new Set(visibleSubsystems.length ? visibleSubsystems : subsystems), [subsystems, visibleSubsystems]);
   const overviewLayout = useMemo(() => {
     const layout = new Map<string, { x: number; y: number }>();
-    const diagnostic = project?.fsm.stateOrder.filter((id) => overviewStateIds.has(id) && project.fsm.states[id]?.subsystem === 'diagnostic') ?? [];
-    const menu = project?.fsm.stateOrder.filter((id) => overviewStateIds.has(id) && project.fsm.states[id]?.subsystem === 'main-menu') ?? [];
-    const modules = project?.fsm.stateOrder.filter((id) => overviewStateIds.has(id) && !['diagnostic', 'main-menu'].includes(project.fsm.states[id]?.subsystem ?? '')) ?? [];
-    diagnostic.forEach((id, index) => layout.set(id, { x: 530, y: 55 + index * 135 }));
-    const menuY = 85 + diagnostic.length * 135;
-    menu.forEach((id, index) => layout.set(id, { x: 70 + index * 245, y: menuY }));
-    const moduleY = menuY + 190;
-    modules.forEach((id, index) => layout.set(id, { x: 70 + (index % 5) * 245, y: moduleY + Math.floor(index / 5) * 165 }));
+    if (!project) return layout;
+    const ids = project.fsm.stateOrder.filter((id) => overviewStateIds.has(id));
+    const initial = ids.filter((id) => project.fsm.states[id]?.initial);
+    initial.forEach((id, index) => layout.set(id, { x: 70 + index * 245, y: 55 }));
+    const remaining = ids.filter((id) => !initial.includes(id));
+    const groups = [...new Set(remaining.map((id) => project.fsm.states[id]?.subsystem ?? 'user'))];
+    groups.forEach((subsystem, row) => {
+      remaining
+        .filter((id) => (project.fsm.states[id]?.subsystem ?? 'user') === subsystem)
+        .forEach((id, column) => layout.set(id, { x: 70 + column * 245, y: 210 + row * 165 }));
+    });
     return layout;
   }, [project, overviewStateIds]);
   const isVisibleOnCanvas = (stateId: string): boolean => {
@@ -467,9 +467,10 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         screenName: state.screenId ? project.screens[state.screenId]?.name ?? null : null,
         allowedButtons: [...new Set(allowedButtons)],
         stateMark,
+        editingEnabled: editing,
       } satisfies FsmStateNodeData];
     }));
-  }, [project, labels]);
+  }, [editing, project, labels]);
 
   const calculatedNodes = useMemo<Node[]>(() => project
     ? canvasStateIds.map((stateId) => {
@@ -642,7 +643,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   return (
     <section
       ref={workspaceRef}
-      className={`workspace-root fsm-workspace fsm-workspace-resizable${isFullscreen ? ' fsm-fullscreen' : ''}${isFullscreen && fullscreenInspectorOpen ? ' fsm-fullscreen-inspector-open' : ''}`}
+      className={`workspace-root fsm-workspace fsm-workspace-resizable ${editing ? 'fsm-edit-mode' : 'fsm-readonly-mode'}${isFullscreen ? ' fsm-fullscreen' : ''}${isFullscreen && fullscreenInspectorOpen ? ' fsm-fullscreen-inspector-open' : ''}`}
       aria-label={labels.fsmEditor}
       data-testid="fsm-workspace"
       style={{ gridTemplateColumns: `${layout.leftWidth}px 6px minmax(430px, 1fr) 6px ${layout.rightWidth}px` }}
@@ -653,7 +654,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       <aside className="workspace-sidebar fsm-state-catalog">
         <header className="workspace-section-header">
           <h2>{labels.states}</h2>
-          <button type="button" onClick={addFsmState} title={labels.addState} data-testid="fsm-add-state"><Plus size={16} /></button>
+          <button type="button" onClick={addFsmState} title={labels.addState} data-testid="fsm-add-state" disabled={!editing}><Plus size={16} /></button>
         </header>
         <div className="sidebar-search">
           <Search size={14} />
@@ -673,7 +674,14 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                   type="button"
                   className="entity-row"
                   data-testid={`fsm-state-select-${stateId}`}
-                  onClick={() => { setSelectedStateIds([stateId]); selectState(stateId); }}
+                  onClick={() => {
+                    const subsystem = state.subsystem ?? 'user';
+                    setVisibleSubsystems((current) => current.length && !current.includes(subsystem) ? [...current, subsystem] : current);
+                    setFocusedSubsystem(null);
+                    setOverviewMode(false);
+                    setSelectedStateIds([stateId]);
+                    selectState(stateId);
+                  }}
                 >
                   <strong>{state.title}</strong>
                   <small>{state.id}</small>
@@ -682,7 +690,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                   <button type="button" onClick={() => void copyToClipboard(state.id)} title={labels.copyId}>
                     <Copy size={14} />
                   </button>
-                  <button type="button" onClick={() => deleteFsmState(stateId)} title={labels.delete}>
+                  <button type="button" onClick={() => { if (confirmFsmDelete('state', 1, state.title)) deleteFsmState(stateId); }} title={labels.delete} disabled={!editing}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -730,25 +738,18 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
 
       <main className="workspace-canvas-column fsm-graph-column">
         <header className="workspace-toolbar">
-          <button type="button" className={editing ? 'active' : ''} onClick={() => setEditing((value) => !value)}>
+          <button type="button" className={editing ? 'active' : ''} onClick={() => setEditing((value) => !value)} aria-pressed={editing} data-testid="fsm-edit-mode">
             {labels.editGraph}
-          </button>
-          <button
-            type="button"
-            onClick={() => void runElkLayout(layoutTemplate)}
-            title={labels.rebuildWithoutCrossings}
-          >
-            <LayoutGrid size={16} /> {labels.autoArrange}
           </button>
           <button
             type="button"
             className={elkRunning ? 'active' : ''}
             disabled={elkRunning}
             onClick={() => void runElkLayout(layoutTemplate)}
-            title={labels.elkLayoutTip}
+            title={`${labels.rebuildWithoutCrossings} · ${labels.elkLayoutTip}`}
           >
             <LayoutGrid size={16} />
-            {elkRunning ? 'ELK…' : 'ELK Layout'}
+            {elkRunning ? 'ELK…' : labels.autoArrange}
           </button>
           <label className="fsm-layout-template">
             <span>{labels.layoutTemplate}</span>
@@ -830,11 +831,9 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           {focusedSubsystem ? (
             <button type="button" onClick={() => { setFocusedSubsystem(null); setOverviewMode(true); }}>{labels.backToOverviewButton}</button>
           ) : null}
-          {showSwimlanes ? (
-            <button type="button" className="active" onClick={() => setShowSwimlanes(false)} title={labels.hideSubsystems}>
-              {labels.swimlanes} ✓
-            </button>
-          ) : null}
+          <button type="button" className={showSwimlanes ? 'active' : ''} onClick={() => setShowSwimlanes((value) => !value)} title={showSwimlanes ? labels.hideSubsystems : labels.swimlanes} aria-pressed={showSwimlanes}>
+            {labels.swimlanes}{showSwimlanes ? ' ✓' : ''}
+          </button>
           <button type="button" className="hmi-help-button" title={labels.showHelp} onClick={() => setShowTutorial(true)}>
             <HelpCircle size={15} />
           </button>
@@ -943,7 +942,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                 groupDragRef.current = null;
               }}
               nodesConnectable={editing}
-              nodesDraggable={true}
+              nodesDraggable={editing}
               selectionOnDrag
               panOnDrag={[1, 2]}
               minZoom={0.03}
@@ -971,14 +970,14 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
               <button type="button" role="menuitem" onClick={() => { void copyToClipboard(state.id); setContextMenu(null); }}>{labels.copyId}</button>
               <button type="button" role="menuitem" onClick={() => { duplicateState(state); setContextMenu(null); }}>{labels.duplicate}</button>
               <button type="button" role="menuitem" onClick={() => { setOverviewMode(false); setFocusedSubsystem(state.subsystem); setContextMenu(null); }}>{labels.ctxShowBranch} «{state.subsystem}»</button>
-              <button type="button" role="menuitem" className="danger" onClick={() => { deleteFsmState(state.id); setContextMenu(null); }}>{labels.delete}</button>
+              <button type="button" role="menuitem" className="danger" disabled={!editing} onClick={() => { if (confirmFsmDelete('state', 1, state.title)) deleteFsmState(state.id); setContextMenu(null); }}>{labels.delete}</button>
             </>;
           })() : null}
           {contextMenu.transitionId && project.fsm.transitions[contextMenu.transitionId] ? (
             <>
               <button type="button" role="menuitem" onClick={() => { selectTransition(contextMenu.transitionId!); setContextMenu(null); }}>{labels.ctxEditTransition}</button>
               <button type="button" role="menuitem" onClick={() => { void copyToClipboard(contextMenu.transitionId!); setContextMenu(null); }}>{labels.copyId}</button>
-              <button type="button" role="menuitem" className="danger" onClick={() => { deleteFsmTransition(contextMenu.transitionId!); setContextMenu(null); }}>{labels.delete}</button>
+              <button type="button" role="menuitem" className="danger" disabled={!editing} onClick={() => { if (confirmFsmDelete('transition', 1)) deleteFsmTransition(contextMenu.transitionId!); setContextMenu(null); }}>{labels.delete}</button>
             </>
           ) : null}
           {!contextMenu.stateId && !contextMenu.transitionId ? (
@@ -1011,8 +1010,9 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
             <TransitionInspector
               transition={selectedTransition}
               labels={labels}
+              editing={editing}
               onUpdate={(updates) => updateFsmTransition(selectedTransition.id, updates)}
-              onDelete={() => deleteFsmTransition(selectedTransition.id)}
+              onDelete={() => { if (confirmFsmDelete('transition', 1)) deleteFsmTransition(selectedTransition.id); }}
               onCreateEvent={(name) => {
                 addFsmEvent(name, { scope: 'state', sourceStateId: selectedTransition.from });
                 const newEventId = useProjectStore.getState().project?.fsm.eventOrder.at(-1);
@@ -1031,8 +1031,9 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
               state={selectedState}
               labels={labels}
               layers={layerList}
+              editing={editing}
               onUpdate={(updates) => updateFsmState(selectedState.id, updates)}
-              onDelete={() => deleteFsmState(selectedState.id)}
+              onDelete={() => { if (confirmFsmDelete('state', 1, selectedState.title)) deleteFsmState(selectedState.id); }}
             />
             <RouteEditor
               labels={labels}
@@ -1047,6 +1048,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                 eventId,
                 project.fsm.events[eventId]?.name ?? eventId
               ]))}
+              editing={editing}
               onAddRoute={(targetStateId, eventId, direction, condition) => {
                 addFsmTransition(selectedState.id, targetStateId, eventId);
                 const created = useProjectStore.getState().project?.fsm.transitionOrder.at(-1);
@@ -1195,38 +1197,40 @@ function StateInspector({
   state,
   labels,
   layers,
+  editing,
   onUpdate,
   onDelete
 }: {
   state: FsmState;
   labels: UiText;
   layers: FsmLayer[];
+  editing: boolean;
   onUpdate: (updates: Partial<FsmState>) => void;
   onDelete: () => void;
 }): React.ReactElement {
   return (
     <section className="inspector-card">
       <h3>{labels.stateProperties}</h3>
-      <label>{labels.title}<input value={state.title} onChange={(event) => onUpdate({ title: event.target.value })} /></label>
+      <label>{labels.title}<DraftTextInput value={state.title} disabled={!editing} onCommit={(title) => onUpdate({ title })} /></label>
       <label>
         {labels.screenLayerAssignment}
-        <select aria-label={labels.screenLayerAssignment} value={state.subsystem || 'user'} onChange={(event) => onUpdate({ subsystem: event.target.value })}>
+        <select disabled={!editing} aria-label={labels.screenLayerAssignment} value={state.subsystem || 'user'} onChange={(event) => onUpdate({ subsystem: event.target.value })}>
           <option value="user">{labels.generalLayerOption}</option>
           {layers.filter((layer) => layer.id !== 'user').map((layer) => <option key={layer.id} value={layer.id}>{layer.name}</option>)}
         </select>
       </label>
       <label>
         {labels.stateMark}
-        <select value={state.stateType} onChange={(event) => onUpdate({ stateType: event.target.value })}>
+        <select disabled={!editing} value={state.stateType} onChange={(event) => onUpdate({ stateType: event.target.value })}>
           <option value="initial">{labels.initialState}</option>
           <option value="process">{labels.processState}</option>
           <option value="success">{labels.successState}</option>
           <option value="failure">{labels.failureState}</option>
         </select>
       </label>
-      <label className="checkbox-line"><input type="checkbox" checked={state.initial} onChange={(event) => onUpdate({ initial: event.target.checked })} />{labels.initialState}</label>
-      <label className="checkbox-line"><input type="checkbox" checked={state.terminal} onChange={(event) => onUpdate({ terminal: event.target.checked })} />{labels.terminalState}</label>
-      <button type="button" className="delete-button" onClick={onDelete}><Trash2 size={15} />{labels.deleteState}</button>
+      <label className="checkbox-line"><input disabled={!editing} type="checkbox" checked={state.initial} onChange={(event) => onUpdate({ initial: event.target.checked })} />{labels.initialState}</label>
+      <label className="checkbox-line"><input disabled={!editing} type="checkbox" checked={state.terminal} onChange={(event) => onUpdate({ terminal: event.target.checked })} />{labels.terminalState}</label>
+      <button type="button" className="delete-button" onClick={onDelete} disabled={!editing}><Trash2 size={15} />{labels.deleteState}</button>
     </section>
   );
 }
@@ -1238,6 +1242,7 @@ function RouteEditor({
   stateOrder,
   eventOrder,
   eventNames,
+  editing,
   onAddRoute
 }: {
   labels: UiText;
@@ -1246,6 +1251,7 @@ function RouteEditor({
   stateOrder: string[];
   eventOrder: string[];
   eventNames: Record<string, string>;
+  editing: boolean;
   onAddRoute: (targetStateId: string, eventId: string, direction: 'one-way' | 'two-way', condition: string) => void;
 }): React.ReactElement {
   const targetOptions = stateOrder.filter((stateId) => stateId !== currentStateId);
@@ -1283,7 +1289,7 @@ function RouteEditor({
         </select>
       </label>
       <label>{labels.transitionCondition}<input value={condition} onChange={(event) => setCondition(event.target.value)} /></label>
-      <button type="button" disabled={!targetStateId || !eventId} onClick={() => onAddRoute(targetStateId, eventId, direction, condition)}>
+      <button type="button" disabled={!editing || !targetStateId || !eventId} onClick={() => onAddRoute(targetStateId, eventId, direction, condition)}>
         {labels.addRoute}
       </button>
     </section>
@@ -1380,6 +1386,7 @@ function TransitionValidation({ transition, project }: { transition: FsmTransiti
 function TransitionInspector({
   transition,
   labels,
+  editing,
   onUpdate,
   onDelete,
   onCreateEvent,
@@ -1389,6 +1396,7 @@ function TransitionInspector({
 }: {
   transition: FsmTransition;
   labels: UiText;
+  editing: boolean;
   onUpdate: (updates: Partial<FsmTransition>) => void;
   onDelete: () => void;
   onCreateEvent: (name?: string) => void;
@@ -1639,7 +1647,7 @@ function TransitionInspector({
           onCommit={(description) => onUpdateBackendDescription(currentBackendProcess.id, description)}
         />
       ) : null}
-      <button type="button" className="delete-button" onClick={onDelete}><Trash2 size={15} />{labels.deleteTransition}</button>
+      <button type="button" className="delete-button" onClick={onDelete} disabled={!editing}><Trash2 size={15} />{labels.deleteTransition}</button>
     </section>
   );
 }
@@ -1675,6 +1683,70 @@ function BackendDescriptionInput({
       />
     </label>
   );
+}
+
+function DraftTextInput({
+  value,
+  disabled,
+  onCommit
+}: {
+  value: string;
+  disabled?: boolean;
+  onCommit: (value: string) => void;
+}): React.ReactElement {
+  const [draft, setDraft] = useState(value);
+  const cancelledRef = useRef(false);
+
+  useEffect(() => setDraft(value), [value]);
+
+  return (
+    <input
+      value={draft}
+      disabled={disabled}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => {
+        if (cancelledRef.current) {
+          cancelledRef.current = false;
+          return;
+        }
+        if (draft !== value) onCommit(draft);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          cancelledRef.current = true;
+          setDraft(value);
+          event.currentTarget.blur();
+        } else if (event.key === 'Enter') {
+          event.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
+function arrangePositionsInLanes(
+  positions: Map<string, { x: number; y: number }>,
+  stateIds: string[],
+  subsystemOf: (stateId: string) => string
+): Map<string, { x: number; y: number }> {
+  const result = new Map<string, { x: number; y: number }>();
+  const subsystems = [...new Set(stateIds.map(subsystemOf))];
+  subsystems.forEach((subsystem, laneIndex) => {
+    const laneIds = stateIds
+      .filter((stateId) => subsystemOf(stateId) === subsystem)
+      .sort((left, right) => (positions.get(left)?.x ?? 0) - (positions.get(right)?.x ?? 0));
+    laneIds.forEach((stateId, columnIndex) => {
+      result.set(stateId, { x: 80 + columnIndex * 310, y: 80 + laneIndex * 190 });
+    });
+  });
+  return result;
+}
+
+function confirmFsmDelete(kind: 'state' | 'transition', count: number, title?: string): boolean {
+  const entity = kind === 'state'
+    ? count === 1 ? `состояние${title ? ` «${title}»` : ''}` : `состояния (${count})`
+    : count === 1 ? 'переход' : `переходы (${count})`;
+  return window.confirm(`Удалить ${entity}? Операцию можно отменить через Undo.`);
 }
 
 function readFsmWorkspaceLayout(): FsmWorkspaceLayout {

@@ -5,5 +5,7 @@ describe('MCP tool definitions', () => {
   it('publishes stable unique tool names', () => {
     const names = MCP_TOOL_DEFINITIONS.map((tool) => tool.name);
     expect(new Set(names).size).toBe(names.length);
+    expect(names).toContain('get_authoring_language');
+    expect(names).toContain('set_authoring_language');
   });
 });

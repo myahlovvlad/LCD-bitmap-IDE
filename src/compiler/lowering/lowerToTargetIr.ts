@@ -3,7 +3,8 @@ import type { NormalizedCompilerIrV1 } from '../ir/compilerIr';
 import type { CompilerTargetProfile } from '../profiles/targetProfile';
 import type { LoweredScreenIr, LoweredTargetIrV1 } from '../target-ir/targetIr';
 import { TARGET_IR_VERSION } from '../target-ir/targetIr';
-import { packFrameBufferVerticalLsb, renderLoweredScreenObjects } from './rendering';
+import { encodeDisplayRaster } from '../encoding/displayEncoder';
+import { renderLoweredScreenObjects } from './rendering';
 
 export interface LowerToTargetIrOptions {
   readonly language: LanguageCode;
@@ -20,7 +21,12 @@ export function lowerToTargetIr(ir: NormalizedCompilerIrV1, options: LowerToTarg
       height: screen.height,
       fontRenderer
     });
-    const framebufferBytes = packFrameBufferVerticalLsb(frameBuffer, screen.width, screen.height);
+    const framebufferBytes = encodeDisplayRaster(frameBuffer, {
+      width: screen.width,
+      height: screen.height,
+      colorMode: options.targetProfile.display.colorMode,
+      packing: options.targetProfile.display.packing
+    });
     return {
       id: screen.id,
       order: screen.order,

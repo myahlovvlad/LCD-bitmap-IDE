@@ -51,6 +51,7 @@ import {
 } from '../../application';
 import type { ScreenDslPreviewResult } from '../../application/screenDsl/contracts';
 import type { ApplyScreenDslPreviewResult } from '../../application/screenDsl/applyPreview';
+import { notify } from '../notifications/notificationStore';
 
 type ProjectHistorySnapshot = CommandHistoryEntry;
 
@@ -672,11 +673,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     return { project: { ...state.project, alarms } };
   }),
   setAuthoringLanguage: (lang) => {
-    const state = get();
-    if (!state.project) return;
-    const nextProject = { ...state.project, authoringLanguage: lang };
-    const nextSession = state.session ? sessionFromState({ ...state, project: nextProject }) : null;
-    set({ project: nextProject, session: nextSession });
+    commitProjectCommand(set, get, (state) => ({
+      type: 'project.setAuthoringLanguage',
+      meta: createCommandMeta(state, 'project.setAuthoringLanguage'),
+      payload: { language: lang }
+    }));
   }
 }));
 
@@ -721,6 +722,18 @@ function commitProjectCommand(
     { recordHistory: captureAsHistory ? true : options.recordHistory }
   );
   if (result.status !== 'applied') {
+    if (result.status === 'rejected') {
+      const diagnostic = result.diagnostics[0];
+      notify({
+        title: 'Change rejected',
+        message: diagnostic?.message ?? 'The project was not changed.',
+        tone: 'danger',
+        status: 'failure',
+        source: 'command-bus',
+        persistent: true,
+        dedupeKey: diagnostic?.code ? `command:${diagnostic.code}` : undefined
+      });
+    }
     return result;
   }
   const project = result.session.project;

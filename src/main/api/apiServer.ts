@@ -10,6 +10,7 @@
  *   /api/health               — liveness check
  *   /api/project              — full project JSON
  *   /api/project/meta         — project metadata
+ *   /api/project/authoring-language — LCD content language
  *   /api/fsm/states           — FSM states record
  *   /api/fsm/transitions      — FSM transitions record
  *   /api/fsm/events           — FSM event record
@@ -42,6 +43,7 @@
  *   POST   /api/fsm/auto-layout         — crossing-minimised ELK FSM layout
  *   POST   /api/compile                 — { backend?, scope?, screenId?, language? } → compile
  *   POST   /api/runtime/event           — { eventId } → fire event
+ *   PUT    /api/project/authoring-language — { language: en|ru|zh }
  */
 
 import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http';
@@ -153,6 +155,7 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     if (url === '/api/health') return json(res, { ok: true, ts: new Date().toISOString() });
     if (url === '/api/project') return json(res, { project: cache.project, updatedAt: cache.updatedAt });
     if (url === '/api/project/meta') return json(res, { meta: proj()?.['meta'] ?? null });
+    if (url === '/api/project/authoring-language') return json(res, { language: proj()?.['authoringLanguage'] ?? 'en' });
     if (url === '/api/fsm/states') return json(res, { states: proj()?.['fsm'] ? (proj() as any).fsm.states : null });
     if (url === '/api/fsm/transitions') return json(res, { transitions: proj()?.['fsm'] ? (proj() as any).fsm.transitions : null });
     if (url === '/api/fsm/events') return json(res, { events: proj()?.['fsm'] ? (proj() as any).fsm.events : null });
@@ -188,6 +191,18 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     if (url.startsWith(prefix + '/')) return decodeURIComponent(url.slice(prefix.length + 1));
     return null;
   };
+
+  if (method === 'PUT' && url === '/api/project/authoring-language') {
+    postBody()
+      .then((body) => {
+        const language = (body as { language?: unknown }).language;
+        if (language !== 'en' && language !== 'ru' && language !== 'zh') throw new Error('language must be one of: en, ru, zh');
+        return mutate('setAuthoringLanguage', { language });
+      })
+      .then((result) => json(res, { ok: true, result }))
+      .catch((error) => json(res, { error: String(error) }, 400));
+    return;
+  }
 
   // FSM state mutations
   if (method === 'POST' && url === '/api/fsm/states') {

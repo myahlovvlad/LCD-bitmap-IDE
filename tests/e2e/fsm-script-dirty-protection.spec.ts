@@ -11,6 +11,7 @@ test('dirty script is preserved and marked stale when the graph changes', async 
   await app.openDemo();
   await app.openFsmWorkspace();
   await fsm.openScriptStudio();
+  await fsm.enableEditing();
   await scripts.setAutoPreview('mermaid', false);
 
   const draft = (await scripts.sourceText('mermaid')).replace('title="Measurement"', 'title="Dirty Draft"');
@@ -35,6 +36,7 @@ test('clean script refreshes safely after a graph change', async ({ page }) => {
   await app.openDemo();
   await app.openFsmWorkspace();
   await fsm.openScriptStudio();
+  await fsm.enableEditing();
 
   const original = await scripts.sourceText('mermaid');
   await page.getByTestId('fsm-add-state').click();

@@ -2,7 +2,8 @@ import type {
   CanvasObject,
   DisplayConfig,
   FontGlyphs,
-  GraphPosition
+  GraphPosition,
+  LanguageCode
 } from '../domain';
 import type {
   BackendProcess,
@@ -37,6 +38,8 @@ export function applyProjectCommandMutation(
       return updateProjectMetadata(workspace, command.payload, context);
     case 'project.updateDisplayConfig':
       return updateDisplayConfig(workspace, command.payload.display, context);
+    case 'project.setAuthoringLanguage':
+      return setAuthoringLanguage(workspace, command.payload.language, context);
     case 'fsm.state.add':
       return addFsmState(workspace, context);
     case 'fsm.state.update':
@@ -191,6 +194,30 @@ function updateDisplayConfig(
     path: '/display',
     before: project.display,
     after: nextDisplay
+  }]);
+}
+
+function setAuthoringLanguage(
+  workspace: ApplicationWorkspace,
+  language: LanguageCode,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const current = project.authoringLanguage ?? 'en';
+  if (current === language) {
+    return noChange(workspace);
+  }
+  return changedProject(workspace, {
+    ...project,
+    authoringLanguage: language,
+    meta: { ...project.meta, updatedAt: context.now() }
+  }, [{
+    kind: 'updated',
+    entityType: 'project',
+    entityId: project.meta.id,
+    path: '/authoringLanguage',
+    before: current,
+    after: language
   }]);
 }
 

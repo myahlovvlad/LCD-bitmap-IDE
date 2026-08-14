@@ -10,6 +10,7 @@ import { lowerToTargetIr } from '../../compiler/lowering/lowerToTargetIr';
 import { normalizeProject } from '../../compiler/normalization/normalizeProject';
 import { LEGACY_LCD_TARGET_PROFILE } from '../../compiler/profiles/legacyTargetProfile';
 import { createCompilerSourceSnapshot } from '../../compiler/source/createCompilerSource';
+import { getEncodedDisplayByteLength } from '../../compiler/encoding/displayEncoder';
 import type { FontGlyphs, Glyph, LanguageCode, LcdBitmapProject, TextCanvasObject } from '../../domain';
 import { glyphs as bundledGlyphs } from '../../domain/fonts';
 import { emitPortableFormulaC } from '../../domain/portableFormula';
@@ -174,7 +175,12 @@ function createScreenMap(project: LcdBitmapProject): unknown {
         const screen = project.screens[screenId];
         const w = screen?.width ?? project.display.width;
         const h = screen?.height ?? project.display.height;
-        const byteLength = w * Math.ceil(h / 8);
+        const byteLength = getEncodedDisplayByteLength({
+          width: w,
+          height: h,
+          colorMode: project.display.colorMode,
+          packing: project.display.packing
+        });
         acc.entries.push({
           index,
           id: screenId,

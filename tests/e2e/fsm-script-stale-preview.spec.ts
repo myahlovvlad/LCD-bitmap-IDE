@@ -11,6 +11,7 @@ test('Script Studio disables Apply when a preview becomes stale', async ({ page 
   await app.openDemo();
   await app.openFsmWorkspace();
   await fsm.openScriptStudio();
+  await fsm.enableEditing();
 
   const source = (await scripts.sourceText('mermaid')).replace('title="Measurement"', 'title="Measure Stale"');
   await scripts.setScriptText('mermaid', source);

@@ -35,6 +35,7 @@ test('opens the linked screen from the FSM workspace', async ({ page }) => {
 });
 
 test('keeps the viewport zoom after moving an FSM state node', async ({ page }) => {
+  await page.getByTestId('fsm-edit-mode').click();
   const viewport = page.locator('.fsm-canvas .react-flow__viewport');
   const node = page.locator('.fsm-canvas .react-flow__node').filter({ has: page.locator('.state-node') }).first();
   await expect(node).toBeVisible();
@@ -250,6 +251,28 @@ test('warns in runtime and blocks export when validation has reference errors', 
 
   await page.locator('.project-actions').getByRole('button', { name: /Export universal|Универсальный экспорт/ }).click();
   await expect(page.locator('.toast-danger').getByText(/Export blocked/)).toBeVisible();
+});
+
+test('keeps explicit operation feedback in the notification history', async ({ page }) => {
+  await page.getByRole('button', { name: 'Demo' }).click();
+  await page.locator('.project-actions').getByRole('button', { name: /Export universal|Универсальный экспорт/ }).click();
+  await expect(page.locator('.toast-success')).toBeVisible();
+
+  await page.getByTestId('notification-center-trigger').click();
+  const panel = page.locator('#notification-center-panel');
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText(/export|экспорт/i);
+});
+
+test('requires explicit FSM edit mode for graph mutations', async ({ page }) => {
+  await page.getByRole('button', { name: 'Demo' }).click();
+  await page.locator('.workspace-navigation button[data-workspace="fsm"]').click();
+
+  await expect(page.getByTestId('fsm-add-state')).toBeDisabled();
+  await expect(page.getByTestId('fsm-workspace')).toHaveClass(/fsm-readonly-mode/);
+  await page.getByTestId('fsm-edit-mode').click();
+  await expect(page.getByTestId('fsm-add-state')).toBeEnabled();
+  await expect(page.getByTestId('fsm-workspace')).toHaveClass(/fsm-edit-mode/);
 });
 
 test('opens the searchable operation manual and guided tour', async ({ page }) => {

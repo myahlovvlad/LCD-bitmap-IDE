@@ -1,6 +1,7 @@
 import { DISPLAY_CONSTRAINTS, PRODUCT_IDENTITY } from '../config/constants';
 import type { CanvasData, CanvasObject, LanguageCode } from '../types/domain';
 import type { FontRenderer } from '../core/fonts';
+import { getEncodedDisplayByteLength } from '../../compiler/encoding/displayEncoder';
 import {
   packFrameBuffer,
   packFrameBufferHorizontalLsb,
@@ -10,7 +11,12 @@ import {
   type FrameBuffer
 } from './render';
 
-export const SCREEN_BYTE_LENGTH = DISPLAY_CONSTRAINTS.width * Math.ceil(DISPLAY_CONSTRAINTS.height / 8);
+export const SCREEN_BYTE_LENGTH = getEncodedDisplayByteLength({
+  width: DISPLAY_CONSTRAINTS.width,
+  height: DISPLAY_CONSTRAINTS.height,
+  colorMode: 'monochrome',
+  packing: 'vertical-lsb'
+});
 
 export interface ScreenExportOptions {
   symbolName: string;
@@ -171,7 +177,7 @@ export function bytesToFrameBuffer(bytes: readonly number[]): FrameBuffer {
 }
 
 export function getScreenByteLength(width: number, height: number): number {
-  return width * Math.ceil(height / 8);
+  return getEncodedDisplayByteLength({ width, height, colorMode: 'monochrome', packing: 'vertical-lsb' });
 }
 
 export function sanitizeSymbolName(value: string): string {

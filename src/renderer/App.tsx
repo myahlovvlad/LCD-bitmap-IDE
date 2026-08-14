@@ -47,6 +47,8 @@ import type { AlarmDefinition } from '../domain/alarm';
 import { computeElkLayout } from './core/elkLayout';
 import { GuidedTour } from '../features/guided-tour/GuidedTour';
 import { FIRST_HMI_TOUR } from '../features/guided-tour/tourScenarios';
+import { NotificationCenter, NotificationViewport } from './components/NotificationCenter';
+import { beginOperation, notify, type NotificationTone } from './notifications/notificationStore';
 
 const AUTOSAVE_KEY_V5 = 'lcd-bitmap-ide.project.autosave.v5';
 const LEGACY_AUTOSAVE_KEYS = [
@@ -67,12 +69,6 @@ const SettingsWorkspace = lazy(() => import('../features/settings/SettingsWorksp
 const TextRegistryWorkspace = lazy(() => import('../features/text-registry/TextRegistryWorkspace').then((module) => ({ default: module.TextRegistryWorkspace })));
 const HmiHandoffWorkspace = lazy(() => import('../features/hmi-handoff/HmiHandoffWorkspace').then((module) => ({ default: module.HmiHandoffWorkspace })));
 const HmiDesignerWorkspace = lazy(() => import('../features/hmi-designer/HmiDesignerWorkspace').then((module) => ({ default: module.HmiDesignerWorkspace })));
-
-interface Toast {
-  id: string;
-  text: string;
-  tone: 'info' | 'success' | 'warning' | 'danger';
-}
 
 export function App(): React.ReactElement {
   return (
@@ -104,7 +100,6 @@ function AppShell(): React.ReactElement {
   const [showManual, setShowManual] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
   const [showTour, setShowTour] = useState(false);
-  const [toasts, setToasts] = useState<Toast[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [history, setHistory] = useState<Array<{ id: string; name: string; payload: unknown }>>(() => readHistory());
   const autosaveFailureNotifiedRef = useRef(false);
@@ -219,10 +214,8 @@ function AppShell(): React.ReactElement {
     return () => window.removeEventListener('keydown', handler);
   });
 
-  const pushToast = (text: string, tone: Toast['tone'] = 'info'): void => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setToasts((items) => [...items, { id, text, tone }].slice(-5));
-    window.setTimeout(() => setToasts((items) => items.filter((item) => item.id !== id)), 4200);
+  const pushToast = (text: string, tone: NotificationTone = 'info', message?: string): void => {
+    notify({ title: text, message, tone, source: 'application' });
   };
 
   const navigateTo = (next: WorkspaceLocation): void => {
@@ -276,15 +269,16 @@ function AppShell(): React.ReactElement {
     if (!file) {
       return;
     }
+    const operation = beginOperation(labels.openProject, { message: file.name, source: 'project-file', dedupeKey: 'project-open' });
     try {
       assertImportFileSize(file);
       const migrated = migrateProject(JSON.parse(await file.text()));
       loadProjectSnapshot(migrated);
       setLastSavedAt(migrated.project.meta.updatedAt);
       navigate({ mode: 'fsm', stateId: migrated.project.fsm.stateOrder[0] });
-      pushToast(`${labels.openProject}: ${file.name}`, 'success');
+      operation.succeed(`${labels.openProject}: ${file.name}`);
     } catch (error) {
-      pushToast(error instanceof Error ? error.message : labels.invalidProjectFile, 'danger');
+      operation.fail(labels.invalidProjectFile, error instanceof Error ? error.message : undefined);
     }
   };
 
@@ -360,7 +354,7 @@ function AppShell(): React.ReactElement {
           </div>
         </section>
         <input ref={fileInputRef} type="file" accept=".json,.lcdproj,application/json" hidden onChange={(event) => void openProject(event)} />
-        <ToastViewport toasts={toasts} onDismiss={(id) => setToasts((items) => items.filter((item) => item.id !== id))} />
+        <NotificationViewport language={language} />
       </main>
     );
   }
@@ -413,6 +407,7 @@ function AppShell(): React.ReactElement {
           >
             <Globe2 size={16} />{language.toUpperCase()}
           </button>
+          <NotificationCenter language={language} />
           <button type="button" onClick={createNewProject}>{labels.new}</button>
           <button type="button" onClick={loadDemo}>{labels.demo}</button>
         </div>
@@ -459,7 +454,7 @@ function AppShell(): React.ReactElement {
         <span className={unsaved ? 'status-unsaved' : 'status-saved'}>{unsaved ? labels.unsavedChanges : labels.saved}</span>
       </footer>
 
-      <ToastViewport toasts={toasts} onDismiss={(id) => setToasts((items) => items.filter((item) => item.id !== id))} />
+      <NotificationViewport language={language} />
       {showManual ? <OperationManualDialog labels={labels} language={language} onClose={() => setShowManual(false)} /> : null}
       {showWizard ? (
         <MasterWizard
@@ -517,27 +512,6 @@ function ScreenDslStudioWrapper({ screenId }: { screenId?: string }): React.Reac
 
 function formatUi(template: string, values: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
-}
-
-function ToastViewport({
-  toasts,
-  onDismiss
-}: {
-  toasts: Toast[];
-  onDismiss: (id: string) => void;
-}): React.ReactElement | null {
-  if (toasts.length === 0) {
-    return null;
-  }
-  return (
-    <div className="toast-viewport" aria-live="polite">
-      {toasts.map((toast) => (
-        <button key={toast.id} type="button" className={`toast toast-${toast.tone}`} onClick={() => onDismiss(toast.id)}>
-          {toast.text}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function readAutosave(): ReturnType<typeof migrateProject> | null {
@@ -676,6 +650,16 @@ async function runMutationAction(action: string, payload: unknown): Promise<unkn
     case 'deleteAlarm':
       store.deleteAlarm(body['alarmId'] as string);
       return { alarmId: body['alarmId'] };
+
+    case 'setAuthoringLanguage': {
+      const language = body['language'];
+      if (language !== 'en' && language !== 'ru' && language !== 'zh') {
+        throw new Error('language must be one of: en, ru, zh');
+      }
+      store.setAuthoringLanguage(language);
+      const next = useProjectStore.getState();
+      return { language: next.project?.authoringLanguage ?? language, revision: next.revision };
+    }
 
     case 'compileProject':
       return compileProjectForExternalRequest(body);

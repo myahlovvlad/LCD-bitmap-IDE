@@ -9,6 +9,7 @@ import { normalizeFsm } from './normalizeFsm';
 import { normalizeLocalization, normalizeResources } from './normalizeLocalization';
 import { normalizeScreens } from './normalizeScreens';
 import { normalizeSymbols } from './normalizeSymbols';
+import { getEncodedDisplayByteLength } from '../encoding/displayEncoder';
 
 export function normalizeProject(source: CompilerSourceSnapshot): NormalizedCompilerIrResult {
   const sourceDiagnostics = validateCompilerSource(source);
@@ -33,7 +34,7 @@ export function normalizeProject(source: CompilerSourceSnapshot): NormalizedComp
       height: source.project.display.height,
       colorMode: source.project.display.colorMode,
       packing: source.project.display.packing,
-      byteLength: source.project.display.width * Math.ceil(source.project.display.height / 8)
+      byteLength: getEncodedDisplayByteLength(source.project.display)
     },
     fsm,
     screens,

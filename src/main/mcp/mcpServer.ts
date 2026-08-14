@@ -222,6 +222,7 @@ async function dispatchRpc(msg: { jsonrpc: string; id?: string | number; method:
 export const MCP_TOOL_DEFINITIONS = [
   // ── Read tools ──────────────────────────────────────────────────────────
   { name: 'get_project_summary', description: 'Returns project name, schema version, FSM state count, screen count and tag count.', inputSchema: { type: 'object', properties: {}, required: [] } },
+  { name: 'get_authoring_language', description: 'Returns the language used to render and export LCD content. This is independent from the editor interface language.', inputSchema: { type: 'object', properties: {}, required: [] } },
   { name: 'list_fsm_states', description: 'Returns all FSM states as a JSON array.', inputSchema: { type: 'object', properties: {}, required: [] } },
   { name: 'list_fsm_transitions', description: 'Returns all FSM transitions as a JSON array.', inputSchema: { type: 'object', properties: {}, required: [] } },
   { name: 'list_fsm_events', description: 'Returns all semantic FSM events as a JSON array.', inputSchema: { type: 'object', properties: {}, required: [] } },
@@ -234,6 +235,7 @@ export const MCP_TOOL_DEFINITIONS = [
   { name: 'list_alarms', description: 'Returns all alarm definitions as a JSON array.', inputSchema: { type: 'object', properties: {}, required: [] } },
   { name: 'get_runtime_state', description: 'Returns the current FSM runtime state (current state ID and running flag).', inputSchema: { type: 'object', properties: {}, required: [] } },
   { name: 'list_export_formats', description: 'Returns the embedded export formats available for screen code generation (C, XBM, Arduino, Rust, ESP-IDF, binary).', inputSchema: { type: 'object', properties: {}, required: [] } },
+  { name: 'set_authoring_language', description: 'Changes the LCD content language through the application command bus. The operation is revisioned and undoable.', inputSchema: { type: 'object', properties: { language: { type: 'string', enum: ['en', 'ru', 'zh'] } }, required: ['language'] } },
 
   // ── FSM write tools ─────────────────────────────────────────────────────
   { name: 'create_fsm_state', description: 'Creates a new FSM state with an auto-generated screen.', inputSchema: { type: 'object', properties: { title: { type: 'string', description: 'Display title for the new state.' } }, required: [] } },
@@ -287,8 +289,15 @@ async function callTool(id: string | number | undefined, name: string, args: Rec
           procedureCount: Object.keys((p?.['procedures'] as Record<string, unknown> | undefined) ?? {}).length,
           alarmCount: Object.keys((p?.['alarms'] as Record<string, unknown> | undefined) ?? {}).length
         }));
+      case 'get_authoring_language':
+        return rpcOk(id, text({ language: p?.['authoringLanguage'] ?? 'en' }));
       case 'list_fsm_states':
         return rpcOk(id, text(Object.values((fsm?.['states'] as Record<string, unknown> | undefined) ?? {})));
+      case 'set_authoring_language': {
+        const language = args['language'];
+        if (language !== 'en' && language !== 'ru' && language !== 'zh') return rpcError(id, -32602, 'language must be one of: en, ru, zh');
+        return rpcOk(id, text(await mutate('setAuthoringLanguage', { language })));
+      }
       case 'list_fsm_transitions':
         return rpcOk(id, text(Object.values((fsm?.['transitions'] as Record<string, unknown> | undefined) ?? {})));
       case 'list_fsm_events':

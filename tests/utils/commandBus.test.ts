@@ -38,6 +38,22 @@ describe('application command bus', () => {
     ]);
   });
 
+  it('sets authoring language through a revisioned semantic command', () => {
+    const session = createProjectSession(createProject(), 0);
+    const result = executeProjectCommand(
+      session,
+      commandFor(session.project, 0, 'project.setAuthoringLanguage', { language: 'zh' }),
+      createFixedApplicationCommandContext(timestamp)
+    );
+
+    expect(result.status).toBe('applied');
+    expect(result.session.project.authoringLanguage).toBe('zh');
+    expect(result.session.revision).toBe(1);
+    expect(result.changes).toEqual([
+      expect.objectContaining({ entityType: 'project', path: '/authoringLanguage', before: 'en', after: 'zh' })
+    ]);
+  });
+
   it('stores multiline backend process documentation through the command bus', () => {
     const project = migrateLegacySnapshot(createDemoProject()).project;
     const processId = 'measure-process';

@@ -23,6 +23,28 @@ describe('project store command adapter', () => {
     expect(next.canUndo).toBe(true);
   });
 
+  it('keeps interface language separate while authoring language is revisioned and undoable', () => {
+    const store = useProjectStore.getState();
+    store.setLanguage('en');
+    store.setAuthoringLanguage('ru');
+
+    let next = useProjectStore.getState();
+    expect(next.language).toBe('en');
+    expect(next.project?.authoringLanguage).toBe('ru');
+    expect(next.revision).toBe(1);
+    expect(next.undoStack.at(-1)?.semanticChanges).toEqual([
+      expect.objectContaining({ path: '/authoringLanguage', before: 'en', after: 'ru' })
+    ]);
+
+    next.undo();
+    next = useProjectStore.getState();
+    expect(next.project?.authoringLanguage).toBe('en');
+    expect(next.canRedo).toBe(true);
+
+    next.redo();
+    expect(useProjectStore.getState().project?.authoringLanguage).toBe('ru');
+  });
+
   it('creates a screen and linked FSM state through the command adapter', () => {
     useProjectStore.getState().createScreen('Diagnostics');
     const state = useProjectStore.getState();

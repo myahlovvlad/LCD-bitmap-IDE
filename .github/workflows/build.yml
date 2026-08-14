@@ -1,4 +1,4 @@
-name: Electron — Windows and Linux
+name: Electron — Windows, Linux and macOS
 
 on:
   push:
@@ -21,6 +21,10 @@ jobs:
             command: npm run build:linux
             artifact: linux-build
             path: release/*.{AppImage,deb,tar.gz}
+          - os: macos-latest
+            command: npm run build:macos
+            artifact: macos-build
+            path: release/*.{dmg,zip}
 
     runs-on: ${{ matrix.os }}
     name: Electron / ${{ matrix.os }}

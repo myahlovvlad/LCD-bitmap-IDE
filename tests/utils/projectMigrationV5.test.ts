@@ -37,12 +37,21 @@ describe('v5 project migration', () => {
 
   it('round-trips a v5 project file', () => {
     const snapshot = migrateLegacySnapshot(createDemoProject());
+    snapshot.project.authoringLanguage = 'ru';
     const payload = createProjectFileV5(snapshot, 'en');
     const restored = migrateProject(payload);
 
     expect(restored.project.meta.id).toBe(snapshot.project.meta.id);
     expect(restored.project.fsm.eventOrder).toEqual(snapshot.project.fsm.eventOrder);
     expect(restored.project.controlPanel.elementOrder.length).toBeGreaterThan(1);
+    expect(restored.project.authoringLanguage).toBe('ru');
+  });
+
+  it('defaults legacy project content language without changing the interface language', () => {
+    const restored = migrateLegacySnapshot({ ...createDemoProject(), language: 'zh' });
+
+    expect(restored.language).toBe('zh');
+    expect(restored.project.authoringLanguage).toBe('en');
   });
 
   it('preserves IDs and screen references across a v5 import', () => {
