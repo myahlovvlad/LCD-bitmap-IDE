@@ -57,6 +57,23 @@ describe("codegen utils", () => {
     expect(generateAllScreensBinary(canvases, "en")).toHaveLength(2048);
   });
 
+  it("uses each screen's actual byte length in mixed-resolution C tables", () => {
+    const canvases: CanvasData[] = [
+      makeCanvas("small", 16, 16),
+      makeCanvas("banner", 24, 9),
+    ];
+    const header = generateAllScreensCHeader(canvases, {
+      projectSymbolName: "project",
+      language: "en",
+    });
+
+    expect(header).toContain("static const uint8_t project_small_screen[32]");
+    expect(header).toContain('{ "small", project_small_screen, 32 }');
+    expect(header).toContain("static const uint8_t project_banner_screen[48]");
+    expect(header).toContain('{ "banner", project_banner_screen, 48 }');
+    expect(generateAllScreensBinary(canvases, "en")).toHaveLength(80);
+  });
+
   it("imports C header literals in hex, decimal, and binary forms", () => {
     const values = ["0x01", "2", "0b00000011", ...new Array(1021).fill("0x00")];
     const arrays = parseCHeaderScreenArrays(
@@ -120,17 +137,43 @@ describe("codegen utils", () => {
     expect(results.get("rust-embedded")).toContain(
       "pub const STATUS_SCREEN: [u8; 8]",
     );
+    expect(results.get("rust-embedded")).toContain(
+      "1bpp row-major MSB, each row byte-aligned",
+    );
+    expect(results.get("rust-embedded")).toContain(
+      "let img = Image::new(&raw, Point::zero());",
+    );
     expect(results.get("esp-idf")).toContain(
       "RODATA_ATTR uint8_t status_screen[8]",
     );
   });
+
+  it("packs Rust ImageRaw pixels row-major and MSB-first", () => {
+    const diagonal: CanvasObject[] = [{
+      ...objects[0],
+      x1: 7,
+      y1: 7,
+    }];
+
+    const rust = exportScreenEmbedded(diagonal, "rust-embedded", {
+      symbolName: "diagonal",
+      language: "en",
+      width: 8,
+      height: 8,
+      bytesPerRow: 8,
+    });
+
+    expect(rust).toContain(
+      "0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01",
+    );
+  });
 });
 
-function makeCanvas(stateId: string): CanvasData {
+function makeCanvas(stateId: string, width = 128, height = 64): CanvasData {
   return {
     stateId,
-    width: 128,
-    height: 64,
+    width,
+    height,
     objects,
     selectedObjectIds: [],
     updatedAt: "2026-05-12T00:00:00.000Z",
