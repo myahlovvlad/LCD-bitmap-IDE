@@ -169,23 +169,31 @@ function createScreenMap(project: LcdBitmapProject): unknown {
   return {
     schemaVersion: 1,
     display: project.display,
-    screens: project.screenOrder.map((screenId, index) => {
-      const screen = project.screens[screenId];
-      return {
-        index,
-        id: screenId,
-        name: screen?.name ?? screenId,
-        binaryOffset: index * project.display.width * Math.ceil(project.display.height / 8),
-        byteLength: project.display.width * Math.ceil(project.display.height / 8),
-        linkedStateIds: Object.values(project.fsm.states)
-          .filter((state) => state.screenId === screenId)
-          .map((state) => state.id),
-        objects: screen?.objects.map((object) => ({
-          ...object,
-          firmwareBinding: object.bindings ?? null
-        })) ?? []
-      };
-    })
+    screens: project.screenOrder.reduce<{ entries: unknown[]; offset: number }>(
+      (acc, screenId, index) => {
+        const screen = project.screens[screenId];
+        const w = screen?.width ?? project.display.width;
+        const h = screen?.height ?? project.display.height;
+        const byteLength = w * Math.ceil(h / 8);
+        acc.entries.push({
+          index,
+          id: screenId,
+          name: screen?.name ?? screenId,
+          binaryOffset: acc.offset,
+          byteLength,
+          linkedStateIds: Object.values(project.fsm.states)
+            .filter((state) => state.screenId === screenId)
+            .map((state) => state.id),
+          objects: screen?.objects.map((object) => ({
+            ...object,
+            firmwareBinding: object.bindings ?? null
+          })) ?? []
+        });
+        acc.offset += byteLength;
+        return acc;
+      },
+      { entries: [], offset: 0 }
+    ).entries
   };
 }
 

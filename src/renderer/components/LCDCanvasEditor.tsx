@@ -92,6 +92,7 @@ const specialChars = ['?', '!', '#', '%', '/', '+', '-', '=', '.', ',', ':'];
 const specialGlyphChars = ['?', '!', '#', '%', '/', '+', '-', '=', '.', ',', ':', '☐', '☑', '✓', '×', '№', 'λ'];
 const specialElementKinds: SpecialElementKind[] = ['checkbox', 'radio', 'progress', 'battery', 'signal', 'scrollbar'];
 type GlyphEditScope = 'global' | 'local';
+const CANVAS_CLIPBOARD_KEY = 'lcd-bitmap-ide.canvas-clipboard.v1';
 
 export function LCDCanvasEditor({
   canvasData,
@@ -163,6 +164,87 @@ export function LCDCanvasEditor({
       : [],
     [project]
   );
+
+  // Keyboard shortcuts: Delete, Escape, Ctrl+A/C/V/D
+  useEffect(() => {
+    const handler = (event: KeyboardEvent): void => {
+      // Don't intercept when user is typing in a form control
+      const tag = (document.activeElement?.tagName ?? '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      // Don't intercept while glyph or bitmap editors are open
+      if (editingGlyph || editingBitmap) return;
+
+      const cmd = event.ctrlKey || event.metaKey;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setCanvasSelection(canvasData.stateId, []);
+        setMode('select');
+        return;
+      }
+
+      if ((event.key === 'Delete' || event.key === 'Backspace') && !cmd) {
+        if (canvasData.selectedObjectIds.length === 0) return;
+        event.preventDefault();
+        captureHistory();
+        deleteSelectedCanvasObjects(canvasData.stateId);
+        return;
+      }
+
+      if (!cmd) return;
+      const key = event.key.toLowerCase();
+
+      if (key === 'a') {
+        event.preventDefault();
+        setCanvasSelection(canvasData.stateId, canvasData.objects.filter((o) => !o.locked).map((o) => o.id));
+        return;
+      }
+
+      if (key === 'c') {
+        const sel = canvasData.objects.filter((o) => canvasData.selectedObjectIds.includes(o.id));
+        if (sel.length === 0) return;
+        event.preventDefault();
+        try { localStorage.setItem(CANVAS_CLIPBOARD_KEY, JSON.stringify(sel)); } catch { /* unavailable */ }
+        return;
+      }
+
+      if (key === 'v') {
+        event.preventDefault();
+        try {
+          const raw = localStorage.getItem(CANVAS_CLIPBOARD_KEY);
+          if (!raw) return;
+          const copied = JSON.parse(raw) as CanvasObject[];
+          if (!Array.isArray(copied) || copied.length === 0) return;
+          captureHistory();
+          const newIds: string[] = [];
+          for (const obj of copied) {
+            const newId = createObjectId(canvasData.stateId, obj.type);
+            newIds.push(newId);
+            addCanvasObject(canvasData.stateId, moveObject({ ...obj, id: newId }, 4, 4, canvasData));
+          }
+          setCanvasSelection(canvasData.stateId, newIds);
+        } catch { /* parse error or storage unavailable */ }
+        return;
+      }
+
+      if (key === 'd') {
+        const sel = canvasData.objects.filter((o) => canvasData.selectedObjectIds.includes(o.id));
+        if (sel.length === 0) return;
+        event.preventDefault();
+        captureHistory();
+        const newIds: string[] = [];
+        for (const obj of sel) {
+          const newId = createObjectId(canvasData.stateId, obj.type);
+          newIds.push(newId);
+          addCanvasObject(canvasData.stateId, moveObject({ ...obj, id: newId }, 4, 4, canvasData));
+        }
+        setCanvasSelection(canvasData.stateId, newIds);
+        return;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [canvasData, editingGlyph, editingBitmap, deleteSelectedCanvasObjects, setCanvasSelection, addCanvasObject, captureHistory]);
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>): void => {
     const point = getCanvasPoint(event, canvasData);
