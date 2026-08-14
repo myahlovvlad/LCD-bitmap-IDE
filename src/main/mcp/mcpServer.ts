@@ -22,7 +22,7 @@
  *   list_control_panel_elements, get_validation_report, list_tags, list_procedures,
  *   list_alarms, get_runtime_state, list_export_formats
  *
- * Tools (write — every project mutation available in the UI is exposed here):
+ * Tools (write — current externally supported mutation subset):
  *   create_fsm_state, update_fsm_state, delete_fsm_state,
  *   create_fsm_transition, update_fsm_transition, delete_fsm_transition,
  *   create_fsm_event, update_fsm_event, delete_fsm_event, update_control_panel_element,
@@ -35,11 +35,11 @@
 import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import type { BrowserWindow, IpcMain } from 'electron';
+import { evaluateLocalHttpAccess, readBoundedRequestBody } from '../localHttpSecurity.js';
 
 export const MCP_PORT = 8767;
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Accept'
 };
@@ -122,6 +122,17 @@ function notifySseClients(notification: unknown): void {
 }
 
 function handleMcpRequest(req: IncomingMessage, res: ServerResponse): void {
+  const access = evaluateLocalHttpAccess(req.headers, MCP_PORT);
+  if (!access.allowed) {
+    const out = JSON.stringify(rpcError(null, -32003, access.reason ?? 'Forbidden'));
+    res.writeHead(403, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(out) });
+    res.end(out);
+    return;
+  }
+  if (access.allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', access.allowedOrigin);
+    res.setHeader('Vary', 'Origin');
+  }
   if (req.method === 'OPTIONS') { res.writeHead(204, CORS); res.end(); return; }
   const url = req.url ?? '/';
 
@@ -196,7 +207,7 @@ async function dispatchRpc(msg: { jsonrpc: string; id?: string | number; method:
     }
 
     case 'tools/list':
-      return rpcOk(id, { tools: TOOL_DEFINITIONS });
+      return rpcOk(id, { tools: MCP_TOOL_DEFINITIONS });
 
     case 'tools/call': {
       const p2 = params as { name: string; arguments?: Record<string, unknown> };
@@ -208,7 +219,7 @@ async function dispatchRpc(msg: { jsonrpc: string; id?: string | number; method:
   }
 }
 
-const TOOL_DEFINITIONS = [
+export const MCP_TOOL_DEFINITIONS = [
   // ── Read tools ──────────────────────────────────────────────────────────
   { name: 'get_project_summary', description: 'Returns project name, schema version, FSM state count, screen count and tag count.', inputSchema: { type: 'object', properties: {}, required: [] } },
   { name: 'list_fsm_states', description: 'Returns all FSM states as a JSON array.', inputSchema: { type: 'object', properties: {}, required: [] } },
@@ -391,10 +402,5 @@ function rpcError(id: string | number | null | undefined, code: number, message:
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (chunk: Buffer) => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks).toString()));
-    req.on('error', reject);
-  });
+  return readBoundedRequestBody(req);
 }

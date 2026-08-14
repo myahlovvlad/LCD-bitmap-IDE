@@ -107,10 +107,24 @@ function AppShell(): React.ReactElement {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [history, setHistory] = useState<Array<{ id: string; name: string; payload: unknown }>>(() => readHistory());
+  const autosaveFailureNotifiedRef = useRef(false);
 
   useEffect(() => {
     document.documentElement.lang = language === 'zh' ? 'zh-CN' : language;
   }, [language]);
+
+  useEffect(() => {
+    const hasUnsavedChanges = Boolean(project && project.meta.updatedAt !== lastSavedAt);
+    if (!hasUnsavedChanges) {
+      return;
+    }
+    const preventAccidentalUnload = (event: BeforeUnloadEvent): void => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', preventAccidentalUnload);
+    return () => window.removeEventListener('beforeunload', preventAccidentalUnload);
+  }, [lastSavedAt, project]);
 
   useEffect(() => {
     if (!project) {
@@ -124,9 +138,18 @@ function AppShell(): React.ReactElement {
         loadedFonts,
         savedMeasurements
       }, language);
-      localStorage.setItem(AUTOSAVE_KEY_V5, JSON.stringify(payload));
       // Push state to main process for API/MCP servers
       window.spectroDesigner?.ipcSend?.('api:project-state', { project });
+      try {
+        localStorage.setItem(AUTOSAVE_KEY_V5, JSON.stringify(payload));
+        autosaveFailureNotifiedRef.current = false;
+      } catch (error) {
+        console.error('[autosave] local snapshot failed', error);
+        if (!autosaveFailureNotifiedRef.current) {
+          autosaveFailureNotifiedRef.current = true;
+          pushToast(labels.autosaveFailed, 'danger');
+        }
+      }
     }, 650);
     return () => window.clearTimeout(timeout);
   }, [fontGlyphs, language, loadedFonts, project, savedMeasurements]);
@@ -228,8 +251,7 @@ function AppShell(): React.ReactElement {
     setLastSavedAt(project.meta.updatedAt);
     const entry = { id: `history-${Date.now()}`, name: `${project.meta.name} ${new Date().toLocaleString()}`, payload };
     const nextHistory = [entry, ...history].slice(0, 20);
-    setHistory(nextHistory);
-    localStorage.setItem(LOCAL_HISTORY_KEY, JSON.stringify(nextHistory));
+    setHistory(persistHistoryWithinQuota(nextHistory));
     pushToast(`${labels.saveProject}: ${filename}`, 'success');
   };
 
@@ -521,17 +543,33 @@ function ToastViewport({
 function readAutosave(): ReturnType<typeof migrateProject> | null {
   const keys = [AUTOSAVE_KEY_V5, ...LEGACY_AUTOSAVE_KEYS];
   for (const key of keys) {
-    const raw = localStorage.getItem(key);
-    if (!raw) {
-      continue;
-    }
     try {
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        continue;
+      }
       return migrateProject(JSON.parse(raw));
     } catch {
       continue;
     }
   }
   return null;
+}
+
+function persistHistoryWithinQuota(
+  entries: Array<{ id: string; name: string; payload: unknown }>
+): Array<{ id: string; name: string; payload: unknown }> {
+  for (let count = entries.length; count > 0; count -= 1) {
+    const candidate = entries.slice(0, count);
+    try {
+      localStorage.setItem(LOCAL_HISTORY_KEY, JSON.stringify(candidate));
+      return candidate;
+    } catch {
+      // A large project can exceed the browser quota. Retain as many of the
+      // newest snapshots as will fit instead of failing the explicit save.
+    }
+  }
+  return [];
 }
 
 function readHistory(): Array<{ id: string; name: string; payload: unknown }> {

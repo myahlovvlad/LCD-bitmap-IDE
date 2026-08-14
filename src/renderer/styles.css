@@ -3648,20 +3648,22 @@ button:disabled {
 
 .hmi-designer-workspace {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr) minmax(200px, 0.65fr);
   grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
   padding: 10px;
 }
-.hmi-designer-workspace.right-collapsed { grid-template-columns: minmax(0, 1.15fr) minmax(250px, .8fr) 48px; }
+.hmi-designer-workspace.right-collapsed { grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr) 48px; }
 
 .hmi-designer-toolbar { grid-column: 1 / -1; }
 .hmi-designer-toolbar strong { margin-right: 8px; }
 .hmi-mode-hint { color: var(--ide-text-secondary); font-size: 12px; }
 .hmi-designer-left, .hmi-designer-main, .hmi-designer-right { min-width: 0; overflow: auto; }
+.hmi-designer-left { container-type: inline-size; }
 .hmi-designer-left header h2, .hmi-designer-main header h2, .hmi-designer-right header h2 { display: flex; gap: 7px; align-items: center; margin: 0 0 12px; font-size: 15px; }
-.hmi-device-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, .65fr); gap: 14px; padding: clamp(10px, 2vw, 20px); border: 2px solid var(--ide-border); border-radius: 18px; min-height: 270px; container-type: inline-size; }
+.hmi-device-panel { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(150px, .55fr); gap: 14px; padding: clamp(10px, 2vw, 20px); border: 2px solid var(--ide-border); border-radius: 18px; min-height: 270px; }
 .hmi-device-display { display: grid; place-items: center; min-width: 0; border: 8px solid #17251d; border-radius: 8px; background: #87aa5c; overflow: auto; }
+.hmi-device-display canvas { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
 .hmi-device-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: center; gap: 8px; }
 .hmi-device-buttons button { min-width: 0; min-height: 40px; border: 2px solid; border-radius: 9px; font-weight: 700; cursor: pointer; }
 .hmi-device-buttons button.active { outline: 3px solid #60a5fa; outline-offset: 2px; }
@@ -3680,15 +3682,15 @@ button:disabled {
 .hmi-context-menu { position: fixed; z-index: 50; right: 24px; bottom: 24px; display: grid; gap: 6px; padding: 8px; min-width: 180px; border: 1px solid var(--ide-border); border-radius: 10px; background: var(--ide-panel); box-shadow: 0 14px 36px rgba(0, 0, 0, .4); }
 .hmi-context-menu button { display: flex; align-items: center; gap: 7px; text-align: left; }
 
-@container (max-width: 520px) {
+@container (max-width: 440px) {
   .hmi-device-panel { grid-template-columns: minmax(0, 1fr); }
   .hmi-device-buttons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 1280px) {
-  .hmi-designer-workspace { grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr); }
+  .hmi-designer-workspace { grid-template-columns: minmax(0, 1.3fr) minmax(260px, .8fr); }
   .hmi-designer-main { grid-column: 1 / -1; min-height: 180px; }
-  .hmi-designer-workspace.right-collapsed { grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr) 48px; }
+  .hmi-designer-workspace.right-collapsed { grid-template-columns: minmax(0, 1.3fr) minmax(260px, .8fr) 48px; }
 }
 
 @media (max-width: 760px) {

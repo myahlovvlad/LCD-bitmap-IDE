@@ -47,10 +47,13 @@
 import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import type { BrowserWindow, IpcMain } from 'electron';
+import {
+  evaluateLocalHttpAccess,
+  readBoundedRequestBody
+} from '../localHttpSecurity.js';
 
 export const API_PORT = 8766;
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
 };
@@ -132,6 +135,14 @@ async function mutate(action: string, payload: unknown): Promise<unknown> {
 }
 
 function handleRequest(req: IncomingMessage, res: ServerResponse): void {
+  const access = evaluateLocalHttpAccess(req.headers, API_PORT);
+  if (!access.allowed) {
+    return json(res, { error: access.reason ?? 'Forbidden' }, 403);
+  }
+  if (access.allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', access.allowedOrigin);
+    res.setHeader('Vary', 'Origin');
+  }
   if (req.method === 'OPTIONS') { res.writeHead(204, CORS_HEADERS); res.end(); return; }
 
   const url = req.url ?? '/';
@@ -273,10 +284,5 @@ function json(res: ServerResponse, data: unknown, status = 200): void {
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (c: Buffer) => chunks.push(c));
-    req.on('end', () => resolve(Buffer.concat(chunks).toString()));
-    req.on('error', reject);
-  });
+  return readBoundedRequestBody(req);
 }

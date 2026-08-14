@@ -155,6 +155,7 @@ const RAW_UI_TEXT = {
     customGlyphHint: 'Enter exactly one Unicode character, for example ?, ! or λ.',
     defaultText: 'Text',
     autosaved: 'Autosaved',
+    autosaveFailed: 'Local autosave failed. Save the project to a file now.',
     invalidProjectFile: 'Invalid or unsupported project file'
     ,
     importImageGlyphEditor: 'Import image + glyph editor',
@@ -836,6 +837,7 @@ const RAW_UI_TEXT = {
     customGlyphHint: 'Введите ровно один Unicode-символ, например ?, ! или λ.',
     defaultText: 'Текст',
     autosaved: 'Автосохранение',
+    autosaveFailed: 'Локальное автосохранение не выполнено. Сохраните проект в файл.',
     invalidProjectFile: 'Некорректный или неподдерживаемый файл проекта'
     ,
     importImageGlyphEditor: 'Импорт изображения + редактор глифов',
@@ -1517,6 +1519,7 @@ const RAW_UI_TEXT = {
     customGlyphHint: '请输入一个 Unicode 字符，例如 ?、! 或 λ。',
     defaultText: '文本',
     autosaved: '已自动保存',
+    autosaveFailed: '本地自动保存失败。请立即将项目保存到文件。',
     invalidProjectFile: '项目文件无效或不受支持'
     ,
     importImageGlyphEditor: '导入图像 + 字形编辑器',
