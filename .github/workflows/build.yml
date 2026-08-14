@@ -16,15 +16,22 @@ jobs:
           - os: windows-2022
             command: npm run build:windows
             artifact: windows-build
-            path: release/*Setup*.exe
+            path: |
+              release/*Setup*.exe
+              release/*Portable*.exe
           - os: ubuntu-latest
             command: npm run build:linux
             artifact: linux-build
-            path: release/*.{AppImage,deb,tar.gz}
+            path: |
+              release/*.AppImage
+              release/*.deb
+              release/*.tar.gz
           - os: macos-latest
             command: npm run build:macos
             artifact: macos-build
-            path: release/*.{dmg,zip}
+            path: |
+              release/*.dmg
+              release/*.zip
 
     runs-on: ${{ matrix.os }}
     name: Electron / ${{ matrix.os }}
