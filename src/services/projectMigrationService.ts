@@ -277,6 +277,7 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
     backendProcesses: project.backendProcesses ?? {},
     bindings: project.bindings ?? { statesByScreenId: {}, buttonsByEventId: {}, transitionsByEventId: {} },
     validation: project.validation ?? { issues: [], validatedAt: null },
+    authoringLanguage: project.authoringLanguage ?? 'en',
     // v6 HMI extension fields — initialize empty if absent (v5→v6 migration)
     tags: project.tags ?? {},
     dataSources: project.dataSources ?? {},

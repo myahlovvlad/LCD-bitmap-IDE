@@ -147,7 +147,7 @@ export function HmiDesignerWorkspace({ requestedStateId, requestedElementId }: {
         <div className="hmi-device-panel" style={{ background: project.controlPanel.backgroundColor }}>
           <div className="hmi-device-display">
             {screen
-              ? <LCDCanvas canvasData={{ stateId: screen.id, width: screen.width, height: screen.height, objects: screen.objects, selectedObjectIds: [], updatedAt: screen.updatedAt }} language={language} scale={2} fontRenderer={fontRenderer} />
+              ? <LCDCanvas canvasData={{ stateId: screen.id, width: screen.width, height: screen.height, objects: screen.objects, selectedObjectIds: [], updatedAt: screen.updatedAt }} language={project.authoringLanguage ?? 'en'} scale={2} fontRenderer={fontRenderer} />
               : <span>{labels.hmiScreenNotAssigned}</span>}
           </div>
           <div className="hmi-device-buttons">

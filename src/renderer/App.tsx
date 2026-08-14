@@ -713,7 +713,7 @@ function compileProjectForExternalRequest(body: Record<string, unknown>): { arti
     const symbolName = `${project.meta.name}_${screen.name || screen.id}_screen`;
     const result = exportScreenEmbedded(screen.objects, format, {
       symbolName,
-      language: store.language,
+      language: project.authoringLanguage ?? store.language,
       width: screen.width,
       height: screen.height
     });

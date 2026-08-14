@@ -263,7 +263,7 @@ export function RuntimeWorkspace(): React.ReactElement {
                 selectedObjectIds: screen.selectedObjectIds,
                 updatedAt: screen.updatedAt
               }}
-              language={language}
+              language={project.authoringLanguage ?? 'en'}
               fontRenderer={fontRenderer}
             />
           ) : (

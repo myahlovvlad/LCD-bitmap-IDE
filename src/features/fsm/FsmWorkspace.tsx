@@ -1088,7 +1088,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
                       selectedObjectIds: [],
                       updatedAt: selectedScreen.updatedAt
                     }}
-                    language={language}
+                    language={project.authoringLanguage ?? 'en'}
                     scale={3}
                     fontRenderer={new FontRenderer(fontGlyphs)}
                     className="lcd-canvas"
@@ -1338,7 +1338,7 @@ function TransitionLinkPreview({
                 {screen ? (
                   <LCDCanvas
                     canvasData={{ stateId: screen.id, width: screen.width, height: screen.height, objects: screen.objects, selectedObjectIds: [], updatedAt: screen.updatedAt }}
-                    language={language}
+                    language={project.authoringLanguage ?? 'en'}
                     scale={1}
                     className="transition-link-lcd"
                     fontRenderer={new FontRenderer(fontGlyphs)}

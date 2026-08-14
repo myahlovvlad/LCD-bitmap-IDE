@@ -137,6 +137,7 @@ interface ProjectStoreState {
   deleteCliCommand: (commandId: string) => void;
   upsertAlarm: (alarm: AlarmDefinition) => void;
   deleteAlarm: (alarmId: string) => void;
+  setAuthoringLanguage: (lang: LanguageCode) => void;
 }
 
 const SCREEN_TEMPLATES_KEY = 'lcd-bitmap-ide.screen-templates.v1';
@@ -669,7 +670,14 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const alarms = { ...(state.project.alarms ?? {}) };
     delete alarms[alarmId];
     return { project: { ...state.project, alarms } };
-  })
+  }),
+  setAuthoringLanguage: (lang) => {
+    const state = get();
+    if (!state.project) return;
+    const nextProject = { ...state.project, authoringLanguage: lang };
+    const nextSession = state.session ? sessionFromState({ ...state, project: nextProject }) : null;
+    set({ project: nextProject, session: nextSession });
+  }
 }));
 
 function readPersistedLanguage(): LanguageCode {

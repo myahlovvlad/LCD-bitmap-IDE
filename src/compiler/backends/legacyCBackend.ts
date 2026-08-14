@@ -86,7 +86,7 @@ export function generateAllScreensCHeader(targetIr: LoweredTargetIrV1, projectSy
   );
   const tableRows = targetIr.screens.map((screen) => {
     const symbolName = screenSymbolName(baseName, screen.id);
-    return `  { "${escapeCString(screen.id)}", ${symbolName}, ${targetIr.targetProfile.codegen.allScreensTableByteLength} }`;
+    return `  { "${escapeCString(screen.id)}", ${symbolName}, ${screen.framebufferBytes.length} }`;
   });
 
   return [
