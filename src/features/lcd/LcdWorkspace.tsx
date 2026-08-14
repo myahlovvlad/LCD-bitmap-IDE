@@ -285,7 +285,7 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
               selectedObjectIds: screen.selectedObjectIds,
               updatedAt: screen.updatedAt
             }}
-            language={language}
+            language={project.authoringLanguage ?? language}
             labels={labels}
             showPixelGrid={showPixelGrid}
             onTogglePixelGrid={() => setShowPixelGrid((value) => !value)}

@@ -120,6 +120,9 @@ export function LCDCanvasEditor({
     deleteSavedMeasurement,
     importFontGlyphs
   } = useProjectStore();
+  // Authoring language governs LCD content rendering and export.
+  // Falls back to the UI language prop only when no project is loaded.
+  const authoringLanguage = project?.authoringLanguage ?? language;
   const fontRenderer = useMemo(() => new FontRenderer(fontGlyphs), [fontGlyphs]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const cHeaderInputRef = useRef<HTMLInputElement | null>(null);
@@ -164,7 +167,7 @@ export function LCDCanvasEditor({
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>): void => {
     const point = getCanvasPoint(event, canvasData);
     if (mode === 'select') {
-      const hitObject = findObjectAtPoint(canvasData.objects, point, language, fontRenderer);
+      const hitObject = findObjectAtPoint(canvasData.objects, point, authoringLanguage, fontRenderer);
       if (hitObject && !hitObject.locked) {
         const nextSelection = event.shiftKey
           ? Array.from(new Set([...canvasData.selectedObjectIds, hitObject.id]))
@@ -289,13 +292,13 @@ export function LCDCanvasEditor({
     }
 
     if (mode === 'glyph') {
-      const hitObject = findObjectAtPoint(canvasData.objects, point, language, fontRenderer);
+      const hitObject = findObjectAtPoint(canvasData.objects, point, authoringLanguage, fontRenderer);
       if (!hitObject) {
         return;
       }
 
       if (hitObject.type === 'text') {
-        const char = findCharacterAtPoint(hitObject, point, language, fontRenderer);
+        const char = findCharacterAtPoint(hitObject, point, authoringLanguage, fontRenderer);
         if (!char) {
           return;
         }
@@ -379,7 +382,7 @@ export function LCDCanvasEditor({
     if (marquee) {
       const selectionRect = toRect(marquee);
       const nextSelection = canvasData.objects
-        .filter((object) => rectsIntersect(selectionRect, getObjectBounds(object, language, fontRenderer)))
+        .filter((object) => rectsIntersect(selectionRect, getObjectBounds(object, authoringLanguage, fontRenderer)))
         .map((object) => object.id);
       setCanvasSelection(
         canvasData.stateId,
@@ -429,7 +432,7 @@ export function LCDCanvasEditor({
     if (!codegenWorkspace) {
       return;
     }
-    const cCode = generateSelectedScreenCHeader(codegenWorkspace, canvasData.stateId, { language });
+    const cCode = generateSelectedScreenCHeader(codegenWorkspace, canvasData.stateId, { language: authoringLanguage });
     await copyToClipboard(cCode);
   };
 
@@ -439,7 +442,7 @@ export function LCDCanvasEditor({
     }
     downloadBlob(
       `${sanitizeFilename(canvasData.stateId)}_screen.h`,
-      generateSelectedScreenCHeader(codegenWorkspace, canvasData.stateId, { language }),
+      generateSelectedScreenCHeader(codegenWorkspace, canvasData.stateId, { language: authoringLanguage }),
       'text/x-c'
     );
   };
@@ -450,7 +453,7 @@ export function LCDCanvasEditor({
     }
     downloadBlob(
       `${sanitizeFilename(canvasData.stateId)}_screen.bin`,
-      generateSelectedScreenBinary(codegenWorkspace, canvasData.stateId, { language }),
+      generateSelectedScreenBinary(codegenWorkspace, canvasData.stateId, { language: authoringLanguage }),
       'application/octet-stream'
     );
   };
@@ -461,7 +464,7 @@ export function LCDCanvasEditor({
     }
     downloadBlob(
       `${sanitizeFilename(project.meta.id)}_lcd_screens.h`,
-      generateAllScreensCHeader(codegenWorkspace, { language }),
+      generateAllScreensCHeader(codegenWorkspace, { language: authoringLanguage }),
       'text/x-c'
     );
   };
@@ -472,7 +475,7 @@ export function LCDCanvasEditor({
     }
     downloadBlob(
       `${sanitizeFilename(project.meta.id)}_lcd_screens.bin`,
-      generateAllScreensBinary(codegenWorkspace, { language }),
+      generateAllScreensBinary(codegenWorkspace, { language: authoringLanguage }),
       'application/octet-stream'
     );
   };
@@ -481,7 +484,7 @@ export function LCDCanvasEditor({
     const ext = EMBEDDED_FORMAT_EXTENSIONS[embeddedFormat];
     const content = exportScreenEmbedded(canvasData.objects, embeddedFormat, {
       symbolName: `${canvasData.stateId}_screen`,
-      language,
+      language: authoringLanguage,
       fontRenderer,
       width: canvasData.width,
       height: canvasData.height
@@ -502,7 +505,7 @@ export function LCDCanvasEditor({
       const chunks = allCanvases.map((screen) =>
         exportScreenEmbedded(screen.objects, embeddedFormat, {
           symbolName: `${screen.stateId}_screen`,
-          language,
+          language: authoringLanguage,
           fontRenderer,
           width: screen.width,
           height: screen.height
@@ -521,7 +524,7 @@ export function LCDCanvasEditor({
     const sections = allCanvases.map((screen) =>
       exportScreenEmbedded(screen.objects, embeddedFormat, {
         symbolName: `${screen.stateId}_screen`,
-        language,
+        language: authoringLanguage,
         fontRenderer,
         width: screen.width,
         height: screen.height
@@ -624,7 +627,7 @@ export function LCDCanvasEditor({
         {mode === 'special' || mode === 'glyph' ? (
           <SpecialGlyphPanel
             labels={labels}
-            language={language}
+            language={authoringLanguage}
             variant={fontTargetVariant}
             scope={glyphEditScope}
             onVariantChange={setFontTargetVariant}
@@ -674,7 +677,7 @@ export function LCDCanvasEditor({
 
         <ObjectProperties
           selectedObjects={selectedObjects}
-          language={language}
+          language={authoringLanguage}
           labels={labels}
           tags={Object.values(project?.tags ?? {})}
           procedures={Object.values(project?.procedures ?? {})}
@@ -703,7 +706,7 @@ export function LCDCanvasEditor({
           measurements={savedMeasurements}
           stateId={canvasData.stateId}
           labels={labels}
-          onAdd={() => addSavedMeasurement(canvasData.stateId, canvasData.stateId, getMeasurementValue(canvasData, language, fontRenderer))}
+          onAdd={() => addSavedMeasurement(canvasData.stateId, canvasData.stateId, getMeasurementValue(canvasData, authoringLanguage, fontRenderer))}
           onUpdate={updateSavedMeasurement}
           onDelete={deleteSavedMeasurement}
         />
@@ -716,7 +719,7 @@ export function LCDCanvasEditor({
         >
           <LCDCanvas
             canvasData={canvasData}
-            language={language}
+            language={authoringLanguage}
             scale={5}
             showPixelGrid={showPixelGrid}
             className={`lcd-canvas block rounded-sm shadow-[inset_0_0_15px_rgba(0,0,0,0.6)] mx-auto editor-mode-${mode}`}

@@ -265,7 +265,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
               selectedObjectIds: selectedObject ? [selectedObject.id] : [],
               updatedAt: screen.updatedAt
             }}
-            language={language}
+            language={project.authoringLanguage ?? 'en'}
             fontRenderer={fontRenderer}
             interactive
             onSelectObject={(objectId) => setSelectedObjectId(objectId)}

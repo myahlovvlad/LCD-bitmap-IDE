@@ -36,7 +36,7 @@ export interface TextCanvasObject extends CanvasObjectBase {
   y: number;
   fontVariant: FontVariant;
   pendingTranslation: boolean;
-  /** Fixed LCD content language. Null/undefined follows the editor interface language. */
+  /** Fixed LCD content language. Null/undefined follows project.authoringLanguage. */
   displayLanguage?: LanguageCode | null;
   /** Shared key for repeated strings. Editing one registry row updates all peers. */
   globalTextKey?: string;

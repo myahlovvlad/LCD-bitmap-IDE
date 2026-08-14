@@ -1,6 +1,6 @@
 import type { CanvasObject, DisplayConfig, GraphPosition } from './canvas';
 import type { FontMetadata } from './fonts';
-import type { LocalizedText } from './localization';
+import type { LanguageCode, LocalizedText } from './localization';
 import type { HmiBindings, HmiTag, DataSource } from './tag';
 import type { BackendProcedure, CliCommandDefinition } from './procedure';
 import type { AlarmDefinition } from './alarm';
@@ -296,6 +296,10 @@ export interface LcdBitmapProject {
   backendProcesses: Record<string, BackendProcess>;
   bindings: ProjectBindings;
   validation: ValidationState;
+  /** Language used when rendering LCD canvas text and exporting bitmaps.
+   *  Independent of the editor UI language. Optional for backward compatibility;
+   *  `normalizeV5Project` always sets it to 'en' when absent. */
+  authoringLanguage?: LanguageCode;
   // v6 HMI extensions — all optional for backward compatibility
   tags?: Record<string, HmiTag>;
   dataSources?: Record<string, DataSource>;

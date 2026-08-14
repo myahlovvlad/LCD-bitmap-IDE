@@ -9,7 +9,7 @@ const API_PORT = 8766;
 const MCP_PORT = 8767;
 
 export function SettingsWorkspace(): React.ReactElement {
-  const { project, language, setLanguage, updateProjectMetadata, updateDisplayConfig } = useProjectStore();
+  const { project, language, setLanguage, setAuthoringLanguage, updateProjectMetadata, updateDisplayConfig } = useProjectStore();
   const labels = UI_TEXT[language];
   const isDesktop = Boolean(window.spectroDesigner);
 
@@ -22,11 +22,22 @@ export function SettingsWorkspace(): React.ReactElement {
       <div className="settings-column">
         <section className="inspector-card settings-card">
           <h3><Globe2 size={16} /> {labels.settingsLanguage}</h3>
-          <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageCode)}>
-            {SUPPORTED_LANGUAGES.map((code) => (
-              <option key={code} value={code}>{code.toUpperCase()}</option>
-            ))}
-          </select>
+          <label className="hmi-form-row">
+            <span className="hmi-form-label">{labels.settingsLanguage}</span>
+            <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageCode)}>
+              {SUPPORTED_LANGUAGES.map((code) => (
+                <option key={code} value={code}>{code.toUpperCase()}</option>
+              ))}
+            </select>
+          </label>
+          <label className="hmi-form-row">
+            <span className="hmi-form-label">{labels.settingsContentLanguage}</span>
+            <select value={project.authoringLanguage ?? 'en'} onChange={(event) => setAuthoringLanguage(event.target.value as LanguageCode)}>
+              {SUPPORTED_LANGUAGES.map((code) => (
+                <option key={code} value={code}>{code.toUpperCase()}</option>
+              ))}
+            </select>
+          </label>
         </section>
 
         <section className="inspector-card settings-card">
