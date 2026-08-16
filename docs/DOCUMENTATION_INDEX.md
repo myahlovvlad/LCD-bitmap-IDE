@@ -29,6 +29,8 @@ Use this page instead of scanning the `docs/` directory alphabetically.
 - [Application command model](APPLICATION_COMMAND_MODEL.md)
 - [HMI handoff guide](HMI_HANDOFF_GUIDE.md)
 - [ECROS CLI and HMI operational contract](ECROS_CLI_PROTOCOL_NOTES.md)
+- [Automation registry milestone](audits/AUTOMATION_COMMAND_REGISTRY_MILESTONE.md)
+- [ADR-055: renderer-owned automation registry](adr/ADR-055-automation-command-registry.md)
 
 ## Specialized Design Documents
 

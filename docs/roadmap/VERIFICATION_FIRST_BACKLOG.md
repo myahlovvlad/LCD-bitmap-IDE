@@ -2,15 +2,15 @@
 
 ## P0 — contract integrity
 
-- Complete UI command registry coverage and document every intentional `uiOnlyReason`.
-- Route remaining direct tag/procedure/alarm mutations through the application command bus.
-- Add expected revision, idempotency, dry-run and audit metadata to every external mutation.
-- Generate REST/MCP schemas and parity tests from one registry.
-- Add Tauri localhost-only automation transport with origin, body, timeout and token controls.
+- [x] Complete UI command registry coverage and document every intentional `uiOnlyReason`.
+- [x] Route remaining direct tag/procedure/alarm mutations through the application command bus.
+- [x] Add expected revision, idempotency, dry-run and audit metadata to every external mutation.
+- [x] Generate REST/MCP schemas and parity tests from one registry.
+- [x] Add Tauri localhost-only automation transport with origin, body, timeout and token controls.
 
 ## P1 — canonical display and evidence core
 
-- Introduce schema v7 `DisplayProfile`, migration v6 → v7 and profile fingerprint.
+- [ ] Introduce schema v7 `DisplayProfile`, migration v6 → v7 and profile fingerprint.
 - Separate `CanonicalRaster`, encoder, decoder and codegen backends.
 - Add lossless encode/decode property tests for all supported profiles.
 - Build deterministic screen rendering/layout analysis and issue overlays.
