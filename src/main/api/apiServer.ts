@@ -53,20 +53,29 @@ import {
   evaluateLocalHttpAccess,
   readBoundedRequestBody
 } from '../localHttpSecurity.js';
+import type { AutomationOutcome } from '../../shared/automation/contracts.js';
+import {
+  AutomationAuthorizationError,
+  authorizeLocalAutomation,
+  automationHttpStatus,
+  createAutomationRequest,
+  type AutomationEnvelopeInput
+} from '../automationTransport.js';
 
 export const API_PORT = 8766;
 const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type'
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-LCD-IDE-Scopes, X-Correlation-ID'
 };
 
 interface ProjectStateCache {
   project: unknown;
+  revision: number;
   runtimeState: { currentStateId: string | null; isRunning: boolean } | null;
   updatedAt: string;
 }
 
-let cache: ProjectStateCache = { project: null, runtimeState: null, updatedAt: new Date().toISOString() };
+let cache: ProjectStateCache = { project: null, revision: 0, runtimeState: null, updatedAt: new Date().toISOString() };
 let mainWindow: BrowserWindow | null = null;
 let httpServer: Server | null = null;
 let apiIpcHandlersRegistered = false;
@@ -84,8 +93,8 @@ export function startApiServer(ipcMain: IpcMain): Server {
   if (httpServer) return httpServer;
   if (!apiIpcHandlersRegistered) {
     apiIpcHandlersRegistered = true;
-    ipcMain.on('api:project-state', (_e, state: { project: unknown }) => {
-      cache = { ...cache, project: state.project, updatedAt: new Date().toISOString() };
+    ipcMain.on('api:project-state', (_e, state: { project: unknown; revision?: number }) => {
+      cache = { ...cache, project: state.project, revision: state.revision ?? cache.revision, updatedAt: new Date().toISOString() };
     });
     ipcMain.on('api:runtime-state', (_e, runtimeState: ProjectStateCache['runtimeState']) => {
       cache = { ...cache, runtimeState, updatedAt: new Date().toISOString() };
@@ -146,9 +155,19 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     res.setHeader('Vary', 'Origin');
   }
   if (req.method === 'OPTIONS') { res.writeHead(204, CORS_HEADERS); res.end(); return; }
+  const authorization = authorizeLocalAutomation(req.headers);
+  if (!authorization.allowed) return json(res, { error: authorization.message }, 401);
 
   const url = req.url ?? '/';
   const method = req.method ?? 'GET';
+
+  if (method === 'GET' && (url === '/api/v1/capabilities' || url === '/api/v1/revision')) {
+    const command = url.endsWith('capabilities') ? 'get_capabilities' : 'get_project_revision';
+    executeAutomation(command, {}, req, false)
+      .then((outcome) => json(res, outcome, automationHttpStatus(outcome)))
+      .catch((error) => json(res, { error: error instanceof Error ? error.message : String(error) }, error instanceof AutomationAuthorizationError ? 401 : 500));
+    return;
+  }
 
   // GET routes
   if (method === 'GET') {
@@ -191,6 +210,15 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     if (url.startsWith(prefix + '/')) return decodeURIComponent(url.slice(prefix.length + 1));
     return null;
   };
+
+  if (method === 'POST' && url.startsWith('/api/v1/commands/')) {
+    const command = decodeURIComponent(url.slice('/api/v1/commands/'.length));
+    postBody()
+      .then((body) => executeAutomation(command, normalizeAutomationEnvelope(body), req, false))
+      .then((outcome) => json(res, outcome, automationHttpStatus(outcome)))
+      .catch((error) => json(res, { error: error instanceof Error ? error.message : String(error) }, error instanceof AutomationAuthorizationError ? 401 : 400));
+    return;
+  }
 
   if (method === 'PUT' && url === '/api/project/authoring-language') {
     postBody()
@@ -276,12 +304,10 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
 
   // Runtime event
   if (method === 'POST' && url === '/api/runtime/event') {
-    postBody().then((body) => {
-      const { eventId } = body as { eventId: string };
-      if (typeof eventId !== 'string' || !eventId) return json(res, { error: 'eventId required' }, 400);
-      mainWindow?.webContents.send('api:fire-event', { eventId });
-      json(res, { ok: true, eventId });
-    }).catch(() => json(res, { error: 'Invalid JSON' }, 400));
+    postBody()
+      .then((body) => executeAutomation('fire_runtime_event', { input: body }, req, true))
+      .then((outcome) => json(res, outcome, automationHttpStatus(outcome)))
+      .catch((error) => json(res, { error: error instanceof Error ? error.message : String(error) }, error instanceof AutomationAuthorizationError ? 401 : 400));
     return;
   }
 
@@ -300,4 +326,33 @@ function json(res: ServerResponse, data: unknown, status = 200): void {
 
 function readBody(req: IncomingMessage): Promise<string> {
   return readBoundedRequestBody(req);
+}
+
+async function executeAutomation(
+  command: string,
+  envelope: AutomationEnvelopeInput,
+  req: IncomingMessage,
+  legacyRevisionFallback: boolean
+): Promise<AutomationOutcome> {
+  const request = createAutomationRequest(
+    command,
+    envelope,
+    req.headers,
+    'electron-rest',
+    legacyRevisionFallback ? cache.revision : undefined
+  );
+  return await mutate('automation.execute', request) as AutomationOutcome;
+}
+
+function normalizeAutomationEnvelope(value: unknown): AutomationEnvelopeInput {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { input: value };
+  const record = value as Record<string, unknown>;
+  const { expectedRevision, idempotencyKey, dryRun, correlationId, input, ...inlineInput } = record;
+  return {
+    input: input ?? inlineInput,
+    expectedRevision,
+    idempotencyKey,
+    dryRun,
+    correlationId
+  };
 }
