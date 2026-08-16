@@ -38,6 +38,7 @@ import {
   createDefaultApplicationCommandContext,
   createProjectSession,
   createSessionFromWorkspace,
+  executeProjectChangeSet,
   executeProjectCommand,
   applyFsmScriptPreview,
   applyScreenDslPreview as applyScreenDslPreviewFacade,
@@ -47,6 +48,8 @@ import {
   type CommandMetadata,
   type ProjectCommand,
   type ProjectCommandResult,
+  type ProjectChangeSet,
+  type ExecuteCommandOptions,
   undoProjectSession
 } from '../../application';
 import type { ScreenDslPreviewResult } from '../../application/screenDsl/contracts';
@@ -628,28 +631,26 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const project: LcdBitmapProject = { ...state.project, tags, ...(dataSources !== undefined ? { dataSources } : {}) };
     return { project };
   }),
-  upsertHmiTag: (tag) => set((state) => {
-    if (!state.project) return state;
-    const tags = { ...(state.project.tags ?? {}), [tag.id]: tag };
-    return { project: { ...state.project, tags } };
-  }),
-  deleteHmiTag: (tagId) => set((state) => {
-    if (!state.project) return state;
-    const tags = { ...(state.project.tags ?? {}) };
-    delete tags[tagId];
-    return { project: { ...state.project, tags } };
-  }),
-  upsertHmiProcedure: (procedure) => set((state) => {
-    if (!state.project) return state;
-    const procedures = { ...(state.project.procedures ?? {}), [procedure.id]: procedure };
-    return { project: { ...state.project, procedures } };
-  }),
-  deleteHmiProcedure: (procedureId) => set((state) => {
-    if (!state.project) return state;
-    const procedures = { ...(state.project.procedures ?? {}) };
-    delete procedures[procedureId];
-    return { project: { ...state.project, procedures } };
-  }),
+  upsertHmiTag: (tag) => commitProjectCommand(set, get, (state) => ({
+    type: 'tag.upsert',
+    meta: createCommandMeta(state, 'tag.upsert'),
+    payload: { tag }
+  })),
+  deleteHmiTag: (tagId) => commitProjectCommand(set, get, (state) => ({
+    type: 'tag.delete',
+    meta: createCommandMeta(state, 'tag.delete'),
+    payload: { tagId }
+  })),
+  upsertHmiProcedure: (procedure) => commitProjectCommand(set, get, (state) => ({
+    type: 'procedure.upsert',
+    meta: createCommandMeta(state, 'procedure.upsert'),
+    payload: { procedure }
+  })),
+  deleteHmiProcedure: (procedureId) => commitProjectCommand(set, get, (state) => ({
+    type: 'procedure.delete',
+    meta: createCommandMeta(state, 'procedure.delete'),
+    payload: { procedureId }
+  })),
   upsertCliCommand: (command) => set((state) => {
     if (!state.project) return state;
     const cliCatalog = { ...(state.project.cliCatalog ?? {}), [command.id]: command };
@@ -661,17 +662,16 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     delete cliCatalog[commandId];
     return { project: { ...state.project, cliCatalog } };
   }),
-  upsertAlarm: (alarm) => set((state) => {
-    if (!state.project) return state;
-    const alarms = { ...(state.project.alarms ?? {}), [alarm.id]: alarm };
-    return { project: { ...state.project, alarms } };
-  }),
-  deleteAlarm: (alarmId) => set((state) => {
-    if (!state.project) return state;
-    const alarms = { ...(state.project.alarms ?? {}) };
-    delete alarms[alarmId];
-    return { project: { ...state.project, alarms } };
-  }),
+  upsertAlarm: (alarm) => commitProjectCommand(set, get, (state) => ({
+    type: 'alarm.upsert',
+    meta: createCommandMeta(state, 'alarm.upsert'),
+    payload: { alarm }
+  })),
+  deleteAlarm: (alarmId) => commitProjectCommand(set, get, (state) => ({
+    type: 'alarm.delete',
+    meta: createCommandMeta(state, 'alarm.delete'),
+    payload: { alarmId }
+  })),
   setAuthoringLanguage: (lang) => {
     commitProjectCommand(set, get, (state) => ({
       type: 'project.setAuthoringLanguage',
@@ -680,6 +680,61 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     }));
   }
 }));
+
+/** Executes an already validated external command through the same application bus as UI actions. */
+export function executeProjectStoreCommand(
+  command: ProjectCommand,
+  options: ExecuteCommandOptions = {}
+): ProjectCommandResult | null {
+  const state = useProjectStore.getState();
+  if (!state.project || !state.session) return null;
+  const result = executeProjectCommand(
+    sessionFromState(state),
+    command,
+    createDefaultApplicationCommandContext(),
+    options
+  );
+  if (result.status === 'applied') replaceProjectStoreSession(result.session);
+  return result;
+}
+
+/** Executes an atomic external ChangeSet and commits it only after full validation. */
+export function executeProjectStoreChangeSet(
+  changeSet: ProjectChangeSet,
+  options: ExecuteCommandOptions = {}
+): ProjectCommandResult | null {
+  const state = useProjectStore.getState();
+  if (!state.project || !state.session) return null;
+  const result = executeProjectChangeSet(
+    sessionFromState(state),
+    changeSet,
+    createDefaultApplicationCommandContext(),
+    options
+  );
+  if (result.status === 'applied') replaceProjectStoreSession(result.session);
+  return result;
+}
+
+export function replaceProjectStoreSession(session: ProjectSession): void {
+  const state = useProjectStore.getState();
+  const project = session.project;
+  useProjectStore.setState({
+    ...projectProjection(session),
+    selectedStateId: state.selectedStateId && project.fsm.states[state.selectedStateId]
+      ? state.selectedStateId
+      : project.fsm.stateOrder[0] ?? null,
+    selectedScreenId: state.selectedScreenId && project.screens[state.selectedScreenId]
+      ? state.selectedScreenId
+      : project.screenOrder[0] ?? null,
+    selectedTransitionId: state.selectedTransitionId && project.fsm.transitions[state.selectedTransitionId]
+      ? state.selectedTransitionId
+      : null,
+    undoStack: session.history.entries.slice(0, session.history.cursor),
+    redoStack: session.history.entries.slice(session.history.cursor),
+    canUndo: session.history.cursor > 0,
+    canRedo: session.history.cursor < session.history.entries.length
+  });
+}
 
 function readPersistedLanguage(): LanguageCode {
   try {

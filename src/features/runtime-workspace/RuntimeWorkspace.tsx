@@ -30,6 +30,7 @@ import type { ControlPanelButton } from '../../domain/project';
 import type { FsmTransition, LcdBitmapProject } from '../../domain/project';
 import { ValidationPanel } from '../validation/ValidationPanel';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
+import { registerRuntimeAutomationHandler } from '../../renderer/automation/runtimeAutomation';
 
 type TransportKind = 'simulation';
 
@@ -73,6 +74,19 @@ export function RuntimeWorkspace(): React.ReactElement {
     setRevision((r) => r + 1);
     return () => { engineRef.current = null; };
   }, [buildEngine]);
+
+  useEffect(() => registerRuntimeAutomationHandler({
+    fireEvent: (eventId) => {
+      const engine = engineRef.current;
+      if (!engine) throw new Error('Runtime engine is not initialized');
+      engine.sendEvent(eventId);
+      setRevision((value) => value + 1);
+    },
+    getState: () => ({
+      currentStateId: engineRef.current?.currentStateId ?? null,
+      isRunning: Boolean(engineRef.current)
+    })
+  }), []);
 
   // Auto-fire timer transitions
   useEffect(() => {

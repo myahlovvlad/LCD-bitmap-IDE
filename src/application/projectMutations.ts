@@ -41,7 +41,7 @@ export function applyProjectCommandMutation(
     case 'project.setAuthoringLanguage':
       return setAuthoringLanguage(workspace, command.payload.language, context);
     case 'fsm.state.add':
-      return addFsmState(workspace, context);
+      return addFsmState(workspace, context, command.payload.title);
     case 'fsm.state.update':
       return updateFsmState(workspace, command.payload.stateId, command.payload.updates, context);
     case 'fsm.states.update':
@@ -128,6 +128,18 @@ export function applyProjectCommandMutation(
       return updateSavedMeasurement(workspace, command.payload.measurement, context);
     case 'measurement.delete':
       return deleteSavedMeasurement(workspace, command.payload.measurementId);
+    case 'tag.upsert':
+      return upsertProjectRecord(workspace, 'tags', 'tag', command.payload.tag.id, command.payload.tag, context);
+    case 'tag.delete':
+      return deleteProjectRecord(workspace, 'tags', 'tag', command.payload.tagId, context);
+    case 'procedure.upsert':
+      return upsertProjectRecord(workspace, 'procedures', 'procedure', command.payload.procedure.id, command.payload.procedure, context);
+    case 'procedure.delete':
+      return deleteProjectRecord(workspace, 'procedures', 'procedure', command.payload.procedureId, context);
+    case 'alarm.upsert':
+      return upsertProjectRecord(workspace, 'alarms', 'alarm', command.payload.alarm.id, command.payload.alarm, context);
+    case 'alarm.delete':
+      return deleteProjectRecord(workspace, 'alarms', 'alarm', command.payload.alarmId, context);
   }
 }
 
@@ -221,10 +233,10 @@ function setAuthoringLanguage(
   }]);
 }
 
-function addFsmState(workspace: ApplicationWorkspace, context: ApplicationCommandContext): ProjectMutationResult {
+function addFsmState(workspace: ApplicationWorkspace, context: ApplicationCommandContext, requestedTitle?: string): ProjectMutationResult {
   const project = workspace.project;
   const id = context.createId(project.fsm.states, 'state');
-  const title = `State ${project.fsm.stateOrder.length + 1}`;
+  const title = requestedTitle?.trim() || `State ${project.fsm.stateOrder.length + 1}`;
   const screenId = createScreenId(project, title);
   const state = createState(project, id, title, screenId);
   const screen = createLcdScreen(project, screenId, title, context.now());
@@ -1198,6 +1210,58 @@ function createControlElement(project: LcdBitmapProject, id: string, type: Contr
     return { ...base, type, name: 'Image', dataUrl: '', opacity: 1, width: 160, height: 100 };
   }
   return { ...base, type, name: 'Group', childIds: [] };
+}
+
+type AutomationRecordKey = 'tags' | 'procedures' | 'alarms';
+type AutomationEntityType = Extract<SemanticChange['entityType'], 'tag' | 'procedure' | 'alarm'>;
+
+function upsertProjectRecord(
+  workspace: ApplicationWorkspace,
+  recordKey: AutomationRecordKey,
+  entityType: AutomationEntityType,
+  entityId: string,
+  value: unknown,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const record = (project[recordKey] ?? {}) as Record<string, unknown>;
+  const before = record[entityId];
+  if (sameJson(before, value)) {
+    return noChange(workspace);
+  }
+  const kind: SemanticChange['kind'] = before === undefined ? 'created' : 'updated';
+  return changedProject(workspace, {
+    ...project,
+    [recordKey]: { ...record, [entityId]: value },
+    meta: { ...project.meta, updatedAt: context.now() }
+  } as LcdBitmapProject, [{
+    kind,
+    entityType,
+    entityId,
+    path: `/${recordKey}/${entityId}`,
+    ...(before === undefined ? {} : { before }),
+    after: value
+  }]);
+}
+
+function deleteProjectRecord(
+  workspace: ApplicationWorkspace,
+  recordKey: AutomationRecordKey,
+  entityType: AutomationEntityType,
+  entityId: string,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const record = (project[recordKey] ?? {}) as Record<string, unknown>;
+  const before = record[entityId];
+  if (before === undefined) {
+    return noChange(workspace);
+  }
+  return changedProject(workspace, {
+    ...project,
+    [recordKey]: omit(record, entityId),
+    meta: { ...project.meta, updatedAt: context.now() }
+  } as LcdBitmapProject, [deleted(entityType, entityId, `/${recordKey}/${entityId}`, before)]);
 }
 
 function changedProject(workspace: ApplicationWorkspace, project: LcdBitmapProject, changes: SemanticChange[]): ProjectMutationResult {

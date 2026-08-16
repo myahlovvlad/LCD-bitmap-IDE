@@ -25,7 +25,7 @@ import {
   Workflow
 } from 'lucide-react';
 import { WorkspaceRouterProvider, useWorkspaceRouter } from '../app/WorkspaceRouter';
-import type { WorkspaceLocation, WorkspaceMode, ControlPanelElement, FsmEvent, FsmState, FsmTransition } from '../domain/project';
+import type { WorkspaceLocation, WorkspaceMode } from '../domain/project';
 import { createBlankProject } from '../entities/project/factory';
 import { createDemoProject } from '../entities/project/demo';
 import { PRODUCT_IDENTITY, SUPPORTED_LANGUAGES } from './config/constants';
@@ -40,15 +40,12 @@ import {
   migrateProject
 } from '../services/projectMigrationService';
 import { hasBlockingValidationIssues } from '../services/projectValidationService';
-import { exportScreenEmbedded, EMBEDDED_FORMAT_EXTENSIONS, type EmbeddedExportFormat } from './utils/codegen';
-import type { HmiTag } from '../domain/tag';
-import type { BackendProcedure } from '../domain/procedure';
-import type { AlarmDefinition } from '../domain/alarm';
-import { computeElkLayout } from './core/elkLayout';
 import { GuidedTour } from '../features/guided-tour/GuidedTour';
 import { FIRST_HMI_TOUR } from '../features/guided-tour/tourScenarios';
 import { NotificationCenter, NotificationViewport } from './components/NotificationCenter';
 import { beginOperation, notify, type NotificationTone } from './notifications/notificationStore';
+import type { AutomationRequest } from '../shared/automation';
+import { executeAutomationRequest } from './automation/automationDispatcher';
 
 const AUTOSAVE_KEY_V5 = 'lcd-bitmap-ide.project.autosave.v5';
 const LEGACY_AUTOSAVE_KEYS = [
@@ -81,6 +78,7 @@ export function App(): React.ReactElement {
 function AppShell(): React.ReactElement {
   const {
     project,
+    revision,
     language,
     fontGlyphs,
     loadedFonts,
@@ -134,7 +132,7 @@ function AppShell(): React.ReactElement {
         savedMeasurements
       }, language);
       // Push state to main process for API/MCP servers
-      window.spectroDesigner?.ipcSend?.('api:project-state', { project });
+      window.spectroDesigner?.ipcSend?.('api:project-state', { project, revision });
       try {
         localStorage.setItem(AUTOSAVE_KEY_V5, JSON.stringify(payload));
         autosaveFailureNotifiedRef.current = false;
@@ -147,7 +145,7 @@ function AppShell(): React.ReactElement {
       }
     }, 650);
     return () => window.clearTimeout(timeout);
-  }, [fontGlyphs, language, loadedFonts, project, savedMeasurements]);
+  }, [fontGlyphs, language, loadedFonts, project, revision, savedMeasurements]);
 
   useEffect(() => {
     window.spectroDesigner?.onMutateRequest?.((requestId, action, payload) => {
@@ -561,162 +559,46 @@ function readHistory(): Array<{ id: string; name: string; payload: unknown }> {
  * mutation (REST API, MCP tools) ultimately runs through here.
  */
 async function runMutationAction(action: string, payload: unknown): Promise<unknown> {
-  const store = useProjectStore.getState();
+  if (action === 'automation.execute') return executeAutomationRequest(payload as AutomationRequest);
+  const legacy = legacyAutomationRequest(action, payload);
+  if (!legacy) throw new Error(`Unknown mutation action: ${action}`);
+  return executeAutomationRequest(legacy);
+}
+
+function legacyAutomationRequest(action: string, payload: unknown): AutomationRequest | null {
   const body = (payload ?? {}) as Record<string, unknown>;
-
-  switch (action) {
-    case 'addFsmState': {
-      store.addFsmState();
-      const newStateId = useProjectStore.getState().selectedStateId;
-      if (newStateId && typeof body['title'] === 'string' && body['title']) {
-        store.updateFsmState(newStateId, { title: body['title'] as string });
-      }
-      return { stateId: newStateId };
-    }
-    case 'updateFsmState':
-      store.updateFsmState(body['stateId'] as string, body['updates'] as Partial<FsmState>);
-      return { stateId: body['stateId'] };
-    case 'deleteFsmState':
-      store.deleteFsmState(body['stateId'] as string);
-      return { stateId: body['stateId'] };
-    case 'addFsmTransition': {
-      store.addFsmTransition(body['from'] as string, body['to'] as string, body['eventId'] as string | undefined);
-      const newTransitionId = useProjectStore.getState().selectedTransitionId;
-      return { transitionId: newTransitionId };
-    }
-    case 'updateFsmTransition':
-      store.updateFsmTransition(body['transitionId'] as string, body['updates'] as Partial<FsmTransition>);
-      return { transitionId: body['transitionId'] };
-    case 'deleteFsmTransition':
-      store.deleteFsmTransition(body['transitionId'] as string);
-      return { transitionId: body['transitionId'] };
-    case 'addFsmEvent': {
-      store.addFsmEvent(body['name'] as string | undefined, {
-        scope: body['scope'] as FsmEvent['scope'] | undefined,
-        sourceStateId: body['sourceStateId'] as string | null | undefined
-      });
-      return { eventId: useProjectStore.getState().project?.fsm.eventOrder.at(-1) ?? null };
-    }
-    case 'updateFsmEvent':
-      store.updateFsmEvent(body['eventId'] as string, body['updates'] as Partial<Pick<FsmEvent, 'name' | 'description' | 'scope' | 'sourceStateId'>>);
-      return { eventId: body['eventId'] };
-    case 'deleteFsmEvent':
-      store.deleteFsmEvent(body['eventId'] as string);
-      return { eventId: body['eventId'] };
-    case 'updateControlElement':
-      store.updateControlElement(body['elementId'] as string, body['updates'] as Partial<ControlPanelElement>);
-      return { elementId: body['elementId'] };
-
-    case 'autoLayoutFsm': {
-      const project = store.project;
-      if (!project) throw new Error('No project loaded');
-      const positions = await computeElkLayout(
-        project.fsm.stateOrder.map((id) => ({
-          id,
-          type: 'stateNode',
-          position: project.fsm.graphLayout[id] ?? { x: 0, y: 0 },
-          data: {}
-        })),
-        project.fsm.transitionOrder.map((id) => {
-          const transition = project.fsm.transitions[id];
-          return { id, source: transition.from, target: transition.to };
-        }),
-        (id) => project.fsm.states[id]?.subsystem ?? 'user',
-        { direction: 'LR', nodeWidth: 220, nodeHeight: 72, paddingX: 80, paddingY: 60 }
-      );
-      const layout: Record<string, { x: number; y: number }> = {};
-      for (const [id, position] of positions) layout[id] = position;
-      store.updateGraphPositions(layout);
-      return { stateCount: Object.keys(layout).length };
-    }
-
-    case 'upsertHmiTag':
-      store.upsertHmiTag(body as unknown as HmiTag);
-      return { tagId: (body as unknown as HmiTag).id };
-    case 'deleteHmiTag':
-      store.deleteHmiTag(body['tagId'] as string);
-      return { tagId: body['tagId'] };
-
-    case 'upsertHmiProcedure':
-      store.upsertHmiProcedure(body as unknown as BackendProcedure);
-      return { procedureId: (body as unknown as BackendProcedure).id };
-    case 'deleteHmiProcedure':
-      store.deleteHmiProcedure(body['procedureId'] as string);
-      return { procedureId: body['procedureId'] };
-
-    case 'upsertAlarm':
-      store.upsertAlarm(body as unknown as AlarmDefinition);
-      return { alarmId: (body as unknown as AlarmDefinition).id };
-    case 'deleteAlarm':
-      store.deleteAlarm(body['alarmId'] as string);
-      return { alarmId: body['alarmId'] };
-
-    case 'setAuthoringLanguage': {
-      const language = body['language'];
-      if (language !== 'en' && language !== 'ru' && language !== 'zh') {
-        throw new Error('language must be one of: en, ru, zh');
-      }
-      store.setAuthoringLanguage(language);
-      const next = useProjectStore.getState();
-      return { language: next.project?.authoringLanguage ?? language, revision: next.revision };
-    }
-
-    case 'compileProject':
-      return compileProjectForExternalRequest(body);
-
-    default:
-      throw new Error(`Unknown mutation action: ${action}`);
-  }
-}
-
-/** Compiles one or all screens to an embedded export format, for the REST API / MCP `compile_screen` tool. */
-function compileProjectForExternalRequest(body: Record<string, unknown>): { artifacts: Array<{ screenId: string; filename: string; format: string; content: string; encoding: 'utf8' | 'base64' }> } {
-  const store = useProjectStore.getState();
-  const project = store.project;
-  if (!project) {
-    throw new Error('No project loaded');
-  }
-  const format = (body['format'] as EmbeddedExportFormat) ?? 'c-vertical-lsb';
-  const scope = (body['scope'] as string) ?? 'all-screens';
-  const requestedScreenId = body['screenId'] as string | undefined;
-
-  const targetScreenIds =
-    scope === 'selected-screen'
-      ? [requestedScreenId ?? store.selectedScreenId ?? project.screenOrder[0]].filter((id): id is string => Boolean(id))
-      : project.screenOrder;
-
-  if (targetScreenIds.length === 0) {
-    throw new Error('No LCD screens available to compile');
-  }
-
-  const artifacts = targetScreenIds.map((screenId) => {
-    const screen = project.screens[screenId];
-    if (!screen) {
-      throw new Error(`Screen not found: ${screenId}`);
-    }
-    const symbolName = `${project.meta.name}_${screen.name || screen.id}_screen`;
-    const result = exportScreenEmbedded(screen.objects, format, {
-      symbolName,
-      language: project.authoringLanguage ?? store.language,
-      width: screen.width,
-      height: screen.height
-    });
-    const ext = EMBEDDED_FORMAT_EXTENSIONS[format] ?? 'h';
-    if (typeof result === 'string') {
-      return { screenId, filename: `${screen.id}_screen.${ext}`, format, content: result, encoding: 'utf8' as const };
-    }
-    return { screenId, filename: `${screen.id}_screen.${ext}`, format, content: uint8ArrayToBase64(result), encoding: 'base64' as const };
-  });
-
-  return { artifacts };
-}
-
-function uint8ArrayToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 1) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+  const mapping: Record<string, { command: string; input: unknown }> = {
+    addFsmState: { command: 'create_fsm_state', input: body },
+    updateFsmState: { command: 'update_fsm_state', input: body },
+    deleteFsmState: { command: 'delete_fsm_state', input: body },
+    addFsmTransition: { command: 'create_fsm_transition', input: body },
+    updateFsmTransition: { command: 'update_fsm_transition', input: body },
+    deleteFsmTransition: { command: 'delete_fsm_transition', input: body },
+    addFsmEvent: { command: 'create_fsm_event', input: body },
+    updateFsmEvent: { command: 'update_fsm_event', input: body },
+    deleteFsmEvent: { command: 'delete_fsm_event', input: body },
+    updateControlElement: { command: 'update_control_panel_element', input: body },
+    autoLayoutFsm: { command: 'auto_layout_fsm', input: {} },
+    upsertHmiTag: { command: 'upsert_tag', input: { tag: body } },
+    deleteHmiTag: { command: 'delete_tag', input: body },
+    upsertHmiProcedure: { command: 'upsert_procedure', input: { procedure: body } },
+    deleteHmiProcedure: { command: 'delete_procedure', input: body },
+    upsertAlarm: { command: 'upsert_alarm', input: { alarm: body } },
+    deleteAlarm: { command: 'delete_alarm', input: body },
+    setAuthoringLanguage: { command: 'set_authoring_language', input: body },
+    compileProject: { command: 'compile_assets', input: body }
+  };
+  const target = mapping[action];
+  if (!target) return null;
+  return {
+    command: target.command,
+    input: target.input,
+    expectedRevision: useProjectStore.getState().revision,
+    correlationId: crypto.randomUUID(),
+    source: 'electron-rest',
+    permissions: ['project:read', 'project:write', 'project:destructive', 'runtime:write'],
+    actor: { id: 'automation:legacy-electron', type: 'adapter', displayName: 'Legacy Electron API' }
+  };
 }
 
 function downloadJson(filename: string, value: unknown): void {
