@@ -1,16 +1,16 @@
 # API And MCP Connector Guide
 
-This guide describes how to operate LCD-bitmap IDE from local automation tools and AI coding agents while the Electron desktop app is running.
+This guide describes how to operate LCD-bitmap IDE from local automation tools and AI coding agents while either the Electron or Tauri desktop app is running.
 
 ## Runtime Model
 
-The UI is the source of truth. The Electron main process exposes local servers, while the renderer keeps the current project state synchronized over IPC.
+The renderer application session is the source of truth. Electron and Tauri are transport adapters; neither owns a second project model.
 
 ```text
-Desktop UI
-  | project state + mutation replies
-  v
-Electron main process
+Desktop UI → AutomationCommandRegistry → application command bus
+  ^                                      |
+  | AutomationRequest/AutomationOutcome  | revision + undo + audit
+Electron or Tauri transport adapter ------
   |-- REST API  http://127.0.0.1:8766
   |-- MCP HTTP  http://127.0.0.1:8767/mcp
 ```
@@ -25,65 +25,48 @@ Base URL:
 http://127.0.0.1:8766
 ```
 
-Read endpoints:
+Versioned discovery endpoints:
 
 ```bash
-curl http://127.0.0.1:8766/api/health
-curl http://127.0.0.1:8766/api/project
-curl http://127.0.0.1:8766/api/project/meta
-curl http://127.0.0.1:8766/api/fsm/states
-curl http://127.0.0.1:8766/api/fsm/transitions
-curl http://127.0.0.1:8766/api/fsm/events
-curl http://127.0.0.1:8766/api/screens
-curl http://127.0.0.1:8766/api/screens/main-screen
-curl http://127.0.0.1:8766/api/control-panel
-curl http://127.0.0.1:8766/api/validation
-curl http://127.0.0.1:8766/api/tags
-curl http://127.0.0.1:8766/api/procedures
-curl http://127.0.0.1:8766/api/alarms
-curl http://127.0.0.1:8766/api/runtime/state
-curl http://127.0.0.1:8766/api/export/formats
+curl http://127.0.0.1:8766/api/v1/capabilities
+curl http://127.0.0.1:8766/api/v1/revision
 ```
 
-Create an FSM state:
+All operations use `POST /api/v1/commands/{command}`. Read `get_project_revision`, then supply that revision for writes:
 
 ```bash
-curl -X POST http://127.0.0.1:8766/api/fsm/states \
+curl -X POST http://127.0.0.1:8766/api/v1/commands/create_fsm_state \
   -H "Content-Type: application/json" \
-  -d "{\"title\":\"Service Menu\",\"x\":360,\"y\":120}"
+  -d '{"expectedRevision":0,"idempotencyKey":"create-service-menu","input":{"title":"Service Menu"}}'
 ```
 
-Create a transition:
+Dry-run an atomic batch before applying it:
 
 ```bash
-curl -X POST http://127.0.0.1:8766/api/fsm/transitions \
+curl -X POST http://127.0.0.1:8766/api/v1/commands/preview_changes \
   -H "Content-Type: application/json" \
-  -d "{\"from\":\"main-menu\",\"to\":\"service-menu\",\"eventId\":\"SERVICE\"}"
+  -d '{"expectedRevision":0,"input":{"operations":[{"command":"set_authoring_language","input":{"language":"ru"}}]}}'
 ```
 
-Upsert a tag:
+Compile without changing the project:
 
 ```bash
-curl -X PUT http://127.0.0.1:8766/api/tags/absorbance \
+curl -X POST http://127.0.0.1:8766/api/v1/commands/compile_assets \
   -H "Content-Type: application/json" \
-  -d "{\"id\":\"absorbance\",\"name\":{\"en\":\"Absorbance\",\"ru\":\"Оптическая плотность\",\"zh\":\"吸光度\"},\"dataType\":\"float\",\"unit\":\"AU\",\"precision\":3,\"source\":\"simulation\"}"
+  -d '{"input":{"format":"c-vertical-lsb","scope":"all-screens"}}'
 ```
 
-Compile all screens:
+The unversioned `/api/*` Electron endpoints remain compatibility aliases. New integrations should use `/api/v1` because it has explicit revision, idempotency, permission, dry-run and outcome semantics.
+
+## Authentication And Scopes
+
+Set an optional token before starting the desktop app:
 
 ```bash
-curl -X POST http://127.0.0.1:8766/api/compile \
-  -H "Content-Type: application/json" \
-  -d "{\"format\":\"c-vertical-lsb\",\"scope\":\"all-screens\",\"language\":\"en\"}"
+$env:LCD_IDE_AUTOMATION_TOKEN = "replace-with-a-random-local-secret"
 ```
 
-Fire a runtime event:
-
-```bash
-curl -X POST http://127.0.0.1:8766/api/runtime/event \
-  -H "Content-Type: application/json" \
-  -d "{\"eventId\":\"START\"}"
-```
+Clients then send `Authorization: Bearer …`. `X-LCD-IDE-Scopes` may restrict a session to `project:read`, `project:write`, `project:destructive` and/or `runtime:write`.
 
 ## MCP Endpoint
 
@@ -93,7 +76,7 @@ Endpoint:
 http://127.0.0.1:8767/mcp
 ```
 
-Resources:
+Electron retains the compatibility resources below; portable clients should prefer registry tools because Tauri intentionally exposes one shared command contract rather than a second project cache:
 
 - `project://current`
 - `project://fsm`
@@ -104,7 +87,7 @@ Resources:
 - `project://alarms`
 - `project://validation`
 
-Read tools:
+Call `tools/list` to obtain the current generated schemas. Core tools include:
 
 - `get_project_summary`
 - `list_fsm_states`
@@ -119,6 +102,14 @@ Read tools:
 - `list_alarms`
 - `get_runtime_state`
 - `list_export_formats`
+- `get_capabilities`
+- `get_project_revision`
+- `preview_changes`
+- `apply_changes`
+- `undo_last_agent_change`
+- `reorder_screens`
+- `validate_project`
+- `compile_assets`
 
 Write tools:
 
@@ -200,7 +191,7 @@ Batch safety checklist:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `connection refused` | Electron app is not running | Start `npm run electron:dev` or the packaged desktop app |
+| `connection refused` | Desktop app is not running or another process owns the port | Start Electron/Tauri and inspect its automation log |
 | API returns `project: null` | No project is open | Open a `.lcdproj` or the demo project |
 | Mutation times out | Renderer did not reply within 5 seconds | Check the desktop app window and console |
 | Runtime event has no effect | Runtime is not started or event is invalid for current state | Open Runtime, start preview, inspect available buttons/events |
@@ -208,4 +199,4 @@ Batch safety checklist:
 
 ## Security Boundary
 
-The servers bind to `127.0.0.1` and are intended for local developer automation. They do not authenticate remote clients. Do not expose the ports through a tunnel or bind them to a public interface.
+The servers bind to `127.0.0.1`, validate Host/Origin, cap request bodies and support an optional bearer token. They are still local developer surfaces: do not expose the ports through a tunnel or bind them to a public interface.

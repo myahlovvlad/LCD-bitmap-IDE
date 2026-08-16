@@ -22,6 +22,9 @@ import type {
 } from '../domain/project';
 import type { FsmInterchangeModelV1 } from '../fsm-interchange';
 import type { ScreenInterchangeProjectV1 } from '../screen-interchange';
+import type { HmiTag } from '../domain/tag';
+import type { BackendProcedure } from '../domain/procedure';
+import type { AlarmDefinition } from '../domain/alarm';
 
 export interface ActorIdentity {
   id: string;
@@ -57,7 +60,7 @@ export type ProjectSetAuthoringLanguageCommand = BaseProjectCommand<
   { language: LanguageCode }
 >;
 
-export type FsmStateAddCommand = BaseProjectCommand<'fsm.state.add', Record<string, never>>;
+export type FsmStateAddCommand = BaseProjectCommand<'fsm.state.add', { title?: string }>;
 export type FsmStateUpdateCommand = BaseProjectCommand<
   'fsm.state.update',
   { stateId: string; updates: Partial<FsmState> }
@@ -207,6 +210,13 @@ export type MeasurementUpdateCommand = BaseProjectCommand<
 >;
 export type MeasurementDeleteCommand = BaseProjectCommand<'measurement.delete', { measurementId: string }>;
 
+export type HmiTagUpsertCommand = BaseProjectCommand<'tag.upsert', { tag: HmiTag }>;
+export type HmiTagDeleteCommand = BaseProjectCommand<'tag.delete', { tagId: string }>;
+export type HmiProcedureUpsertCommand = BaseProjectCommand<'procedure.upsert', { procedure: BackendProcedure }>;
+export type HmiProcedureDeleteCommand = BaseProjectCommand<'procedure.delete', { procedureId: string }>;
+export type AlarmUpsertCommand = BaseProjectCommand<'alarm.upsert', { alarm: AlarmDefinition }>;
+export type AlarmDeleteCommand = BaseProjectCommand<'alarm.delete', { alarmId: string }>;
+
 export type ProjectCommand =
   | ProjectUpdateMetadataCommand
   | ProjectUpdateDisplayConfigCommand
@@ -254,4 +264,31 @@ export type ProjectCommand =
   | FontGlyphsImportCommand
   | MeasurementAddCommand
   | MeasurementUpdateCommand
-  | MeasurementDeleteCommand;
+  | MeasurementDeleteCommand
+  | HmiTagUpsertCommand
+  | HmiTagDeleteCommand
+  | HmiProcedureUpsertCommand
+  | HmiProcedureDeleteCommand
+  | AlarmUpsertCommand
+  | AlarmDeleteCommand;
+
+/** Runtime list used by automation parity tests; the type assertion below keeps it exhaustive. */
+export const PROJECT_COMMAND_TYPES = [
+  'project.updateMetadata', 'project.updateDisplayConfig', 'project.setAuthoringLanguage',
+  'fsm.state.add', 'fsm.state.update', 'fsm.states.update', 'fsm.layers.update', 'fsm.state.delete', 'fsm.state.ensureScreen',
+  'fsm.transition.add', 'fsm.transition.update', 'fsm.transition.delete',
+  'fsm.event.add', 'fsm.event.update', 'fsm.event.delete', 'backendProcess.update',
+  'fsm.graphPosition.update', 'fsm.graphPositions.update', 'fsm.semanticRoundTrip.apply',
+  'screen.create', 'screen.duplicate', 'screen.duplicateLayout', 'screen.rename', 'screen.resize', 'screen.delete', 'screen.reorder',
+  'screen.createFromTemplate', 'screen.dsl.apply',
+  'controlPanel.element.add', 'controlPanel.element.update', 'controlPanel.elements.update', 'controlPanel.elements.delete',
+  'controlPanel.elements.group', 'controlPanel.elements.ungroup', 'controlPanel.elements.align', 'controlPanel.settings.update',
+  'canvas.object.update', 'canvas.selection.set', 'canvas.object.add', 'canvas.bitmapLayer.add', 'canvas.objects.update', 'canvas.objects.delete',
+  'font.glyph.update', 'font.glyphs.import',
+  'measurement.add', 'measurement.update', 'measurement.delete',
+  'tag.upsert', 'tag.delete', 'procedure.upsert', 'procedure.delete', 'alarm.upsert', 'alarm.delete'
+] as const satisfies readonly ProjectCommand['type'][];
+
+type MissingProjectCommandType = Exclude<ProjectCommand['type'], (typeof PROJECT_COMMAND_TYPES)[number]>;
+const projectCommandTypesAreExhaustive: MissingProjectCommandType extends never ? true : never = true;
+void projectCommandTypesAreExhaustive;

@@ -15,7 +15,10 @@ export type SemanticEntityType =
   | 'control-panel-element'
   | 'font-glyph'
   | 'font'
-  | 'measurement';
+  | 'measurement'
+  | 'tag'
+  | 'procedure'
+  | 'alarm';
 
 export interface SemanticChange {
   kind: SemanticChangeKind;

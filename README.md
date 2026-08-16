@@ -115,7 +115,7 @@ The demo is intentionally generic and excludes proprietary implementation files,
 
 ## API And MCP
 
-The Electron desktop build starts local-only automation endpoints:
+The Electron and Tauri desktop builds expose the same local-only automation contract:
 
 - REST API: `http://127.0.0.1:8766`
 - MCP endpoint: `http://127.0.0.1:8767/mcp`
@@ -123,13 +123,14 @@ The Electron desktop build starts local-only automation endpoints:
 Examples:
 
 ```bash
-curl http://127.0.0.1:8766/api/health
-curl http://127.0.0.1:8766/api/project/meta
-curl http://127.0.0.1:8766/api/fsm/states
-curl -X POST http://127.0.0.1:8766/api/runtime/event \
+curl http://127.0.0.1:8766/api/v1/capabilities
+curl http://127.0.0.1:8766/api/v1/revision
+curl -X POST http://127.0.0.1:8766/api/v1/commands/validate_project \
   -H "Content-Type: application/json" \
-  -d "{\"eventId\":\"START\"}"
+  -d "{}"
 ```
+
+Write/destructive commands require `expectedRevision`. Set `LCD_IDE_AUTOMATION_TOKEN` before launching either shell to require a local bearer token.
 
 Connector setup and agent workflows are documented in [docs/API_MCP_CONNECTORS.md](docs/API_MCP_CONNECTORS.md).
 
