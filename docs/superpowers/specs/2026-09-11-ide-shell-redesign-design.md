@@ -6,7 +6,7 @@ Replace the crowded two-row workspace navigation with a stable engineering workb
 
 ## Scope of the first delivery
 
-This delivery changes the common application frame only. It deliberately does not rewrite the FSM canvas, LCD editor, HMI Designer, HMI handoff or alarm workflow internals; those remain separately routable and receive the new shell around them.
+This delivery changes the common application frame and the 2D FSM canvas interaction state. It deliberately does not rewrite the LCD editor, HMI Designer, HMI handoff or alarm workflow internals; those remain separately routable and receive the new shell around them.
 
 ## Visual and information architecture
 
@@ -50,6 +50,21 @@ The bottom status bar presents, in order: current display profile, FSM state/tra
 
 Add one `APP_SOFTWARE_VERSION` export in renderer configuration. Vite/Electron/Tauri builds inject it from `package.json` during build; local development has an explicit fallback. The header uses only that export. The project metadata `meta.version` continues to be editable in Settings and shown as project version.
 
+## FSM canvas interaction and retained view
+
+The FSM canvas must behave as an editor rather than a disposable preview:
+
+- left-drag on empty canvas makes a selection; middle/right drag (and Space + left-drag where supported) pans; wheel zooms around its cursor;
+- click on a state or transition selects it without moving the viewport; context menu remains available by right click;
+- node movement remains possible only in Edit mode; canvas navigation must work in both view and edit modes;
+- the last 2D viewport `{ x, y, zoom }` is held in memory during tab changes and persisted in local storage by project ID;
+- the first opening of a project with no saved viewport fits the represented nodes once; later switches between workspaces, selection changes, node dragging and ordinary rerenders never call `fitView`;
+- manual auto-layout is an explicit exception: it updates the node layout and fits once so the result is visible;
+- changing the visible subsystem/overview is a new graph representation: restore a saved viewport for that representation when present, otherwise fit once. The full graph, a subsystem and overview do not overwrite one another's viewport;
+- malformed/stale cache entries are ignored safely and cause a one-time fit. Stored viewport data is UI-only and never changes the `.lcdproj` revision.
+
+The underlying cause to remove is the current unconditional mount and signature-driven `fitView` calls. Persistence belongs in a small FSM viewport cache module, not in project graph coordinates or router state.
+
 ## Accessibility and operational safety
 
 - All activity-bar controls have a text label/accessible name and selected state.
@@ -73,10 +88,12 @@ Add one `APP_SOFTWARE_VERSION` export in renderer configuration. Vite/Electron/T
 4. The normal desktop layout has one top bar, one left activity bar, one navigator, one work area and one status bar; it has no duplicate global navigation strip.
 5. At 1280×720 the active workspace retains at least 680 px width after both side rails.
 6. Renderer typecheck and focused router/UI tests pass; a manual smoke check verifies Open, Save, Export and all workspace routes.
+7. In a 2D FSM canvas, pan and zoom survive FSM → LCD → FSM and a full renderer reload for the same project and graph representation.
+8. Pressing auto-layout fits the newly arranged graph exactly once; selecting, dragging or returning to the tab does not reset the operator's view.
+9. FSM viewport cache data never changes project revision, FSM coordinates or exported `.lcdproj` content.
 
 ## Follow-on deliveries
 
 1. HMI model workspace: make FSM state → LCD screen → physical button → tags → procedure/alarm trace explicit.
 2. HMI handoff: split into validation, supplier package and device connection steps.
 3. Alarm workspace: visualise condition → impact → recovery/acknowledgement trace.
-
