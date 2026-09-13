@@ -24,10 +24,15 @@ describe('project store remaining mutation behavior', () => {
 
     const state = useProjectStore.getState();
 
-    expect(state.project?.display).toEqual({ width: 512, height: 16, colorMode: 'monochrome', packing: 'vertical-lsb' });
+    expect(state.project?.display).toMatchObject({
+      width: 999,
+      height: 16,
+      pixelFormat: 'mono1',
+      packing: 'vertical-pages'
+    });
     expect(Object.values(state.project?.screens ?? {}).map((screen) => [screen.width, screen.height])).toEqual([
-      [512, 16],
-      [512, 16]
+      [999, 16],
+      [999, 16]
     ]);
   });
 

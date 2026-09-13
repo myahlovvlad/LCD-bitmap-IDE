@@ -1,5 +1,9 @@
 /// <reference types="vite/client" />
 
+declare global {
+  const __APP_SOFTWARE_VERSION__: string | undefined;
+}
+
 import type {
   SpectroSerialCommandRequest,
   SpectroSerialCommandResult,

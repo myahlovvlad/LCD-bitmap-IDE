@@ -15,7 +15,8 @@ import {
   type EdgeProps,
   type EdgeTypes,
   type Node,
-  type NodeTypes
+  type NodeTypes,
+  type Viewport
 } from '@xyflow/react';
 import { Copy, Expand, HelpCircle, LayoutGrid, Minimize2, Monitor, Plus, Search, Trash2 } from 'lucide-react';
 import { useWorkspaceRouter } from '../../app/WorkspaceRouter';
@@ -32,6 +33,7 @@ import { ValidationPanel } from '../validation/ValidationPanel';
 import { FsmScriptStudio } from '../fsm-script/FsmScriptStudio';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 import { ScreenLayerManager } from './ScreenLayerManager';
+import { fsmViewportCache, type FsmViewportContext } from './fsmViewportCache';
 const FsmWebGlGraph = lazy(() => import('./FsmWebGlGraph').then((module) => ({ default: module.FsmWebGlGraph })));
 
 /** Swimlane background band — rendered as a ReactFlow node at zIndex -1. */
@@ -78,6 +80,12 @@ const edgeTypes: EdgeTypes = {
 const FSM_LAYOUT_KEY = 'lcd-bitmap-ide.workspace.fsm-layout.v1';
 type CanvasPresentation = '2d' | '3d';
 type LayoutTemplate = 'hierarchy' | 'tree' | 'lanes';
+
+interface FsmFlowInstance {
+  fitView: (opts?: { padding?: number; duration?: number; nodes?: Node[] }) => void;
+  getViewport: () => Viewport;
+  setViewport: (viewport: Viewport, options?: { duration?: number }) => void;
+}
 
 function edgeDisplayLabel(project: LcdBitmapProject, transition: FsmTransition): string {
   if (transition.labelMode === 'auto') return 'Auto';
@@ -183,7 +191,8 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   const workspaceRef = useRef<HTMLElement | null>(null);
   const groupDragRef = useRef<{ stateIds: string[]; anchorId: string; anchorPosition: { x: number; y: number }; positions: Record<string, { x: number; y: number }> } | null>(null);
   const fsmClipboardRef = useRef<Array<{ state: FsmState; position: { x: number; y: number } }>>([]);
-  const reactFlowInstanceRef = useRef<{ fitView: (opts?: { padding?: number; duration?: number; nodes?: Node[] }) => void } | null>(null);
+  const reactFlowInstanceRef = useRef<FsmFlowInstance | null>(null);
+  const appliedViewportTargetRef = useRef<string | null>(null);
   const labels = UI_TEXT[language];
 
   const toggleFullscreen = async (): Promise<void> => {
@@ -372,27 +381,6 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
     };
   });
 
-  // Fullscreen changes the grid width after the browser fires
-  // `fullscreenchange`.  Fit on the next two frames so React Flow measures the
-  // final canvas, not the old zero-height/zero-width intermediate rectangle.
-  useEffect(() => {
-    if (!isFullscreen || presentation !== '2d') return;
-    let first = 0;
-    let second = 0;
-    const refreshViewport = (): void => {
-      first = requestAnimationFrame(() => {
-        second = requestAnimationFrame(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0 }));
-      });
-    };
-    refreshViewport();
-    window.addEventListener('resize', refreshViewport);
-    return () => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-      window.removeEventListener('resize', refreshViewport);
-    };
-  }, [isFullscreen, fullscreenInspectorOpen, presentation]);
-
   const overviewStateIds = useMemo(() => project ? collectOverviewStateIds(project) : new Set<string>(), [project]);
   const layerList = useMemo<FsmLayer[]>(() => {
     if (!project) return [];
@@ -402,6 +390,22 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   }, [project]);
   const subsystems = useMemo(() => layerList.map((layer) => layer.id), [layerList]);
   const activeSubsystems = useMemo(() => new Set(visibleSubsystems.length ? visibleSubsystems : subsystems), [subsystems, visibleSubsystems]);
+  const viewportContext = useMemo<FsmViewportContext | null>(() => {
+    if (!project) return null;
+    if (focusedSubsystem) {
+      return { projectId: project.meta.id, representation: `subsystem:${focusedSubsystem}` };
+    }
+    if (overviewMode) {
+      return { projectId: project.meta.id, representation: 'overview' };
+    }
+    const active = [...activeSubsystems].sort();
+    return active.length === subsystems.length
+      ? { projectId: project.meta.id, representation: 'all' }
+      : { projectId: project.meta.id, representation: `layers:${active.join(',')}` };
+  }, [activeSubsystems, focusedSubsystem, overviewMode, project, subsystems.length]);
+  const viewportTargetKey = viewportContext
+    ? `${viewportContext.projectId}\u0000${viewportContext.representation}`
+    : null;
   const overviewLayout = useMemo(() => {
     const layout = new Map<string, { x: number; y: number }>();
     if (!project) return layout;
@@ -491,33 +495,33 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       })
     : [], [project, canvasStateIds, focusedSubsystem, overviewMode, overviewLayout, overviewOverrides, stateNodeData, labels.processState]);
 
-  // Swimlane bands are intentionally excluded from fitView: a tall layer
-  // background must never push every actual state node outside the viewport.
-  // The delayed resize fit also covers fullscreen and sidebar changes.
+  const restoreCanvasViewport = (): void => {
+    if (presentation !== '2d' || !viewportContext || !viewportTargetKey || !calculatedNodes.length) return;
+    if (appliedViewportTargetRef.current === viewportTargetKey) return;
+    const instance = reactFlowInstanceRef.current;
+    if (!instance) return;
+
+    appliedViewportTargetRef.current = viewportTargetKey;
+    const storedViewport = fsmViewportCache.read(viewportContext);
+    if (storedViewport) {
+      instance.setViewport(storedViewport, { duration: 0 });
+      return;
+    }
+
+    // Bands are intentionally excluded: their height must not make the state
+    // graph illegible. This fit happens once only for an unseen view.
+    instance.fitView({ padding: 0.12, duration: 0, nodes: calculatedNodes });
+    globalThis.setTimeout(() => {
+      if (appliedViewportTargetRef.current !== viewportTargetKey) return;
+      fsmViewportCache.write(viewportContext, instance.getViewport());
+    }, 0);
+  };
+
   useEffect(() => {
-    if (presentation !== '2d' || !calculatedNodes.length) return;
-    let first = 0;
-    let second = 0;
-    let delayed: ReturnType<typeof globalThis.setTimeout> | undefined;
-    const fit = (): void => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-      first = requestAnimationFrame(() => {
-        second = requestAnimationFrame(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0, nodes: calculatedNodes }));
-      });
-    };
-    fit();
-    // React Flow receives controlled nodes one render after the workspace;
-    // retry after they have dimensions, otherwise fitView sees an empty box.
-    delayed = globalThis.setTimeout(fit, 260);
-    window.addEventListener('resize', fit);
-    return () => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-      if (delayed !== undefined) globalThis.clearTimeout(delayed);
-      window.removeEventListener('resize', fit);
-    };
-  }, [presentation, canvasStateSignature]);
+    if (presentation !== '2d' || !viewportTargetKey) return;
+    const frame = requestAnimationFrame(restoreCanvasViewport);
+    return () => cancelAnimationFrame(frame);
+  }, [presentation, viewportTargetKey, canvasStateSignature]);
   const swimlaneNodes = useMemo<Node[]>(() => showSwimlanes && !overviewMode
     ? swimlaneBands.filter((band) => !focusedSubsystem || band.subsystem === focusedSubsystem).map((band) => ({
         id: `__swimlane_${band.subsystem}`,
@@ -909,8 +913,18 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
               }}
               onPaneClick={() => { setContextMenu(null); setSelectedStateIds([]); }}
               onInit={(instance) => {
-                reactFlowInstanceRef.current = instance as { fitView: (opts?: { padding?: number; duration?: number; nodes?: Node[] }) => void };
-                globalThis.setTimeout(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0, nodes: calculatedNodes }), 260);
+                reactFlowInstanceRef.current = instance as unknown as FsmFlowInstance;
+                restoreCanvasViewport();
+              }}
+              onMove={(_, viewport) => {
+                if (presentation === '2d' && viewportContext) {
+                  fsmViewportCache.write(viewportContext, viewport);
+                }
+              }}
+              onMoveEnd={(_, viewport) => {
+                if (presentation === '2d' && viewportContext) {
+                  fsmViewportCache.write(viewportContext, viewport);
+                }
               }}
               onNodeDragStart={(_, node) => {
                 const stateIds = selectedStateIds.includes(node.id) ? selectedStateIds : [node.id];
@@ -946,7 +960,6 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
               selectionOnDrag
               panOnDrag={[1, 2]}
               minZoom={0.03}
-              fitView
             >
               <Background />
               <Controls />

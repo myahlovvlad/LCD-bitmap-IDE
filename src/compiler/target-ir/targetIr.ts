@@ -1,6 +1,7 @@
 import type { LanguageCode } from '../../domain';
 import type { NormalizedCanvasObjectIr } from '../ir/screenIr';
 import type { CompilerTargetProfile } from '../profiles/targetProfile';
+import type { CanonicalRaster } from '../raster/canonicalRaster';
 
 export const TARGET_IR_VERSION = 1 as const;
 export type TargetIrVersion = typeof TARGET_IR_VERSION;
@@ -41,5 +42,6 @@ export interface LoweredScreenIr {
   readonly sourcePath: string;
   readonly objects: readonly NormalizedCanvasObjectIr[];
   readonly byteLength: number;
+  readonly canonicalRaster: CanonicalRaster;
   readonly framebufferBytes: readonly number[];
 }

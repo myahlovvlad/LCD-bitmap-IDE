@@ -20,7 +20,7 @@ import {
 import { LCDCanvas } from '../../renderer/components/LCDCanvas';
 import { FontRenderer } from '../../renderer/core/fonts';
 import { useProjectStore } from '../../renderer/store/projectStore';
-import { UI_TEXT } from '../../renderer/config/i18n';
+import { UI_TEXT, type UiText } from '../../renderer/config/i18n';
 import { OrchestratedRuntimeEngine } from '../../services/runtime/orchestratedRuntimeEngine';
 import { SimulationTransport } from '../../services/runtime/SimulationTransport';
 import { Ecros5501SimulationTransport } from '../../spectrophotometer';
@@ -31,6 +31,8 @@ import type { FsmTransition, LcdBitmapProject } from '../../domain/project';
 import { ValidationPanel } from '../validation/ValidationPanel';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 import { registerRuntimeAutomationHandler } from '../../renderer/automation/runtimeAutomation';
+import { resolveRuntimeTimerDelay, type RuntimeTimerMode } from './runtimeTimer';
+import { resolveRuntimeButtonAvailability, type RuntimeButtonAvailabilityCode } from '../../services/runtimeEngine';
 
 type TransportKind = 'simulation';
 
@@ -48,6 +50,7 @@ export function RuntimeWorkspace(): React.ReactElement {
   const [revision, setRevision] = useState(0);
   const [stepMode, setStepMode] = useState(false);
   const [bypass, setBypass] = useState(false);
+  const [timerMode, setTimerMode] = useState<RuntimeTimerMode>('real');
   const [transportKind] = useState<TransportKind>('simulation');
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
@@ -62,9 +65,9 @@ export function RuntimeWorkspace(): React.ReactElement {
     if (!project) return null;
     const transport = project.dataSources?.['ecros.cli']
       ? new Ecros5501SimulationTransport({ startConnected: true })
-      : new SimulationTransport(project.cliCatalog ?? {}, { timeScale: 1 });
+      : new SimulationTransport(project.cliCatalog ?? {}, { timeScale: timerMode === 'express' ? 1 / 60 : 1 });
     return new OrchestratedRuntimeEngine(project, { transport, bypassProcedures: bypass });
-  }, [project, bypass]);
+  }, [project, bypass, timerMode]);
 
   useEffect(() => {
     const engine = buildEngine();
@@ -105,10 +108,10 @@ export function RuntimeWorkspace(): React.ReactElement {
       window.setTimeout(() => {
         engine.sendEvent(t.trigger.eventId);
         setRevision((r) => r + 1);
-      }, t.trigger.timerMs ?? 0)
+      }, resolveRuntimeTimerDelay(t.trigger.timerMs ?? 0, timerMode))
     );
     return () => handles.forEach((h) => window.clearTimeout(h));
-  }, [project, revision, stepMode]);
+  }, [project, revision, stepMode, timerMode]);
 
   // Scroll log to bottom
   useEffect(() => {
@@ -127,6 +130,7 @@ export function RuntimeWorkspace(): React.ReactElement {
   const currentStateId = engine?.currentStateId ?? null;
   const currentState = currentStateId ? project.fsm.states[currentStateId] : null;
   const eventLog: readonly RuntimeEvent[] = engine?.eventLog ?? [];
+  const inputSession = engine?.inputSession ?? null;
   const lastProc: OrchestratedTransitionState | null = engine?.lastProcedureRun ?? null;
   const tagValues = Object.entries(engine?.tags?.snapshot() ?? {});
 
@@ -179,6 +183,12 @@ export function RuntimeWorkspace(): React.ReactElement {
                 <span className="badge-dot connected" />
                 {labels.runtimeConnected}
               </div>
+              {inputSession && (
+                <div className="runtime-input-buffer" data-mode={inputSession.mode}>
+                  <small>{labels.runtimeInput} · {inputSession.mode === 'numeric' ? labels.runtimeInputNumeric : labels.runtimeInputText}</small>
+                  <output>{inputSession.value || '▏'}</output>
+                </div>
+              )}
             </div>
 
             <div className="sidebar-content">
@@ -189,20 +199,25 @@ export function RuntimeWorkspace(): React.ReactElement {
               </div>
               <div className="runtime-button-grid">
                 {buttons.map((btn) => {
-                  const allowed = engine?.isButtonAllowed(btn) ?? false;
+                  const availability = resolveRuntimeButtonAvailability(project, currentStateId, btn, engine?.tags.snapshot());
+                  const reasonCode = engine?.isExecutingProcedure ? 'procedure-running' : availability.code;
+                  const allowed = availability.allowed && !engine?.isExecutingProcedure;
+                  const reason = allowed ? null : runtimeButtonReason(reasonCode, labels);
                   return (
-                    <button
-                      key={btn.id}
-                      type="button"
-                      className={`runtime-hw-btn${allowed ? '' : ' disabled'}`}
-                      data-active={allowed ? 'true' : 'false'}
-                      aria-label={`${btn.label}: ${allowed ? 'active in current state' : 'inactive in current state'}`}
-                      disabled={!allowed || engine?.isExecutingProcedure}
-                      onClick={() => allowed && refresh(() => engine?.pressButton(btn.id))}
-                      title={allowed ? `${btn.label} — активно в текущем состоянии` : `${btn.label} — недоступно в текущем состоянии`}
-                    >
-                      {btn.label}
-                    </button>
+                    <div key={btn.id} className="runtime-button-item" data-availability={reasonCode}>
+                      <button
+                        type="button"
+                        className={`runtime-hw-btn${allowed ? '' : ' disabled'}`}
+                        data-active={allowed ? 'true' : 'false'}
+                        aria-label={`${btn.label}: ${allowed ? labels.runtimeButtonAvailable : reason}`}
+                        disabled={!allowed}
+                        onClick={() => allowed && refresh(() => engine?.pressButton(btn.id))}
+                        title={reason ?? labels.runtimeButtonAvailable}
+                      >
+                        {btn.label}
+                      </button>
+                      {reason ? <small>{reason}</small> : null}
+                    </div>
                   );
                 })}
                 {buttons.length === 0 && (
@@ -239,6 +254,17 @@ export function RuntimeWorkspace(): React.ReactElement {
           >
             <Square size={14} />{labels.runtimeStepMode}
           </button>
+          <button
+            type="button"
+            className={timerMode === 'express' ? 'active' : ''}
+            onClick={() => setTimerMode((mode) => mode === 'real' ? 'express' : 'real')}
+            title={labels.runtimeExpressTimerHint}
+          >
+            <Zap size={14} />{timerMode === 'express' ? labels.runtimeExpressTimerOn : labels.runtimeExpressTimer}
+          </button>
+          <span className="runtime-timer-status" data-testid="runtime-timer-status" data-mode={timerMode}>
+            {timerMode === 'express' ? labels.runtimeTimerStatusExpress : labels.runtimeTimerStatusReal}
+          </span>
           {stepMode && (
             <button
               type="button"
@@ -403,4 +429,21 @@ export function RuntimeWorkspace(): React.ReactElement {
       ) : null}
     </section>
   );
+}
+
+function runtimeButtonReason(
+  code: RuntimeButtonAvailabilityCode | 'procedure-running',
+  labels: UiText
+): string {
+  const reasons: Record<RuntimeButtonAvailabilityCode | 'procedure-running', string> = {
+    available: labels.runtimeButtonAvailable,
+    'no-active-state': labels.runtimeButtonNoState,
+    'explicitly-disabled': labels.runtimeButtonExplicitlyDisabled,
+    'missing-event': labels.runtimeButtonMissingEvent,
+    'missing-transition': labels.runtimeButtonMissingTransition,
+    'state-not-allowed': labels.runtimeButtonStateNotAllowed,
+    'guard-rejected': labels.runtimeButtonGuardRejected,
+    'procedure-running': labels.runtimeButtonProcedureRunning
+  };
+  return reasons[code];
 }

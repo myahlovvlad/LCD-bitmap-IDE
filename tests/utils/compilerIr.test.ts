@@ -23,7 +23,14 @@ describe('normalized compiler IR v1', () => {
 
     expect(first.ir.irVersion).toBe(1);
     expect(first.ir.source.projectId).toBe(project.meta.id);
-    expect(first.ir.display).toEqual({ width: 128, height: 64, colorMode: 'monochrome', packing: 'vertical-lsb', byteLength: 1024 });
+    expect(first.ir.display).toEqual(expect.objectContaining({
+      width: 128,
+      height: 64,
+      pixelFormat: 'mono1',
+      packing: 'vertical-pages',
+      bitOrder: 'lsb-first',
+      byteLength: 1024
+    }));
     expect(first.ir.screens.map((screen) => screen.id)).toEqual(project.screenOrder);
     expect(first.ir.fsm.states.map((state) => state.id)).toEqual(project.fsm.stateOrder);
     expect(first.completeness).toEqual(expect.objectContaining({

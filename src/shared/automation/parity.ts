@@ -16,7 +16,7 @@ const uiOnly = (uiCommand: string, uiOnlyReason: string): UiAutomationParityEntr
 /** Every public application command must be mapped or carry a reviewable UI-only reason. */
 export const UI_AUTOMATION_PARITY: readonly UiAutomationParityEntry[] = [
   uiOnly('project.updateMetadata', 'Project identity editing remains a user-confirmed settings workflow.'),
-  uiOnly('project.updateDisplayConfig', 'Display configuration is withheld until the versioned DisplayProfile contract lands.'),
+  mapped('project.updateDisplayConfig', 'update_display_profile'),
   mapped('project.setAuthoringLanguage', 'set_authoring_language'),
   mapped('fsm.state.add', 'create_fsm_state'),
   mapped('fsm.state.update', 'update_fsm_state'),

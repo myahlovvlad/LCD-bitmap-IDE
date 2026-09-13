@@ -6,6 +6,7 @@ import type {
   ValidationSeverity
 } from '../domain/project';
 import { describeTransitionBehavior, parseBackendBehaviorStorage } from '../fsm-behavior';
+import { validateDisplayProfile } from '../domain/displayProfile';
 
 export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -35,6 +36,18 @@ export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
   validateRecordIds(project.fsm.events, 'fsm', 'event', add);
   validateRecordIds(project.backendProcesses, 'fsm', 'backend-process', add);
   validateRecordIds(project.controlPanel.elements, 'control-panel', 'element', add);
+
+  for (const diagnostic of validateDisplayProfile(project.display)) {
+    add(
+      diagnostic.severity,
+      'lcd',
+      `display-profile-${diagnostic.code}`,
+      diagnostic.message,
+      'display-profile',
+      project.display.id,
+      diagnostic.path === 'fingerprint' ? 'Re-import or save the display profile to refresh its fingerprint.' : undefined
+    );
+  }
 
   const linkedScreens = new Set<string>();
   for (const state of Object.values(project.fsm.states)) {

@@ -17,7 +17,11 @@ describe('AutomationCommandRegistry', () => {
       'get_capabilities', 'get_project_revision', 'preview_changes', 'apply_changes',
       'undo_last_agent_change', 'reorder_screens', 'validate_project', 'compile_assets',
       'set_authoring_language', 'create_fsm_state', 'auto_layout_fsm',
-      'upsert_tag', 'upsert_procedure', 'upsert_alarm'
+      'upsert_tag', 'upsert_procedure', 'upsert_alarm', 'get_display_profile',
+      'update_display_profile', 'preview_export', 'decode_artifact',
+      'compare_framebuffers', 'create_evidence_bundle', 'render_screen',
+      'export_screen_html', 'preview_screen_html_import', 'apply_screen_html_import',
+      'analyze_128x64_screens'
     ]));
     for (const definition of definitions) {
       expect(definition.inputSchema).toMatchObject({ type: 'object' });

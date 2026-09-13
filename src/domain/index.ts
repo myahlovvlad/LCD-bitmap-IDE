@@ -14,6 +14,30 @@ export type {
   SpecialElementKind,
   TextCanvasObject
 } from './canvas';
+export {
+  DISPLAY_PROFILE_SCHEMA_VERSION,
+  bitsForPixelFormat,
+  createDisplayProfile,
+  displayMemoryDimensions,
+  exportDisplayProfile,
+  fingerprintDisplayProfile,
+  minimumRowStride,
+  importDisplayProfile,
+  normalizeDisplayProfile,
+  validateDisplayProfile
+} from './displayProfile';
+export type {
+  DisplayBitOrder,
+  DisplayBitsPerPixel,
+  DisplayByteOrder,
+  DisplayPacking,
+  DisplayPixelFormat,
+  DisplayProfile,
+  DisplayProfileDiagnostic,
+  DisplayProfileSpec,
+  DisplayRotation,
+  LegacyDisplayConfig
+} from './displayProfile';
 export type {
   AlarmDefinition,
   AlarmSeverity

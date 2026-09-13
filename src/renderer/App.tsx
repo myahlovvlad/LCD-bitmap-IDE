@@ -28,8 +28,8 @@ import { WorkspaceRouterProvider, useWorkspaceRouter } from '../app/WorkspaceRou
 import type { WorkspaceLocation, WorkspaceMode } from '../domain/project';
 import { createBlankProject } from '../entities/project/factory';
 import { createDemoProject } from '../entities/project/demo';
-import { PRODUCT_IDENTITY, SUPPORTED_LANGUAGES } from './config/constants';
-import { UI_TEXT } from './config/i18n';
+import { APP_SOFTWARE_VERSION, PRODUCT_IDENTITY, SUPPORTED_LANGUAGES } from './config/constants';
+import { UI_TEXT, type UiText } from './config/i18n';
 import { OperationManualDialog } from './components/OperationManualDialog';
 import { MasterWizard } from '../features/master-wizard/MasterWizard';
 import { useProjectStore } from './store/projectStore';
@@ -46,6 +46,14 @@ import { NotificationCenter, NotificationViewport } from './components/Notificat
 import { beginOperation, notify, type NotificationTone } from './notifications/notificationStore';
 import type { AutomationRequest } from '../shared/automation';
 import { executeAutomationRequest } from './automation/automationDispatcher';
+import { ThemeSelector } from './theme/ThemeSelector';
+import { EditorWorkspaceFrame } from './components/EditorWorkspaceFrame';
+import { useAppTheme } from './theme/useAppTheme';
+import {
+  groupForWorkspace,
+  WORKSPACE_GROUPS,
+  type WorkspaceGroupId
+} from './navigation/workspaceGroups';
 
 const AUTOSAVE_KEY_V5 = 'lcd-bitmap-ide.project.autosave.v5';
 const LEGACY_AUTOSAVE_KEYS = [
@@ -94,6 +102,8 @@ function AppShell(): React.ReactElement {
   } = useProjectStore();
   const { location, navigate } = useWorkspaceRouter();
   const labels = UI_TEXT[language];
+  const theme = useAppTheme();
+  const [activeWorkspaceGroup, setActiveWorkspaceGroup] = useState<WorkspaceGroupId>(() => groupForWorkspace(location.mode));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showManual, setShowManual] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
@@ -105,6 +115,12 @@ function AppShell(): React.ReactElement {
   useEffect(() => {
     document.documentElement.lang = language === 'zh' ? 'zh-CN' : language;
   }, [language]);
+
+  useEffect(() => {
+    if (location.mode !== 'settings') {
+      setActiveWorkspaceGroup(groupForWorkspace(location.mode));
+    }
+  }, [location.mode]);
 
   useEffect(() => {
     const hasUnsavedChanges = Boolean(project && project.meta.updatedAt !== lastSavedAt);
@@ -359,6 +375,7 @@ function AppShell(): React.ReactElement {
 
   const unsaved = project.meta.updatedAt !== lastSavedAt;
   const errors = project.validation.issues.filter((issue) => issue.severity === 'error').length;
+  const activeNavigationGroup = WORKSPACE_GROUPS.find((group) => group.id === activeWorkspaceGroup) ?? WORKSPACE_GROUPS[1]!;
 
   return (
     <main className="app-shell">
@@ -374,6 +391,7 @@ function AppShell(): React.ReactElement {
             />
           </label>
           <span className="project-version">v{project.meta.version} / schema 6</span>
+          <span className="software-version" data-testid="software-version">{language === 'ru' ? 'ПО' : 'Software'} v{APP_SOFTWARE_VERSION}</span>
         </div>
         <div className="project-actions">
           <button type="button" onClick={() => fileInputRef.current?.click()}><FolderOpen size={16} />{labels.openProject}</button>
@@ -405,6 +423,15 @@ function AppShell(): React.ReactElement {
           >
             <Globe2 size={16} />{language.toUpperCase()}
           </button>
+          <ThemeSelector
+            compact
+            preference={theme.preference}
+            onChange={theme.setPreference}
+            labels={labels}
+          />
+          <button type="button" onClick={() => navigateTo({ mode: 'settings' })} data-testid="app-settings">
+            <Settings size={16} />{labels.settingsWorkspace}
+          </button>
           <NotificationCenter language={language} />
           <button type="button" onClick={createNewProject}>{labels.new}</button>
           <button type="button" onClick={loadDemo}>{labels.demo}</button>
@@ -412,36 +439,36 @@ function AppShell(): React.ReactElement {
         <input ref={fileInputRef} type="file" accept=".json,.lcdproj,application/json" hidden onChange={(event) => void openProject(event)} />
       </header>
 
-      <nav className="workspace-navigation" aria-label={labels.workspaces} data-testid="workspace-navigation">
-        <WorkspaceButton mode="fsm" active={location.mode === 'fsm'} onClick={() => navigateTo({ mode: 'fsm' })} icon={<Workflow size={17} />} label={labels.fsmEditor} />
-        <WorkspaceButton mode="lcd" active={location.mode === 'lcd'} onClick={() => navigateTo({ mode: 'lcd' })} icon={<Monitor size={17} />} label={labels.lcdEditor} />
-        <WorkspaceButton mode="control-panel" active={location.mode === 'control-panel'} onClick={() => navigateTo({ mode: 'control-panel' })} icon={<PanelTop size={17} />} label={labels.controlPanel} />
-        <WorkspaceButton mode="hmi" active={location.mode === 'hmi'} onClick={() => navigateTo({ mode: 'hmi' })} icon={<PanelsTopLeft size={17} />} label={labels.hmiDesigner} />
-        <WorkspaceButton mode="tags" active={location.mode === 'tags'} onClick={() => navigate({ mode: 'tags' })} icon={<Tag size={17} />} label={labels.tagsWorkspace} />
-        <WorkspaceButton mode="procedures" active={location.mode === 'procedures'} onClick={() => navigate({ mode: 'procedures' })} icon={<Terminal size={17} />} label={labels.proceduresWorkspace} />
-        <WorkspaceButton mode="alarms" active={location.mode === 'alarms'} onClick={() => navigate({ mode: 'alarms' })} icon={<AlertCircle size={17} />} label={labels.alarmsWorkspace} />
-        <WorkspaceButton mode="runtime" active={location.mode === 'runtime'} onClick={() => navigateTo({ mode: 'runtime' })} icon={<PlayCircle size={17} />} label={labels.runtimeWorkspace} />
-        <WorkspaceButton mode="screen-dsl" active={location.mode === 'screen-dsl'} onClick={() => navigate({ mode: 'screen-dsl' })} icon={<Code2 size={17} />} label={labels.screenDslWorkspace} />
-        <WorkspaceButton mode="text-registry" active={location.mode === 'text-registry'} onClick={() => navigate({ mode: 'text-registry' })} icon={<Tag size={17} />} label={labels.textRegistryWorkspace} />
-        <WorkspaceButton mode="handoff" active={location.mode === 'handoff'} onClick={() => navigate({ mode: 'handoff' })} icon={<Package size={17} />} label={labels.hmiHandoffWorkspace} />
-        <WorkspaceButton mode="settings" active={location.mode === 'settings'} onClick={() => navigate({ mode: 'settings' })} icon={<Settings size={17} />} label={labels.settingsWorkspace} />
-      </nav>
-
-      <section className="workspace-host">
+      <section className="ide-workbench">
+        <nav className="activity-bar" aria-label={labels.workspaces}>
+          {WORKSPACE_GROUPS.map((group) => (
+            <button key={group.id} type="button" data-testid={`activity-${group.id}`} className={group.id === activeNavigationGroup.id ? 'active' : ''} aria-pressed={group.id === activeNavigationGroup.id} onClick={() => setActiveWorkspaceGroup(group.id)}>
+              {group.id === 'interface' ? <Monitor size={17} /> : group.id === 'logic' ? <Workflow size={17} /> : group.id === 'hardware' ? <Terminal size={17} /> : <PlayCircle size={17} />}
+              <span>{workspaceGroupLabel(group.id, labels)}</span>
+            </button>
+          ))}
+        </nav>
+        <nav className="workspace-navigation workspace-navigator" aria-label={labels.workspaces} data-testid="workspace-navigator">
+          {activeNavigationGroup.modes.map((mode) => <WorkspaceButton key={mode} mode={mode} active={location.mode === mode} onClick={() => navigateTo({ mode })} icon={workspaceIcon(mode)} label={workspaceLabel(mode, labels)} />)}
+        </nav>
+        <section className="workspace-host">
         <Suspense fallback={<section className="workspace-empty">{labels.loadingWorkspace}</section>}>
           {location.mode === 'fsm' ? <FsmWorkspace requestedStateId={location.stateId} /> : null}
-          {location.mode === 'lcd' ? <LcdWorkspace requestedScreenId={location.screenId} /> : null}
-          {location.mode === 'control-panel' ? <ControlPanelWorkspace requestedElementId={location.elementId} /> : null}
+          {location.mode === 'lcd' ? <EditorWorkspaceFrame mode="lcd" project={project} labels={labels}><LcdWorkspace requestedScreenId={location.screenId} /></EditorWorkspaceFrame> : null}
+          {location.mode === 'control-panel' ? <EditorWorkspaceFrame mode="control-panel" project={project} labels={labels}><ControlPanelWorkspace requestedElementId={location.elementId} /></EditorWorkspaceFrame> : null}
           {location.mode === 'hmi' ? <HmiDesignerWorkspace requestedStateId={location.stateId} requestedElementId={location.elementId} /> : null}
-          {location.mode === 'tags' ? <TagEditorWorkspace /> : null}
-          {location.mode === 'procedures' ? <ProcedureEditorWorkspace /> : null}
-          {location.mode === 'alarms' ? <AlarmWorkspace /> : null}
+          {location.mode === 'tags' ? <EditorWorkspaceFrame mode="tags" project={project} labels={labels}><TagEditorWorkspace /></EditorWorkspaceFrame> : null}
+          {location.mode === 'procedures' ? <EditorWorkspaceFrame mode="procedures" project={project} labels={labels}><ProcedureEditorWorkspace /></EditorWorkspaceFrame> : null}
+          {location.mode === 'alarms' ? <EditorWorkspaceFrame mode="alarms" project={project} labels={labels}><AlarmWorkspace /></EditorWorkspaceFrame> : null}
           {location.mode === 'runtime' ? <RuntimeWorkspace /> : null}
-          {location.mode === 'screen-dsl' ? <ScreenDslStudioWrapper screenId={location.screenId} /> : null}
-          {location.mode === 'text-registry' ? <TextRegistryWorkspace /> : null}
+          {location.mode === 'screen-dsl' ? <EditorWorkspaceFrame mode="screen-dsl" project={project} labels={labels}><ScreenDslStudioWrapper screenId={location.screenId} /></EditorWorkspaceFrame> : null}
+          {location.mode === 'text-registry' ? <EditorWorkspaceFrame mode="text-registry" project={project} labels={labels}><TextRegistryWorkspace /></EditorWorkspaceFrame> : null}
           {location.mode === 'handoff' ? <HmiHandoffWorkspace /> : null}
-          {location.mode === 'settings' ? <SettingsWorkspace /> : null}
+          {location.mode === 'settings' ? (
+            <SettingsWorkspace themePreference={theme.preference} onThemeChange={theme.setPreference} />
+          ) : null}
         </Suspense>
+        </section>
       </section>
 
       <footer className="statusbar">
@@ -491,6 +518,36 @@ function WorkspaceButton({
       {icon}{label}
     </button>
   );
+}
+
+function workspaceIcon(mode: WorkspaceMode): React.ReactNode {
+  const icons: Record<WorkspaceMode, React.ReactNode> = {
+    fsm: <Workflow size={17} />, lcd: <Monitor size={17} />, 'control-panel': <PanelTop size={17} />, preview: <Monitor size={17} />,
+    hmi: <PanelsTopLeft size={17} />, tags: <Tag size={17} />, procedures: <Terminal size={17} />,
+    alarms: <AlertCircle size={17} />, runtime: <PlayCircle size={17} />, 'screen-dsl': <Code2 size={17} />,
+    'text-registry': <Tag size={17} />, handoff: <Package size={17} />, settings: <Settings size={17} />
+  };
+  return icons[mode];
+}
+
+function workspaceLabel(mode: WorkspaceMode, labels: UiText): string {
+  const values: Record<WorkspaceMode, string> = {
+    fsm: labels.fsmEditor, lcd: labels.lcdEditor, 'control-panel': labels.controlPanel, preview: labels.preview,
+    hmi: labels.hmiDesigner, tags: labels.tagsWorkspace, procedures: labels.proceduresWorkspace,
+    alarms: labels.alarmsWorkspace, runtime: labels.runtimeWorkspace, 'screen-dsl': labels.screenDslWorkspace,
+    'text-registry': labels.textRegistryWorkspace, handoff: labels.hmiHandoffWorkspace, settings: labels.settingsWorkspace
+  };
+  return values[mode];
+}
+
+function workspaceGroupLabel(group: WorkspaceGroupId, labels: UiText): string {
+  const values: Record<WorkspaceGroupId, string> = {
+    interface: labels.workspaceGroupInterface,
+    logic: labels.workspaceGroupLogic,
+    hardware: labels.workspaceGroupHardware,
+    delivery: labels.workspaceGroupDelivery
+  };
+  return values[group];
 }
 
 function ScreenDslStudioWrapper({ screenId }: { screenId?: string }): React.ReactElement {

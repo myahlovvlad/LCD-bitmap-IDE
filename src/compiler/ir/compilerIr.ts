@@ -1,4 +1,5 @@
 import type { CompilerDiagnostic } from '../validation/compilerDiagnostics';
+import type { DisplayProfile } from '../../domain/displayProfile';
 import type { NormalizedFsmIr } from './fsmIr';
 import type { NormalizedLocalizationIr, NormalizedResourceIr } from './localizationIr';
 import type { NormalizedScreenIr } from './screenIr';
@@ -6,11 +7,7 @@ import type { CompilerSymbolTable } from './symbolTable';
 import type { CompilerTraceabilityMap } from './traceability';
 import type { CompilerIrVersion } from './version';
 
-export interface NormalizedDisplayIr {
-  readonly width: number;
-  readonly height: number;
-  readonly colorMode: 'monochrome';
-  readonly packing: 'vertical-lsb';
+export interface NormalizedDisplayIr extends DisplayProfile {
   readonly byteLength: number;
 }
 

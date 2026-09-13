@@ -1,13 +1,10 @@
 import type { FontVariant } from './fonts';
 import type { LanguageCode, LocalizedText } from './localization';
 import type { HmiBindings } from './tag';
+import type { DisplayProfile } from './displayProfile';
 
-export interface DisplayConfig {
-  width: number;
-  height: number;
-  colorMode: 'monochrome';
-  packing: 'vertical-lsb';
-}
+/** @deprecated Use DisplayProfile. Kept as an API alias for existing integrations. */
+export type DisplayConfig = DisplayProfile;
 
 export type CanvasObjectType = 'text' | 'line' | 'rect' | 'icon' | 'bitmap' | 'special' | 'invert';
 

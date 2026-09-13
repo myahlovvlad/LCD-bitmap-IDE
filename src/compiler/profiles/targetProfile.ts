@@ -1,13 +1,11 @@
-export type CompilerDisplayPacking = 'vertical-lsb';
+import type { DisplayProfile } from '../../domain/displayProfile';
+
+export type CompilerDisplayPacking = DisplayProfile['packing'];
 
 export interface CompilerTargetProfile {
   readonly id: string;
   readonly version: number;
-  readonly display: {
-    readonly colorMode: 'monochrome';
-    readonly packing: CompilerDisplayPacking;
-    readonly width: number;
-    readonly height: number;
+  readonly display: DisplayProfile & {
     readonly byteLength: number;
   };
   readonly codegen: {

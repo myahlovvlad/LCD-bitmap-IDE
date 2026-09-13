@@ -1,4 +1,4 @@
-import { DEFAULT_DISPLAY_CONFIG, type FontGlyphs, glyphs } from '../domain';
+import { DEFAULT_DISPLAY_CONFIG, normalizeDisplayProfile, type FontGlyphs, glyphs } from '../domain';
 import { lcdProjectSchema, projectFilePayloadSchema, type LcdProject } from '../entities/project/schema';
 import type {
   CanvasData,
@@ -187,7 +187,7 @@ export function createUniversalProjectPayload({
     source: 'spectrodesigner',
     exportedAt: new Date().toISOString(),
     language,
-    display: project.display,
+    display: normalizeDisplay(project.display),
     states: stateOrder
       .map((stateId) => project.states[stateId])
       .filter((state): state is FsmState => Boolean(state))
@@ -620,13 +620,11 @@ function normalizeDisplay(value: unknown): DisplayConfig {
   if (!isRecord(value)) {
     return DEFAULT_DISPLAY_CONFIG;
   }
-
-  return {
+  return normalizeDisplayProfile({
+    ...value,
     width: Math.max(16, readNumber(value.width, DEFAULT_DISPLAY_CONFIG.width)),
-    height: Math.max(16, readNumber(value.height, DEFAULT_DISPLAY_CONFIG.height)),
-    colorMode: 'monochrome',
-    packing: 'vertical-lsb'
-  };
+    height: Math.max(16, readNumber(value.height, DEFAULT_DISPLAY_CONFIG.height))
+  }, DEFAULT_DISPLAY_CONFIG);
 }
 
 function readId(record: UnknownRecord, fallback: string): string {

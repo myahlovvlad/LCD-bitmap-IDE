@@ -7,6 +7,7 @@ import {
   resetAutomationDispatcherForTests
 } from '../../src/renderer/automation/automationDispatcher';
 import { useProjectStore } from '../../src/renderer/store/projectStore';
+import { createDisplayProfile } from '../../src/domain';
 
 const permissions = ['project:read', 'project:write', 'project:destructive', 'runtime:write'];
 let sequence = 0;
@@ -87,6 +88,75 @@ describe('renderer automation dispatcher', () => {
     expect(useProjectStore.getState().revision).toBe(1);
     useProjectStore.getState().undo();
     expect(useProjectStore.getState().project?.tags?.['sample.abs']).toBeUndefined();
+  });
+
+  it('exposes DisplayProfile update and zero-diff evidence through the shared registry', async () => {
+    const current = useProjectStore.getState().project!.display;
+    const profile = createDisplayProfile({ ...current, mirrorX: true });
+    const updated = await executeAutomationRequest(request('update_display_profile', { profile }, { expectedRevision: 0 }));
+    expect(updated.status).toBe('success');
+    expect(useProjectStore.getState().project?.display.fingerprint).toBe(profile.fingerprint);
+
+    const preview = await executeAutomationRequest(request('preview_export'));
+    expect(preview.status).toBe('success');
+    expect(preview.output).toEqual(expect.objectContaining({
+      profileFingerprint: profile.fingerprint,
+      comparison: expect.objectContaining({ differentPixels: 0, result: 'passed' })
+    }));
+  });
+
+  it('renders a screen with deterministic PNG previews and layout diagnostics', async () => {
+    const rendered = await executeAutomationRequest(request('render_screen'));
+    expect(rendered.status).toBe('success');
+    expect(rendered.output).toEqual(expect.objectContaining({
+      width: 128,
+      height: 64,
+      previewPngBase64: expect.stringMatching(/^iVBOR/),
+      overlayPngBase64: expect.stringMatching(/^iVBOR/),
+      canonicalRaster: expect.objectContaining({ pixelFormat: 'argb8888', byteLength: 128 * 64 * 4 }),
+      boundingBoxes: expect.any(Array),
+      issues: expect.any(Array)
+    }));
+  });
+
+  it('exports a screen as HTML and audits 128×64 layout compliance without mutation', async () => {
+    const screenId = useProjectStore.getState().project!.screenOrder[0];
+    const exported = await executeAutomationRequest(request('export_screen_html', { screenId }));
+    const audited = await executeAutomationRequest(request('analyze_128x64_screens'));
+
+    expect(exported.status).toBe('success');
+    expect(exported.output).toEqual(expect.objectContaining({
+      screenId,
+      width: 128,
+      height: 64,
+      html: expect.stringContaining('data-lcd-format="lcd-bitmap-ide/html"')
+    }));
+    expect(audited.status).toBe('success');
+    expect(audited.output).toEqual(expect.objectContaining({
+      target: { width: 128, height: 64 },
+      screenCount: 1,
+      compliantScreenCount: 1,
+      nonCompliantScreenCount: 0
+    }));
+    expect(useProjectStore.getState().revision).toBe(0);
+  });
+
+  it('previews and applies a validated HTML screen import through one revision', async () => {
+    const screenId = useProjectStore.getState().project!.screenOrder[0];
+    const exported = await executeAutomationRequest(request('export_screen_html', { screenId }));
+    const html = (exported.output as { html: string }).html;
+    const editedHtml = html.replace('</section>', '<lcd-rect data-lcd-id="html-import-rect" data-lcd-order="0" data-lcd-z-index="0" data-lcd-visible="true" data-lcd-locked="false" data-lcd-source="generated" data-lcd-resource-refs="[]" data-lcd-x="1" data-lcd-y="1" data-lcd-width="4" data-lcd-height="4" data-lcd-filled="true"></lcd-rect>\n</section>');
+    const preview = await executeAutomationRequest(request('preview_screen_html_import', {
+      html: editedHtml, importMode: 'update', targetScreenId: screenId
+    }, { expectedRevision: 0 }));
+    const applied = await executeAutomationRequest(request('apply_screen_html_import', {
+      html: editedHtml, importMode: 'update', targetScreenId: screenId
+    }, { expectedRevision: 0 }));
+
+    expect(preview.status).toBe('success');
+    expect(preview.output).toEqual(expect.objectContaining({ canonicalHtml: expect.stringContaining('data-lcd-screen-id') }));
+    expect(applied.status).toBe('success');
+    expect(useProjectStore.getState().revision).toBe(1);
   });
 
   it('previews and applies an atomic multi-operation ChangeSet', async () => {

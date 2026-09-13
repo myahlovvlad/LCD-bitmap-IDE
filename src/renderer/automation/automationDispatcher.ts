@@ -16,10 +16,24 @@ import {
   parseAutomationRequest
 } from '../../shared/automation';
 import type { CommandMetadata, ProjectChangeSet, ProjectCommand, ProjectCommandResult } from '../../application';
-import { undoProjectSession } from '../../application';
+import { applyScreenDslPreview, createScreenHtmlPreview, exportSessionScreenInterchangeScreen, undoProjectSession } from '../../application';
 import type { AlarmDefinition, ControlPanelElement, FsmEvent, FsmState, FsmTransition } from '../../domain/project';
 import type { HmiTag } from '../../domain/tag';
 import type { BackendProcedure } from '../../domain/procedure';
+import { FontRenderer, normalizeDisplayProfile, type DisplayProfile } from '../../domain';
+import {
+  canonicalRasterToRgbaBytes,
+  compareFramebuffers,
+  analyzeScreenLayout,
+  createCanonicalRaster,
+  createSoftwareEvidenceBundle,
+  decodeDisplayBytes,
+  encodeRasterPng,
+  renderProjectScreen,
+  rgba
+} from '../../compiler';
+import { sha256Hex } from '../../compiler/artifacts/sha256';
+import { screenInterchangeToHtml } from '../../screen-html';
 import { validateProject } from '../../services/projectValidationService';
 import { computeElkLayout } from '../core/elkLayout';
 import { beginOperation } from '../notifications/notificationStore';
@@ -182,6 +196,7 @@ async function dispatchValidatedRequest(
         alarmCount: Object.keys(project.alarms ?? {}).length
       } : { projectId: null, revision: store.revision });
     case 'get_authoring_language': return successful({ language: project?.authoringLanguage ?? 'en' });
+    case 'get_display_profile': return project ? successful({ profile: project.display }) : blocked('automation.no-project', 'No project loaded');
     case 'list_fsm_states': return successful({ states: ordered(project?.fsm.stateOrder, project?.fsm.states) });
     case 'list_fsm_transitions': return successful({ transitions: ordered(project?.fsm.transitionOrder, project?.fsm.transitions) });
     case 'list_fsm_events': return successful({ events: ordered(project?.fsm.eventOrder, project?.fsm.events) });
@@ -200,6 +215,119 @@ async function dispatchValidatedRequest(
     case 'get_runtime_state': return successful({ runtimeState: getAutomationRuntimeState() });
     case 'list_export_formats': return successful({ formats: ['c-vertical-lsb', 'c-horizontal-msb', 'c-horizontal-lsb', 'xbm', 'arduino-progmem', 'rust-embedded', 'esp-idf', 'binary'] });
     case 'get_automation_audit': return successful({ events: [...auditLog] });
+    case 'render_screen': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const rendered = renderProjectScreen({
+        project,
+        language: project.authoringLanguage ?? store.language,
+        screenId: input.screenId as string | undefined,
+        fontGlyphs: store.fontGlyphs
+      });
+      const layout = analyzeScreenLayout(
+        rendered.screen,
+        project.authoringLanguage ?? store.language,
+        new FontRenderer(store.fontGlyphs)
+      );
+      const rgbaBytes = canonicalRasterToRgbaBytes(rendered.screen.canonicalRaster);
+      return successful({
+        screenId: rendered.screen.id,
+        width: rendered.screen.width,
+        height: rendered.screen.height,
+        previewPngBase64: bytesToBase64(encodeRasterPng(rendered.screen.canonicalRaster)),
+        canonicalRaster: {
+          pixelFormat: 'argb8888',
+          sha256: sha256Hex(rgbaBytes),
+          byteLength: rgbaBytes.length
+        },
+        boundingBoxes: layout.boundingBoxes,
+        issues: layout.issues,
+        overlayPngBase64: bytesToBase64(encodeRasterPng(layout.overlay))
+      });
+    }
+    case 'export_screen_html': {
+      if (!project || !store.session) return blocked('automation.no-project', 'No project loaded');
+      const screenId = input.screenId as string;
+      if (!project.screens[screenId]) return failed('automation.screen-not-found', `Screen not found: ${screenId}`);
+      const exported = exportSessionScreenInterchangeScreen(store.session, screenId);
+      const rendered = renderProjectScreen({ project, language: project.authoringLanguage ?? store.language, screenId, fontGlyphs: store.fontGlyphs });
+      const layout = analyzeScreenLayout(rendered.screen, project.authoringLanguage ?? store.language, new FontRenderer(store.fontGlyphs));
+      return successful({ screenId, width: rendered.screen.width, height: rendered.screen.height, html: screenInterchangeToHtml(exported.package, screenId), issues: layout.issues });
+    }
+    case 'analyze_128x64_screens': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const requestedScreenId = input.screenId as string | undefined;
+      const screenIds = requestedScreenId ? [requestedScreenId] : project.screenOrder;
+      if (requestedScreenId && !project.screens[requestedScreenId]) return failed('automation.screen-not-found', `Screen not found: ${requestedScreenId}`);
+      const screens = screenIds.map((screenId) => {
+        const rendered = renderProjectScreen({ project, language: project.authoringLanguage ?? store.language, screenId, fontGlyphs: store.fontGlyphs });
+        const layout = analyzeScreenLayout(rendered.screen, project.authoringLanguage ?? store.language, new FontRenderer(store.fontGlyphs));
+        return { screenId, width: rendered.screen.width, height: rendered.screen.height, dimensionsMatch: rendered.screen.width === 128 && rendered.screen.height === 64, objectCount: rendered.screen.objects.length, issues: layout.issues };
+      });
+      const compliantScreenCount = screens.filter((screen) => screen.dimensionsMatch && !screen.issues.some((issue) => issue.severity === 'error')).length;
+      return successful({ target: { width: 128, height: 64 }, screenCount: screens.length, compliantScreenCount, nonCompliantScreenCount: screens.length - compliantScreenCount, screens });
+    }
+    case 'preview_screen_html_import': {
+      if (!store.session) return blocked('automation.no-project', 'No project loaded');
+      const preview = createScreenHtmlPreview(store.session, { html: input.html as string, importMode: input.importMode as 'create' | 'update' | 'clone', expectedRevision: request.expectedRevision!, targetScreenId: input.targetScreenId as string | undefined, actor: request.actor });
+      if (!preview.success) return { status: 'failure', diagnostics: preview.diagnostics.map((item) => ({ code: item.code, message: item.message, path: item.path })) };
+      return successful({ canonicalHtml: preview.canonicalHtml, diagnostics: preview.diagnostics, semanticDiff: preview.screenDslPreview?.semanticDiff, applyAllowed: preview.screenDslPreview?.applyAllowed ?? false });
+    }
+    case 'apply_screen_html_import': {
+      if (!store.session) return blocked('automation.no-project', 'No project loaded');
+      const preview = createScreenHtmlPreview(store.session, { html: input.html as string, importMode: input.importMode as 'create' | 'update' | 'clone', expectedRevision: request.expectedRevision!, targetScreenId: input.targetScreenId as string | undefined, actor: request.actor });
+      if (!preview.success || !preview.screenDslPreview || !preview.screenDslSource) return { status: 'failure', diagnostics: preview.diagnostics.map((item) => ({ code: item.code, message: item.message, path: item.path })) };
+      const applied = applyScreenDslPreview(store.session, { preview: preview.screenDslPreview, sourceText: preview.screenDslSource, confirmDestructive: Boolean(input.confirmDestructive) });
+      if (!applied.applied || !applied.result) return { status: 'failure', diagnostics: applied.diagnostics.map((item) => ({ code: item.code, message: item.message, path: item.path })) };
+      replaceProjectStoreSession(applied.result.session);
+      return { status: 'success', result: applied.result, output: { applied: true, transaction: applied.transaction }, diagnostics: [] };
+    }
+    case 'preview_export': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const evidence = createSoftwareEvidenceBundle({
+        project,
+        language: project.authoringLanguage ?? store.language,
+        screenId: input.screenId as string | undefined,
+        fontGlyphs: store.fontGlyphs
+      });
+      return successful({
+        screenId: evidence.screenId,
+        profileFingerprint: evidence.profileFingerprint,
+        projectFingerprint: evidence.projectFingerprint,
+        comparison: evidence.comparison,
+        artifacts: evidence.artifacts.map(({ path, mediaType, byteLength, sha256 }) => ({ path, mediaType, byteLength, sha256 }))
+      });
+    }
+    case 'create_evidence_bundle': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const evidence = createSoftwareEvidenceBundle({
+        project,
+        language: project.authoringLanguage ?? store.language,
+        screenId: input.screenId as string | undefined,
+        fontGlyphs: store.fontGlyphs
+      });
+      return successful({
+        screenId: evidence.screenId,
+        filename: `${project.meta.id}-${evidence.screenId}-evidence.zip`,
+        encoding: 'base64',
+        content: bytesToBase64(evidence.zip),
+        comparison: evidence.comparison,
+        artifacts: evidence.artifacts.map(({ path, mediaType, byteLength, sha256 }) => ({ path, mediaType, byteLength, sha256 }))
+      });
+    }
+    case 'decode_artifact': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const profile = normalizeDisplayProfile(input.profile ?? project.display, project.display);
+      const decoded = decodeDisplayBytes(base64ToBytes(input.content as string), profile);
+      const rgbaBytes = canonicalRasterToRgbaBytes(decoded);
+      return successful({ width: decoded.width, height: decoded.height, profileFingerprint: profile.fingerprint, rgbaBase64: bytesToBase64(rgbaBytes), sha256: sha256Hex(rgbaBytes) });
+    }
+    case 'compare_framebuffers': {
+      const width = input.width as number;
+      const height = input.height as number;
+      const expected = rgbaBytesToRaster(base64ToBytes(input.expectedRgbaBase64 as string), width, height);
+      const decoded = rgbaBytesToRaster(base64ToBytes(input.decodedRgbaBase64 as string), width, height);
+      return successful({ comparison: compareFramebuffers(expected, decoded) });
+    }
     case 'compile_assets': return successful(compileAssetsForAutomation(input));
     case 'fire_runtime_event':
       await fireAutomationRuntimeEvent(input.eventId as string);
@@ -212,6 +340,11 @@ async function dispatchValidatedRequest(
       return undoLastAutomationChange();
     case 'auto_layout_fsm':
       return executeAutoLayout(request, input);
+    case 'update_display_profile': {
+      const profile = input.profile as DisplayProfile;
+      const diagnostics = validateAutomationDisplayProfile(profile);
+      return diagnostics.length ? { status: 'failure', diagnostics } : executeMappedCommand(request, input);
+    }
     default:
       return executeMappedCommand(request, input);
   }
@@ -299,6 +432,7 @@ function buildProjectCommands(command: string, input: Record<string, unknown>, m
   } as ProjectCommand);
   switch (command) {
     case 'set_authoring_language': return [commandOf('project.setAuthoringLanguage', { language: input.language })];
+    case 'update_display_profile': return [commandOf('project.updateDisplayConfig', { display: input.profile as DisplayProfile })];
     case 'create_fsm_state': return [commandOf('fsm.state.add', { title: input.title })];
     case 'update_fsm_state': return [commandOf('fsm.state.update', {
       stateId: input.stateId,
@@ -437,6 +571,32 @@ function ordered<T>(order: string[] | undefined, record: Record<string, T> | und
   return (order ?? Object.keys(record)).map((id) => record[id]).filter((value): value is T => Boolean(value));
 }
 function asObject(value: unknown): Record<string, unknown> { return value && typeof value === 'object' ? value as Record<string, unknown> : {}; }
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+function base64ToBytes(value: string): Uint8Array {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+function rgbaBytesToRaster(bytes: Uint8Array, width: number, height: number) {
+  if (bytes.length !== width * height * 4) throw new Error(`RGBA framebuffer needs ${width * height * 4} bytes, received ${bytes.length}.`);
+  const pixels = new Uint32Array(width * height);
+  for (let index = 0; index < pixels.length; index += 1) {
+    pixels[index] = rgba(bytes[index * 4], bytes[index * 4 + 1], bytes[index * 4 + 2], bytes[index * 4 + 3]);
+  }
+  return createCanonicalRaster(width, height, pixels);
+}
+function validateAutomationDisplayProfile(profile: DisplayProfile): AutomationDiagnostic[] {
+  const normalized = normalizeDisplayProfile(profile);
+  if (normalized.fingerprint !== profile.fingerprint) {
+    return [{ code: 'automation.display-profile-fingerprint', message: 'DisplayProfile fingerprint does not match its canonical fields.', path: 'profile.fingerprint' }];
+  }
+  return [];
+}
 function rememberIdempotentOutcome(key: string, outcome: AutomationOutcome): void {
   idempotencyCache.set(key, outcome);
   if (idempotencyCache.size > MAX_IDEMPOTENCY_ENTRIES) idempotencyCache.delete(idempotencyCache.keys().next().value as string);

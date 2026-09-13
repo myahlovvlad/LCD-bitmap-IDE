@@ -30,10 +30,7 @@ export function normalizeProject(source: CompilerSourceSnapshot): NormalizedComp
       sourceFingerprint: source.sourceFingerprint
     },
     display: {
-      width: source.project.display.width,
-      height: source.project.display.height,
-      colorMode: source.project.display.colorMode,
-      packing: source.project.display.packing,
+      ...source.project.display,
       byteLength: getEncodedDisplayByteLength(source.project.display)
     },
     fsm,

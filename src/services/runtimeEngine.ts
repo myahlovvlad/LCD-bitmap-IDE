@@ -1,5 +1,6 @@
 import type {
   ControlPanelButton,
+  FsmInputConfig,
   FsmTransition,
   LcdBitmapProject,
   LcdScreen
@@ -20,11 +21,24 @@ export interface RuntimeEvent {
   backendProcessId?: string;
 }
 
+export interface RuntimeInputSession {
+  stateId: string;
+  mode: FsmInputConfig['mode'];
+  value: string;
+  maxLength: number;
+}
+
+export interface RuntimeInputCommit extends RuntimeInputSession {
+  eventId: 'UI.OK';
+}
+
 export interface RuntimeEngine {
   readonly currentStateId: string | null;
   readonly eventLog: readonly RuntimeEvent[];
   readonly lastTransition: FsmTransition | null;
   readonly pendingEventIds: readonly string[];
+  readonly inputSession: RuntimeInputSession | null;
+  readonly lastInputCommit: RuntimeInputCommit | null;
   start(initialStateId?: string): void;
   reset(): void;
   sendEvent(eventId: string): void;
@@ -42,6 +56,86 @@ export interface ProjectRuntimeEngineOptions {
   getGuardValues?: () => Readonly<Record<string, string | number | boolean | null>>;
 }
 
+export type RuntimeButtonAvailabilityCode =
+  | 'available'
+  | 'no-active-state'
+  | 'explicitly-disabled'
+  | 'missing-event'
+  | 'missing-transition'
+  | 'state-not-allowed'
+  | 'guard-rejected';
+
+export interface RuntimeButtonAvailability {
+  allowed: boolean;
+  code: RuntimeButtonAvailabilityCode;
+  message: string | null;
+}
+
+export function resolveRuntimeButtonAvailability(
+  project: LcdBitmapProject,
+  stateId: string | null,
+  button: ControlPanelButton,
+  values?: Readonly<Record<string, string | number | boolean | null>>
+): RuntimeButtonAvailability {
+  if (!stateId || !project.fsm.states[stateId]) {
+    return blocked('no-active-state', 'Button is unavailable: the runtime has no active state.');
+  }
+  if (button.disabledStates?.includes(stateId)) {
+    return blocked('explicitly-disabled', `Button "${button.id}" is disabled in state "${stateId}".`);
+  }
+  const eventId = button.fsmEventId;
+  if (!eventId) return blocked('missing-event', `Button "${button.id}" has no FSM event binding.`);
+  if (isRuntimeInputEvent(project.fsm.states[stateId].input, eventId)) {
+    return { allowed: true, code: 'available', message: null };
+  }
+  const candidates = project.fsm.transitionOrder
+    .map((id) => project.fsm.transitions[id])
+    .filter((transition): transition is FsmTransition => (
+      Boolean(transition) && transition.from === stateId && transition.trigger.eventId === eventId
+    ));
+  if (candidates.length === 0) {
+    return blocked('missing-transition', `Button "${button.id}" has no programmed transition from state "${stateId}".`);
+  }
+  if (button.allowedStates?.length && !button.allowedStates.includes(stateId)) {
+    return blocked('state-not-allowed', `Button "${button.id}" is not enabled for state "${stateId}".`);
+  }
+  const evaluations = candidates.map((transition) => {
+    const expression = transition.condition || transition.trigger.fact;
+    return {
+      transition,
+      result: evaluateTypedGuard(expression ?? null, {
+        event: eventId,
+        button: button.label,
+        button_id: button.id,
+        status: 'READY',
+        value: 1,
+        timeout_ms: transition.trigger.timerMs ?? 0,
+        values
+      })
+    };
+  });
+  const invalid = evaluations.find(({ result }) => result.behavior.kind === 'invalid');
+  if (invalid) {
+    return blocked('guard-rejected', `Invalid typed guard on transition "${invalid.transition.id}".`);
+  }
+  if (!evaluations.some(({ result }) => result.matched)) {
+    return blocked('guard-rejected', `Button "${button.id}" is blocked because every matching transition guard rejected the current values.`);
+  }
+  return { allowed: true, code: 'available', message: null };
+}
+
+function blocked(code: Exclude<RuntimeButtonAvailabilityCode, 'available'>, message: string): RuntimeButtonAvailability {
+  return { allowed: false, code, message };
+}
+
+function isRuntimeInputEvent(config: FsmInputConfig | undefined, eventId: string): boolean {
+  if (!config) return false;
+  if (eventId === 'UI.CLR') return true;
+  if (eventId === 'UI.DOT') return config.mode === 'numeric' && config.allowDecimal === true;
+  if (eventId === 'UI.MINUS') return config.mode === 'numeric' && config.allowNegative === true;
+  return phoneDigitForEvent(eventId) !== null;
+}
+
 export class ProjectRuntimeEngine implements RuntimeEngine {
   currentStateId: string | null = null;
   eventLog: RuntimeEvent[] = [];
@@ -49,6 +143,10 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
   pendingEventIds: string[] = [];
   private stepMode = false;
   private activeButtonId: string | null = null;
+  inputSession: RuntimeInputSession | null = null;
+  lastInputCommit: RuntimeInputCommit | null = null;
+  private lastInputEventId: string | null = null;
+  private lastInputAt = 0;
 
   constructor(
     private readonly project: LcdBitmapProject,
@@ -63,6 +161,8 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
     this.pendingEventIds = [];
     this.lastTransition = null;
     this.activeButtonId = null;
+    this.lastInputCommit = null;
+    this.openInputSession();
     this.eventLog = [];
     this.log('info', 'start', this.currentStateId ? `Runtime started at "${this.currentStateId}".` : 'Runtime cannot start: no FSM state.');
   }
@@ -109,6 +209,8 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
       this.log('warning', 'error', `Button "${element.id}" has no FSM event binding.`);
       return;
     }
+    if (this.applyPhoneInput(element.fsmEventId)) return;
+    if (element.fsmEventId === 'UI.OK' && this.inputSession) this.commitInput();
     this.activeButtonId = element.id;
     this.sendEvent(element.fsmEventId);
     this.activeButtonId = null;
@@ -135,30 +237,25 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
   }
 
   isButtonAllowed(button: ControlPanelButton): boolean {
-    return this.getButtonBlockReason(button) === null;
+    return resolveRuntimeButtonAvailability(
+      this.project,
+      this.currentStateId,
+      button,
+      this.options.getGuardValues?.()
+    ).allowed;
   }
 
   getButtonBlockReason(button: ControlPanelButton): string | null {
-    if (!this.currentStateId) {
-      return 'Button is unavailable: the runtime has no active state.';
-    }
-    if (button.disabledStates?.includes(this.currentStateId)) {
-      return `Button "${button.id}" is disabled in state "${this.currentStateId}".`;
-    }
-    if (!button.fsmEventId) return `Button "${button.id}" has no FSM event binding.`;
-    // A control is enabled only when this state has an executable transition
-    // for its event. Empty allowedStates must never mean "enabled everywhere".
-    const hasProgrammedTransition = this.project.fsm.transitionOrder.some((id) => {
-      const transition = this.project.fsm.transitions[id];
-      return transition?.from === this.currentStateId && transition.trigger.eventId === button.fsmEventId;
-    });
-    if (!hasProgrammedTransition) {
-      return `Button "${button.id}" has no programmed transition from state "${this.currentStateId}".`;
-    }
-    if (button.allowedStates?.length && !button.allowedStates.includes(this.currentStateId)) {
-      return `Button "${button.id}" is not enabled for state "${this.currentStateId}".`;
-    }
-    return null;
+    return resolveRuntimeButtonAvailability(
+      this.project,
+      this.currentStateId,
+      button,
+      this.options.getGuardValues?.()
+    ).message;
+  }
+
+  isInputButtonEvent(eventId: string): boolean {
+    return this.canEditWith(eventId);
   }
 
   private executeEvent(eventId: string): void {
@@ -185,6 +282,7 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
     }
     const previousStateId = this.currentStateId;
     this.currentStateId = transition.to;
+    this.openInputSession();
     this.lastTransition = transition;
     this.log('info', 'transition', `Transition "${transition.id}": ${previousStateId} -> ${transition.to}.`, {
       eventId: transition.trigger.eventId,
@@ -265,6 +363,67 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
     return candidates.find((candidate) => this.isConditionSatisfied(candidate, eventId)) ?? null;
   }
 
+  private openInputSession(): void {
+    const config = this.currentStateId ? this.project.fsm.states[this.currentStateId]?.input : undefined;
+    this.lastInputEventId = null;
+    this.lastInputAt = 0;
+    this.inputSession = config
+      ? { stateId: this.currentStateId!, mode: config.mode, value: '', maxLength: config.maxLength ?? 16 }
+      : null;
+  }
+
+  private canEditWith(eventId: string): boolean {
+    const config = this.inputSession ? this.project.fsm.states[this.inputSession.stateId]?.input : undefined;
+    return isRuntimeInputEvent(config, eventId);
+  }
+
+  private applyPhoneInput(eventId: string): boolean {
+    const session = this.inputSession;
+    if (!session || !this.canEditWith(eventId)) return false;
+    if (eventId === 'UI.CLR') {
+      session.value = session.value.slice(0, -1);
+      this.lastInputEventId = null;
+      this.lastInputAt = 0;
+      return true;
+    }
+    if (session.mode === 'numeric') {
+      const digit = phoneDigitForEvent(eventId);
+      if (digit !== null) this.appendInput(digit);
+      else if (eventId === 'UI.DOT' && !session.value.includes('.')) this.appendInput(session.value ? '.' : '0.');
+      else if (eventId === 'UI.MINUS' && !session.value) this.appendInput('-');
+      this.lastInputEventId = null;
+      this.lastInputAt = 0;
+      return true;
+    }
+
+    const digit = phoneDigitForEvent(eventId);
+    if (digit === null) return false;
+    const letters = PHONE_TEXT_KEYS[digit];
+    const now = Date.now();
+    const cycle = this.lastInputEventId === eventId && now - this.lastInputAt < 900 && session.value.length > 0;
+    if (cycle) {
+      const current = session.value.at(-1) ?? '';
+      const next = letters[(letters.indexOf(current) + 1) % letters.length] ?? letters[0];
+      session.value = `${session.value.slice(0, -1)}${next}`;
+    } else {
+      this.appendInput(letters[0]);
+    }
+    this.lastInputEventId = eventId;
+    this.lastInputAt = now;
+    return true;
+  }
+
+  private appendInput(value: string): void {
+    if (!this.inputSession || this.inputSession.value.length >= this.inputSession.maxLength) return;
+    this.inputSession.value += value;
+  }
+
+  commitInput(): void {
+    if (!this.inputSession) return;
+    this.lastInputCommit = { ...this.inputSession, eventId: 'UI.OK' };
+    this.log('info', 'event', `Input "${this.inputSession.value}" committed.`, { eventId: 'UI.OK' });
+  }
+
   private log(
     level: RuntimeLogLevel,
     type: RuntimeEvent['type'],
@@ -283,6 +442,24 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
       backendProcessId: details.backendProcessId
     });
   }
+}
+
+const PHONE_TEXT_KEYS: Record<string, string> = {
+  '0': ' ',
+  '1': '1',
+  '2': 'ABC',
+  '3': 'DEF',
+  '4': 'GHI',
+  '5': 'JKL',
+  '6': 'MNO',
+  '7': 'PQRS',
+  '8': 'TUV',
+  '9': 'WXYZ'
+};
+
+function phoneDigitForEvent(eventId: string): string | null {
+  const match = eventId.match(/^UI\.K([0-9])(?:[AB])?$/);
+  return match ? match[1] : null;
 }
 
 export function createRuntimeEngine(project: LcdBitmapProject, options?: ProjectRuntimeEngineOptions): ProjectRuntimeEngine {

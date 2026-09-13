@@ -8,6 +8,7 @@ import { FontRenderer } from '../../renderer/core/fonts';
 import { UI_TEXT } from '../../renderer/config/i18n';
 import { useProjectStore } from '../../renderer/store/projectStore';
 import { createRuntimeEngine } from '../../services/runtimeEngine';
+import { resolveHmiTrace } from './hmiTrace';
 
 type HmiMode = 'design' | 'simulate' | 'runtime';
 
@@ -82,6 +83,10 @@ export function HmiDesignerWorkspace({ requestedStateId, requestedElementId }: {
     [project, activeStateId]
   );
   const contextButton = contextButtonId ? buttons.find((button) => button.id === contextButtonId) ?? null : null;
+  const trace = useMemo(
+    () => project ? resolveHmiTrace(project, activeStateId, selectedElement?.type === 'button' ? selectedElement.id : null) : null,
+    [project, activeStateId, selectedElement]
+  );
 
   const fontRenderer = useMemo(() => new FontRenderer(fontGlyphs), [fontGlyphs]);
 
@@ -196,6 +201,17 @@ export function HmiDesignerWorkspace({ requestedStateId, requestedElementId }: {
 
       <main className="hmi-designer-main inspector-card">
         <header><h2><Route size={16} /> {labels.hmiScenario}</h2></header>
+        {trace ? (
+          <div className="hmi-trace-chain" data-testid="hmi-trace-chain">
+            <TraceStage label={labels.hmiTraceFsm} values={trace.stateId ? [trace.stateId] : []} missing={labels.hmiTraceMissing} onOpen={(id) => navigate({ mode: 'fsm', stateId: id })} />
+            <TraceStage label={labels.hmiTraceScreen} values={trace.screenId ? [trace.screenId] : []} missing={labels.hmiTraceMissing} onOpen={(id) => navigate({ mode: 'lcd', screenId: id })} />
+            <TraceStage label={labels.hmiTraceButton} values={trace.buttonId ? [trace.eventId ? `${trace.buttonId} · ${trace.eventId}` : trace.buttonId] : []} missing={labels.hmiTraceSelectButton} onOpen={() => trace.buttonId && navigate({ mode: 'control-panel', elementId: trace.buttonId })} />
+            <TraceStage label={labels.hmiTraceTags} values={trace.tagIds} missing={labels.hmiTraceOptional} onOpen={(id) => navigate({ mode: 'tags', tagId: id })} />
+            <TraceStage label={labels.hmiTraceProcedures} values={trace.procedureIds} missing={labels.hmiTraceOptional} onOpen={(id) => navigate({ mode: 'procedures', procedureId: id })} />
+            <TraceStage label={labels.hmiTraceAlarms} values={trace.alarmIds} missing={labels.hmiTraceOptional} onOpen={(id) => navigate({ mode: 'alarms', alarmId: id })} />
+            {trace.gaps.length ? <p className="hmi-trace-gaps">{labels.hmiTraceGaps.replace('{count}', String(trace.gaps.length))}</p> : null}
+          </div>
+        ) : null}
         <ol className="hmi-timeline" aria-live="polite">
           {timeline.length
             ? timeline.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)
@@ -271,5 +287,26 @@ export function HmiDesignerWorkspace({ requestedStateId, requestedElementId }: {
         </div>
       ) : null}
     </section>
+  );
+}
+
+function TraceStage({
+  label,
+  values,
+  missing,
+  onOpen
+}: {
+  label: string;
+  values: string[];
+  missing: string;
+  onOpen: (id: string) => void;
+}): React.ReactElement {
+  return (
+    <div className={values.length ? 'hmi-trace-stage linked' : 'hmi-trace-stage missing'}>
+      <span>{label}</span>
+      {values.length
+        ? values.map((value) => <button key={value} type="button" onClick={() => onOpen(value.split(' · ')[0])}>{value}</button>)
+        : <small>{missing}</small>}
+    </div>
   );
 }

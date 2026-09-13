@@ -5,6 +5,7 @@ import type {
   GraphPosition,
   LanguageCode
 } from '../domain';
+import { normalizeDisplayProfile } from '../domain';
 import type {
   BackendProcess,
   ControlPanelElement,
@@ -184,12 +185,11 @@ function updateDisplayConfig(
   context: ApplicationCommandContext
 ): ProjectMutationResult {
   const project = workspace.project;
-  const nextDisplay: DisplayConfig = {
-    width: clamp(display.width, 16, 512),
-    height: clamp(display.height, 16, 512),
-    colorMode: 'monochrome',
-    packing: 'vertical-lsb'
-  };
+  const nextDisplay: DisplayConfig = normalizeDisplayProfile({
+    ...display,
+    width: clamp(display.width, 16, 4096),
+    height: clamp(display.height, 16, 4096)
+  }, project.display);
   const screens = Object.fromEntries(Object.entries(project.screens).map(([id, screen]) => [
     id,
     { ...screen, width: nextDisplay.width, height: nextDisplay.height, updatedAt: context.now() }

@@ -7,6 +7,12 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Permanent GitHub Release tag (for example v0.1.18)"
+        required: true
+        default: "v0.1.18"
+        type: string
 
 permissions:
   contents: write
@@ -102,7 +108,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.96.0
 
       - uses: swatinem/rust-cache@v2
         with:
@@ -134,9 +140,11 @@ jobs:
 
   publish:
     name: Publish stable release
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     needs: [package-electron, package-tauri]
     runs-on: ubuntu-22.04
+    env:
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.release_tag }}
 
     steps:
       - uses: actions/download-artifact@v4
@@ -147,7 +155,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_TAG#v}"
           mkdir -p release-assets
 
           find release-input/electron-win release-input/electron-linux \
@@ -182,7 +190,9 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           make_latest: true
           fail_on_unmatched_files: true
