@@ -5,6 +5,8 @@ export type SemanticEntityType =
   | 'display'
   | 'screen'
   | 'canvas-object'
+  | 'animation'
+  | 'animation-frame'
   | 'fsm-state'
   | 'fsm-transition'
   | 'fsm-event'
