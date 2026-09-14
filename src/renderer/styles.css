@@ -1598,6 +1598,15 @@ button:disabled {
   opacity: 1;
 }
 
+/*
+  Outside edit mode the handles stay mounted (so persisted transitions have a
+  DOM anchor) but must not intercept clicks or appear as a connect affordance.
+*/
+.node-handles-passive .node-handle {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 .fsm-edge {
   stroke: #cbd5e1;
   stroke-width: 2;
@@ -3787,6 +3796,19 @@ button:disabled {
   white-space: nowrap;
 }
 
+.fsm-transition-summary {
+  color: var(--ide-text-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.fsm-transition-summary-filtered {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+
 .screen-layer-manager {
   display: grid;
   gap: 6px;
@@ -5223,6 +5245,16 @@ button:disabled {
   background: var(--ide-surface);
 }
 
+/*
+  Collapsing the global navigator only narrows this column to an icon rail.
+  It must never affect a workspace's own local sidebars (FSM state catalog,
+  inspector panes, etc.) -- those are collapsed independently by each
+  workspace and own their own grid columns further down the tree.
+*/
+.ide-workbench.ide-workbench-navigator-collapsed {
+  grid-template-columns: 62px 46px minmax(0, 1fr);
+}
+
 .activity-bar {
   display: flex;
   flex-direction: column;
@@ -5297,6 +5329,27 @@ button:disabled {
   background: var(--ide-selection);
   box-shadow: none;
   color: var(--ide-text-primary);
+}
+
+.workspace-navigator-toggle {
+  justify-content: center !important;
+  margin-bottom: 4px;
+}
+
+.workspace-navigator.navigator-compact {
+  padding-left: 4px;
+  padding-right: 4px;
+  align-items: center;
+}
+
+.workspace-navigator.navigator-compact button {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.workspace-navigator.navigator-compact .workspace-nav-label {
+  display: none;
 }
 
 .ide-workbench .workspace-host {

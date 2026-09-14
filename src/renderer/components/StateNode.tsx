@@ -46,8 +46,14 @@ export const StateNode = memo(function StateNode({ id, selected, data }: NodePro
       tabIndex={0}
       aria-readonly={!editingEnabled}
     >
-      {/* Connection handles on all 4 sides (Visio-like) */}
-      {editingEnabled ? <>
+      {/*
+        Handles must stay mounted regardless of edit mode: persisted transitions
+        reference stable "s-" and "t-" prefixed handle ids, and React Flow drops
+        an edge whose endpoint handle isn't in the DOM. `nodesConnectable={editing}`
+        already blocks creating new connections outside edit mode, so the wrapper
+        below only needs to suppress the hover affordance and pointer interaction.
+      */}
+      <div className={editingEnabled ? 'node-handles' : 'node-handles node-handles-passive'} aria-hidden={!editingEnabled}>
         <Handle type="target" position={Position.Top} id="t-top" className="node-handle node-handle-target node-handle-top" />
         <Handle type="source" position={Position.Top} id="s-top" className="node-handle node-handle-source node-handle-top" />
         <Handle type="target" position={Position.Right} id="t-right" className="node-handle node-handle-target node-handle-right" />
@@ -56,7 +62,7 @@ export const StateNode = memo(function StateNode({ id, selected, data }: NodePro
         <Handle type="source" position={Position.Bottom} id="s-bottom" className="node-handle node-handle-source node-handle-bottom" />
         <Handle type="target" position={Position.Left} id="t-left" className="node-handle node-handle-target node-handle-left" />
         <Handle type="source" position={Position.Left} id="s-left" className="node-handle node-handle-source node-handle-left" />
-      </> : null}
+      </div>
 
       {editing ? (
         <input

@@ -19,6 +19,11 @@ async function openWorkspace(page: Page, mode: keyof typeof WORKSPACE_GROUP): Pr
   await page.getByTestId(`workspace-${mode}`).click();
 }
 
+async function openDemoAndFsm(page: Page): Promise<void> {
+  await openWorkspace(page, 'fsm');
+  await expect(page.getByTestId('fsm-workspace')).toBeVisible();
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
@@ -202,6 +207,37 @@ test('keeps the viewport zoom after moving an FSM state node', async ({ page }) 
   await page.mouse.up();
   await page.waitForTimeout(400);
   expect(await scaleOf()).toBeCloseTo(before, 6);
+});
+
+test('renders persisted FSM edges in read-only mode', async ({ page }) => {
+  await openDemoAndFsm(page);
+  await expect(page.getByTestId('fsm-edit-mode')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.react-flow__edge path.fsm-edge')).toHaveCount(4);
+});
+
+test('reports and resets transitions hidden by overview', async ({ page }) => {
+  await openDemoAndFsm(page);
+  await page.getByRole('button', { name: /Overview|Обзор/ }).click();
+  await expect(page.getByTestId('fsm-transition-summary')).toContainText(/of 4/);
+  await page.getByTestId('fsm-reset-graph-filters').click();
+  await expect(page.getByTestId('fsm-transition-summary')).toContainText('4 / 4');
+});
+
+test('navigator compaction leaves FSM state pane visible', async ({ page }) => {
+  await openDemoAndFsm(page);
+  await page.getByTestId('workspace-navigator-toggle').click();
+  await expect(page.getByTestId('workspace-navigator')).toHaveClass(/navigator-compact/);
+  await expect(page.locator('.fsm-state-catalog')).toBeVisible();
+  await expect(page.locator('.fsm-state-catalog')).not.toHaveClass(/collapsed/);
+});
+
+test('FSM pane collapse releases its grid column and remains restorable', async ({ page }) => {
+  await openDemoAndFsm(page);
+  await page.getByTestId('fsm-collapse-state-catalog').click();
+  await expect(page.locator('.fsm-state-catalog')).toHaveClass(/collapsed/);
+  await expect(page.getByTestId('fsm-expand-state-catalog')).toBeVisible();
+  await page.getByTestId('fsm-expand-state-catalog').click();
+  await expect(page.locator('.fsm-state-catalog')).not.toHaveClass(/collapsed/);
 });
 
 test('keeps an operator zoom after switching from FSM to LCD and back', async ({ page }) => {
