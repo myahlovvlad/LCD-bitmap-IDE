@@ -59,6 +59,24 @@ describe('animation commands', () => {
     expect(result.session.project.screens[screen.id].objects[0]).not.toHaveProperty('animationId', 'spin');
   });
 
+  it('refuses resizing an animation resource when a bound target would no longer fit', () => {
+    const project = projectWithAnimation();
+    const screen = project.screens[project.screenOrder[0]];
+    const bitmap = { id: 'bitmap', type: 'bitmap' as const, name: 'Bitmap', x: 0, y: 0, width: 8, height: 8, bytes: [0], zIndex: 0, visible: true, locked: false, source: 'user' as const, animationId: 'spin' };
+    const session = createProjectSession({ ...project, screens: { ...project.screens, [screen.id]: { ...screen, animationId: 'spin', objects: [bitmap] } } }, 0);
+
+    const result = executeProjectCommand(session, command(session.project, 0, 'animation.update', {
+      animationId: 'spin', updates: { width: 9 }
+    }), context());
+
+    expect(result.status).toBe('noop');
+    expect(result.session).toBe(session);
+    expect(result.session.workspace).toBe(session.workspace);
+    expect(result.session.project.animations.resources.spin.width).toBe(8);
+    expect(result.session.project.screens[screen.id].animationId).toBe('spin');
+    expect(result.session.project.screens[screen.id].objects[0]).toHaveProperty('animationId', 'spin');
+  });
+
   it('clears matching screen and bitmap bindings when deleting an animation', () => {
     const project = projectWithAnimation();
     const screen = project.screens[project.screenOrder[0]];

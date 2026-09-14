@@ -1126,9 +1126,19 @@ function updateAnimation(
   if (!animation) return noChange(workspace);
   const nextAnimation = { ...animation, ...updates, id: animationId };
   if (sameJson(animation, nextAnimation)) return noChange(workspace);
+  if (hasIncompatibleAnimationBinding(project, animationId, nextAnimation)) return noChange(workspace);
   return replaceAnimation(workspace, animationId, nextAnimation, context, [{
     kind: 'updated', entityType: 'animation', entityId: animationId, path: `/animations/resources/${animationId}`, before: animation, after: nextAnimation
   }]);
+}
+
+function hasIncompatibleAnimationBinding(project: LcdBitmapProject, animationId: string, resource: AnimationResource): boolean {
+  return Object.values(project.screens).some((screen) => (
+    (screen.animationId === animationId && (screen.width !== resource.width || screen.height !== resource.height))
+    || screen.objects.some((object) => object.type === 'bitmap'
+      && object.animationId === animationId
+      && (object.width !== resource.width || object.height !== resource.height))
+  ));
 }
 
 function deleteAnimation(workspace: ApplicationWorkspace, animationId: string, context: ApplicationCommandContext): ProjectMutationResult {
