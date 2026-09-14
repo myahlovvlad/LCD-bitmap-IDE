@@ -1656,6 +1656,11 @@ button:disabled {
 
 .state-node-screen.linked { color: #bfdbfe; }
 
+.state-node-screen.unlinked {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
 .state-node-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -3695,7 +3700,7 @@ button:disabled {
   overflow: hidden;
 }
 
-.lcd-workspace .workspace-canvas-column {
+.workspace-canvas-column {
   container-type: inline-size;
 }
 
@@ -3855,9 +3860,56 @@ button:disabled {
 }
 
 .fsm-canvas {
+  position: relative;
   flex: 1;
   min-height: 380px;
   background: var(--ide-canvas);
+}
+
+.fsm-empty-state {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.fsm-empty-state-card {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+  max-width: 360px;
+  padding: 28px 32px;
+  border: 1px dashed rgba(148, 163, 184, 0.55);
+  border-radius: 14px;
+  background: var(--ide-surface-raised, rgba(17, 24, 39, 0.92));
+  pointer-events: auto;
+}
+
+.fsm-empty-state-card h3 {
+  margin: 0;
+  color: var(--ide-text-primary);
+}
+
+.fsm-empty-state-card p {
+  margin: 0;
+  color: var(--ide-text-secondary);
+  font-size: 13px;
+}
+
+.fsm-empty-state-card button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1px solid var(--ide-selection-border, #60a5fa);
+  border-radius: 8px;
+  background: var(--ide-accent, #2563eb);
+  color: #fff;
+  font-weight: 600;
 }
 
 .fsm-readonly-mode .fsm-canvas {
@@ -5627,9 +5679,19 @@ button:disabled {
     justify-content: flex-start;
   }
 
+  /*
+    FSM/LCD workspaces set gridTemplateColumns inline from resizable-sidebar
+    state (see FsmWorkspace.tsx / LcdWorkspace.tsx). An inline style always
+    beats a stylesheet rule regardless of specificity, so this breakpoint
+    needs !important to actually take effect -- the same technique already
+    used by the FSM fullscreen override below. Both workspaces render five
+    grid children (sidebar, splitter, canvas, splitter, sidebar), so the
+    override must define five tracks too, or the splitter/inspector panes
+    get auto-placed into implicit tracks and the canvas collapses.
+  */
   .fsm-workspace,
   .lcd-workspace {
-    grid-template-columns: 220px minmax(390px, 1fr) 310px;
+    grid-template-columns: 220px 6px minmax(390px, 1fr) 6px 310px !important;
   }
 }
 
@@ -5650,14 +5712,10 @@ button:disabled {
 
   .workspace-root,
   .fsm-workspace,
+  .lcd-workspace,
   .control-panel-workspace,
   .preview-workspace {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-
-  .lcd-workspace:not(.lcd-workspace-resizable) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     height: auto;
   }
 
@@ -6839,6 +6897,91 @@ button:disabled {
   to { transform: rotate(360deg); }
 }
 .spin { animation: spin 1s linear infinite; }
+
+.font-import-preview {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--ide-border);
+  border-radius: 8px;
+  background: var(--ide-surface-raised);
+}
+
+.font-import-preview-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ide-text-secondary);
+  font-size: 11px;
+}
+
+.font-import-preview-meta strong {
+  overflow: hidden;
+  color: var(--ide-text);
+  font-family: var(--ide-font-mono);
+  text-overflow: ellipsis;
+}
+
+.font-import-preview svg {
+  width: 100%;
+  height: 54px;
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.font-import-preview-background { fill: #8aac59; }
+.font-import-preview-pixel { fill: #17230d; }
+
+.settings-status-badge.offline {
+  color: var(--ide-danger);
+  border-color: var(--ide-danger);
+}
+
+.settings-server-details {
+  opacity: 0.78;
+  font-size: 11px;
+}
+
+.workspace-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-host > .workspace-root,
+.workspace-host > [class$="-workspace"] {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.workspace-navigator-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--ide-border);
+  border-radius: 7px;
+  background: var(--ide-surface-raised);
+  color: var(--ide-text-secondary);
+  box-shadow: var(--ide-shadow-sm);
+}
+
+.workspace-navigator-toggle:hover {
+  border-color: var(--ide-accent);
+  color: var(--ide-text);
+}
+
+.element-export-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+}
 
 /* ─── Alarm Workspace ─────────────────────────────────────────────────────── */
 

@@ -45,6 +45,11 @@ jobs:
 
       - run: npm ci
 
+      - run: npm ci --prefix apps/tauri
+
+      - name: Generate shared Electron and Tauri icons
+        run: npm run icons:generate
+
       - name: Build Electron distributable
         shell: bash
         run: |

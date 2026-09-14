@@ -269,7 +269,10 @@ test('keeps an operator zoom after switching from FSM to LCD and back', async ({
   const canvasBox = await canvas.boundingBox();
   if (!canvasBox) throw new Error('FSM canvas is unavailable.');
   await page.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
-  await page.mouse.wheel(0, -620);
+  // The initial fit-to-view scale depends on canvas width, which itself
+  // depends on the active responsive breakpoint, so scroll well past any
+  // plausible starting scale rather than relying on a single fixed delta.
+  await page.mouse.wheel(0, -2400);
   await expect.poll(scaleOf).toBeGreaterThan(1);
   const expectedScale = await scaleOf();
   await expect.poll(async () => page.evaluate((expected) => {
@@ -305,7 +308,10 @@ test('restores the FSM viewport after reload without changing project metadata',
   const canvasBox = await page.locator('.fsm-canvas').boundingBox();
   if (!canvasBox) throw new Error('FSM canvas is unavailable.');
   await page.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
-  await page.mouse.wheel(0, -620);
+  // The initial fit-to-view scale depends on canvas width, which itself
+  // depends on the active responsive breakpoint, so scroll well past any
+  // plausible starting scale rather than relying on a single fixed delta.
+  await page.mouse.wheel(0, -2400);
   await expect.poll(scaleOf).toBeGreaterThan(1);
   const expectedScale = await scaleOf();
 

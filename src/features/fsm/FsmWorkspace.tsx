@@ -87,13 +87,32 @@ interface FsmFlowInstance {
   setViewport: (viewport: Viewport, options?: { duration?: number }) => void;
 }
 
-function edgeDisplayLabel(project: LcdBitmapProject, transition: FsmTransition): string {
-  if (transition.labelMode === 'auto') return 'Auto';
+function edgeDisplayLabel(project: LcdBitmapProject, transition: FsmTransition, labels: UiText): string {
+  if (transition.labelMode === 'auto') return labels.autoLabel;
   const button = transition.trigger.buttonId
     ? project.controlPanel.elements[transition.trigger.buttonId]
     : null;
-  if (transition.labelMode === 'event') return project.fsm.events[transition.trigger.eventId]?.name ?? 'Auto';
-  return button?.type === 'button' && button.label.trim() ? button.label : 'Auto';
+  if (transition.labelMode === 'event') return project.fsm.events[transition.trigger.eventId]?.name ?? labels.autoLabel;
+  return button?.type === 'button' && button.label.trim() ? button.label : labels.autoLabel;
+}
+
+function transitionKindLabel(kind: string, labels: UiText): string {
+  switch (kind) {
+    case 'navigation': return labels.transitionKindNavigation;
+    case 'guarded': return labels.transitionKindGuarded;
+    case 'timeout': return labels.transitionKindTimeout;
+    case 'backend': return labels.transitionKindBackend;
+    default: return kind;
+  }
+}
+
+function mechanismLabel(mechanism: string | undefined, labels: UiText): string {
+  switch (mechanism) {
+    case 'button': return labels.mechanismButton;
+    case 'timer': return labels.mechanismTimer;
+    case 'fact': return labels.mechanismFact;
+    default: return labels.mechanismEvent;
+  }
 }
 
 /** One entry state per subsystem makes the default canvas a readable system map. */
@@ -474,6 +493,10 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         allowedButtons: [...new Set(allowedButtons)],
         stateMark,
         editingEnabled: editing,
+        noLayerLabel: labels.noLayerAssigned,
+        lcdNotLinkedLabel: labels.lcdNotLinked,
+        allowedButtonsPrefix: labels.allowedButtonsPrefix,
+        noButtonsTitle: labels.noButtonsTrigger,
       } satisfies FsmStateNodeData];
     }));
   }, [editing, project, labels]);
@@ -492,10 +515,19 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           // onSelectionChange creates a selection -> nodes -> selection loop
           // for marquee and multi-select gestures.
           zIndex: 1,
-          data: stateNodeData.get(stateId) ?? { compact: true, state, allowedButtons: [], stateMark: { kind: 'process', label: labels.processState } }
+          data: stateNodeData.get(stateId) ?? {
+            compact: true,
+            state,
+            allowedButtons: [],
+            stateMark: { kind: 'process', label: labels.processState },
+            noLayerLabel: labels.noLayerAssigned,
+            lcdNotLinkedLabel: labels.lcdNotLinked,
+            allowedButtonsPrefix: labels.allowedButtonsPrefix,
+            noButtonsTitle: labels.noButtonsTrigger
+          }
         };
       })
-    : [], [project, canvasStateIds, focusedSubsystem, overviewMode, overviewLayout, overviewOverrides, stateNodeData, labels.processState]);
+    : [], [project, canvasStateIds, focusedSubsystem, overviewMode, overviewLayout, overviewOverrides, stateNodeData, labels]);
 
   const restoreCanvasViewport = (): void => {
     if (presentation !== '2d' || !viewportContext || !viewportTargetKey || !calculatedNodes.length) return;
@@ -574,7 +606,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         source: transition.from,
         target: transition.to,
         label: [
-          edgeDisplayLabel(project, transition),
+          edgeDisplayLabel(project, transition, labels),
           transition.condition ? `[${transition.condition}]` : ''
         ].filter(Boolean).join(' '),
         type: 'fsmTransition',
@@ -590,7 +622,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         zIndex: transition.id === selectedTransitionId ? 90 : 0
       };
     });
-  }, [project, selectedTransitionId, canvasTransitions, edgeRoutes]);
+  }, [project, selectedTransitionId, canvasTransitions, edgeRoutes, labels]);
 
   if (!project) {
     return <section className="workspace-empty">{labels.noProjectLoaded}</section>;
@@ -616,6 +648,16 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
     setFocusedSubsystem(null);
     setOverviewMode(false);
     setVisibleSubsystems([]);
+  };
+
+  // A first-time user reads "Add state" as the obvious first action; requiring
+  // a separate, unexplained "Edit graph" toggle first is the single biggest
+  // source of "I clicked + and nothing happened" confusion. Turning edit mode
+  // on as part of the same click keeps the safety of a read-only default
+  // without making it a hidden prerequisite.
+  const addStateAndEnableEditing = (): void => {
+    if (!editing) setEditing(true);
+    addFsmState();
   };
 
   const selectedState = selectedStateId ? project.fsm.states[selectedStateId] : null;
@@ -684,7 +726,17 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         <header className="workspace-section-header">
           <h2>{labels.states}</h2>
           <div className="sidebar-header-actions">
-            {!layout.leftCollapsed ? <button type="button" onClick={addFsmState} title={labels.addState} data-testid="fsm-add-state" disabled={!editing}><Plus size={16} /></button> : null}
+            {!layout.leftCollapsed ? (
+              <button
+                type="button"
+                onClick={addFsmState}
+                title={editing ? labels.addState : labels.addStateNeedsEditing}
+                data-testid="fsm-add-state"
+                disabled={!editing}
+              >
+                <Plus size={16} />
+              </button>
+            ) : null}
             <button
               type="button"
               className="sidebar-collapse-button"
@@ -911,6 +963,17 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           ) : null
         ) : (
           <section className={`fsm-canvas fsm-canvas-${presentation}`}>
+            {project.fsm.stateOrder.length === 0 ? (
+              <div className="fsm-empty-state" data-testid="fsm-empty-state">
+                <div className="fsm-empty-state-card">
+                  <h3>{labels.emptyFsmTitle}</h3>
+                  <p>{labels.emptyFsmBody}</p>
+                  <button type="button" onClick={addStateAndEnableEditing} data-testid="fsm-empty-state-cta">
+                    <Plus size={16} /> {labels.emptyFsmCta}
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {presentation === '3d' ? (
               <>
                 <Suspense fallback={<div className="fsm-webgl-loading">{labels.loading3dView}</div>}>
@@ -1054,7 +1117,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           ) : null}
           {!contextMenu.stateId && !contextMenu.transitionId ? (
             <>
-              <button type="button" role="menuitem" onClick={() => { addFsmState(); setContextMenu(null); }}>{labels.addState}</button>
+              <button type="button" role="menuitem" onClick={() => { addFsmState(); setContextMenu(null); }} disabled={!editing} title={editing ? undefined : labels.addStateNeedsEditing}>{labels.addState}</button>
               <button type="button" role="menuitem" onClick={() => { void runElkLayout('tree'); setContextMenu(null); }}>{labels.ctxArrangeTree}</button>
               <button type="button" role="menuitem" onClick={() => { setFocusedSubsystem(null); setOverviewMode(true); setContextMenu(null); }}>{labels.ctxShowOverview}</button>
               <button type="button" role="menuitem" onClick={() => { setFocusedSubsystem(null); setOverviewMode(false); setContextMenu(null); }}>{labels.ctxShowAllScreens}</button>
@@ -1408,12 +1471,12 @@ function TransitionLinkPreview({
   const button = transition.trigger.buttonId ? project.controlPanel.elements[transition.trigger.buttonId] : null;
   const caption = button?.type === 'button'
     ? button.label
-    : transition.labelMode === 'auto' ? 'Auto' : project.fsm.events[transition.trigger.eventId]?.name ?? 'Auto';
+    : transition.labelMode === 'auto' ? labels.autoLabel : project.fsm.events[transition.trigger.eventId]?.name ?? labels.autoLabel;
   const backendProcess = transition.backendProcessId ? project.backendProcesses[transition.backendProcessId] : null;
   const cliCommands = backendProcess?.commands.map((command) => project.cliCatalog?.[command]?.command ?? command) ?? [];
   const cards = [
-    { title: 'Исходное состояние', state: from },
-    { title: 'Целевое состояние', state: to }
+    { title: labels.sourceState, state: from },
+    { title: labels.targetState, state: to }
   ];
   return (
     <section className="transition-link-preview" aria-label={labels.transitionLinkedScreensAria}>
@@ -1429,7 +1492,7 @@ function TransitionLinkPreview({
             <article key={title}>
               <small>{title}</small>
               <button type="button" onClick={() => state && selectState(state.id)} title={labels.selectStateOnCanvas}>
-                <strong>{state?.title ?? 'Состояние отсутствует'}</strong>
+                <strong>{state?.title ?? labels.stateNotAssigned}</strong>
                 {screen ? (
                   <LCDCanvas
                     canvasData={{ stateId: screen.id, width: screen.width, height: screen.height, objects: screen.objects, selectedObjectIds: [], updatedAt: screen.updatedAt }}
@@ -1444,7 +1507,7 @@ function TransitionLinkPreview({
           );
         })}
       </div>
-      <small className="transition-link-meta">{transition.kind} · {transition.trigger.mechanism ?? 'event'}{transition.condition ? ` · ${transition.condition}` : ''}</small>
+      <small className="transition-link-meta">{transitionKindLabel(transition.kind, labels)} · {mechanismLabel(transition.trigger.mechanism, labels)}{transition.condition ? ` · ${transition.condition}` : ''}</small>
       {cliCommands.length ? (
         <section className="transition-cli-command" aria-label={labels.cliTransitionCommandsAria}>
           <strong>{labels.cliPrefixLabel} {backendProcess?.name}</strong>

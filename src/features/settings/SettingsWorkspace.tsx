@@ -1,5 +1,6 @@
 import { useRef, type ChangeEvent } from 'react';
 import type React from 'react';
+import { useEffect, useState } from 'react';
 import { Globe2, Monitor, Server } from 'lucide-react';
 import { UI_TEXT } from '../../renderer/config/i18n';
 import { DISPLAY_PROFILES, SUPPORTED_LANGUAGES } from '../../renderer/config/constants';
@@ -24,6 +25,27 @@ export function SettingsWorkspace({
   const { project, language, setLanguage, setAuthoringLanguage, updateProjectMetadata, updateDisplayConfig } = useProjectStore();
   const labels = UI_TEXT[language];
   const isDesktop = Boolean(window.spectroDesigner);
+  const hasAutomationStatus = Boolean(window.spectroDesigner?.automationStatus);
+  const [automationStatus, setAutomationStatus] = useState<Awaited<ReturnType<NonNullable<NonNullable<typeof window.spectroDesigner>['automationStatus']>>> | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const readStatus = window.spectroDesigner?.automationStatus;
+    if (!readStatus) return undefined;
+    const refresh = (): void => {
+      void readStatus().then((status) => {
+        if (active) setAutomationStatus(status);
+      }).catch(() => {
+        if (active) setAutomationStatus(null);
+      });
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 1500);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
   const profileFileInput = useRef<HTMLInputElement>(null);
 
   if (!project) {
@@ -242,14 +264,25 @@ export function SettingsWorkspace({
             <div className="settings-server-status">
               <div className="settings-server-row">
                 <span>{labels.settingsApiStatus}</span>
-                <code>http://127.0.0.1:{API_PORT}</code>
-                <span className="settings-status-badge">{labels.settingsApiMcpRunning}</span>
+                <code>{automationStatus?.rest.endpoint ?? `http://127.0.0.1:${API_PORT}`}</code>
+                <span className={`settings-status-badge${automationStatus && !automationStatus.rest.running ? ' offline' : ''}`}>
+                  {automationStatus ? (automationStatus.rest.running ? labels.settingsApiMcpRunning : '—') : (hasAutomationStatus ? '…' : labels.settingsApiMcpRunning)}
+                </span>
               </div>
               <div className="settings-server-row">
                 <span>{labels.settingsMcpStatus}</span>
-                <code>http://127.0.0.1:{MCP_PORT}/mcp</code>
-                <span className="settings-status-badge">{labels.settingsApiMcpRunning}</span>
+                <code>{automationStatus?.mcp.endpoint ?? `http://127.0.0.1:${MCP_PORT}/mcp`}</code>
+                <span className={`settings-status-badge${automationStatus && !automationStatus.mcp.running ? ' offline' : ''}`}>
+                  {automationStatus ? (automationStatus.mcp.running ? labels.settingsApiMcpRunning : '—') : (hasAutomationStatus ? '…' : labels.settingsApiMcpRunning)}
+                </span>
               </div>
+              {automationStatus?.mcp.running ? (
+                <div className="settings-server-row settings-server-details">
+                  <span>{labels.settingsMcpProtocolPrefix} {automationStatus.mcp.protocolVersion}</span>
+                  <code>{automationStatus.mcp.healthEndpoint}</code>
+                  <span>{automationStatus.authConfigured ? labels.settingsAuthModeToken : labels.settingsAuthModeLocalhost}</span>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </section>

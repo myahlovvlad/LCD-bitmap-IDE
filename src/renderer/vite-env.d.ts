@@ -16,6 +16,11 @@ declare global {
     spectroDesigner?: {
       platform: NodeJS.Platform;
       clipboardWrite?: (text: string) => Promise<boolean>;
+      automationStatus?: () => Promise<{
+        rest: { running: boolean; endpoint: string };
+        mcp: { running: boolean; endpoint: string; healthEndpoint: string; protocolVersion: string };
+        authConfigured: boolean;
+      }>;
       manualExportPdf?: (html: string, filename: string) => Promise<boolean>;
       ipcSend?: (channel: string, payload: unknown) => void;
       onMutateRequest?: (handler: (requestId: string, action: string, payload: unknown) => void) => void;

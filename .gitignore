@@ -49,3 +49,10 @@ LCD-*.html
 
 # Generated outputs
 docs/generated/
+
+# Local assistant tooling and client project files (not part of this repo)
+.claude/
+.superpowers/
+.github/copilot-instructions.md
+.github/instructions/
+ECROS-5400UV/

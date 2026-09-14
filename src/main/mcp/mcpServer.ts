@@ -41,6 +41,7 @@ import type { AutomationOutcome } from '../../shared/automation/contracts.js';
 import { AutomationAuthorizationError, authorizeLocalAutomation, createAutomationRequest, splitMcpArguments } from '../automationTransport.js';
 
 export const MCP_PORT = 8767;
+const MCP_PROTOCOL_VERSION = '2024-11-05';
 
 const CORS = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -104,6 +105,15 @@ export function stopMcpServer(): void {
   sseClients.clear();
 }
 
+export function getMcpServerStatus(): { running: boolean; endpoint: string; healthEndpoint: string; protocolVersion: string } {
+  return {
+    running: mcpServer !== null,
+    endpoint: `http://127.0.0.1:${MCP_PORT}/mcp`,
+    healthEndpoint: `http://127.0.0.1:${MCP_PORT}/health`,
+    protocolVersion: MCP_PROTOCOL_VERSION
+  };
+}
+
 async function mutate(action: string, payload: unknown): Promise<unknown> {
   if (!_mainWindow) throw new Error('No renderer window available');
   const requestId = randomUUID();
@@ -137,6 +147,23 @@ function handleMcpRequest(req: IncomingMessage, res: ServerResponse): void {
     res.setHeader('Vary', 'Origin');
   }
   if (req.method === 'OPTIONS') { res.writeHead(204, CORS); res.end(); return; }
+  const url = req.url ?? '/';
+
+  // Health checks stay local-only but read-free, so they never require the
+  // bearer token: a client should be able to confirm the server is up before
+  // it has (or needs) credentials for project access.
+  if (url === '/health' && req.method === 'GET') {
+    const out = JSON.stringify({
+      ok: true,
+      transport: 'electron-mcp',
+      endpoint: `http://127.0.0.1:${MCP_PORT}/mcp`,
+      protocolVersion: MCP_PROTOCOL_VERSION
+    });
+    res.writeHead(200, { ...CORS, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(out) });
+    res.end(out);
+    return;
+  }
+
   const authorization = authorizeLocalAutomation(req.headers);
   if (!authorization.allowed) {
     const out = JSON.stringify(rpcError(null, -32001, authorization.message));
@@ -144,7 +171,6 @@ function handleMcpRequest(req: IncomingMessage, res: ServerResponse): void {
     res.end(out);
     return;
   }
-  const url = req.url ?? '/';
 
   if (url === '/mcp' && req.method === 'GET' && req.headers['accept'] === 'text/event-stream') {
     res.writeHead(200, { ...CORS, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
@@ -157,8 +183,15 @@ function handleMcpRequest(req: IncomingMessage, res: ServerResponse): void {
   if (url === '/mcp' && req.method === 'POST') {
     readBody(req).then((body) => {
       const msg = JSON.parse(body) as { jsonrpc: string; id?: string | number; method: string; params?: unknown };
+      if (msg.method === 'notifications/initialized') {
+        // A JSON-RPC notification carries no id and expects no response body.
+        res.writeHead(204, CORS);
+        res.end();
+        return null;
+      }
       return dispatchRpc(msg, req.headers);
     }).then((response) => {
+      if (response === null) return;
       const out = JSON.stringify(response);
       res.writeHead(200, { ...CORS, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(out) });
       res.end(out);
@@ -179,10 +212,13 @@ async function dispatchRpc(msg: { jsonrpc: string; id?: string | number; method:
   switch (method) {
     case 'initialize':
       return rpcOk(id, {
-        protocolVersion: '2024-11-05',
+        protocolVersion: MCP_PROTOCOL_VERSION,
         capabilities: { resources: { subscribe: false }, tools: {} },
         serverInfo: { name: 'lcd-bitmap-ide', version: '1.0.0' }
       });
+
+    case 'ping':
+      return rpcOk(id, {});
 
     case 'resources/list':
       return rpcOk(id, { resources: [

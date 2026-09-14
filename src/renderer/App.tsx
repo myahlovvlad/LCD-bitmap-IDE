@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
   BookOpen,
+  Compass,
   Code2,
   Download,
   FolderOpen,
@@ -218,7 +219,10 @@ function AppShell(): React.ReactElement {
         return;
       }
       const key = event.key.toLowerCase();
-      if (key === 'z') {
+      if (key === 'b') {
+        event.preventDefault();
+        setNavigatorCollapsed((value) => !value);
+      } else if (key === 'z') {
         event.preventDefault();
         undo();
       } else if (key === 'y') {
@@ -421,7 +425,7 @@ function AppShell(): React.ReactElement {
           <button type="button" onClick={redo} disabled={!canRedo} data-testid="app-redo"><RotateCw size={16} />{labels.redo}</button>
           <button type="button" onClick={() => setShowManual(true)}><BookOpen size={16} />{labels.manual}</button>
           <button type="button" onClick={() => setShowWizard(true)}><Wand2 size={16} />{labels.wizard}</button>
-          <button type="button" onClick={() => setShowTour(true)}><BookOpen size={16} />{labels.startTour}</button>
+          <button type="button" onClick={() => setShowTour(true)}><Compass size={16} />{labels.startTour}</button>
           <select
             aria-label={labels.versionHistory}
             value=""
@@ -480,13 +484,14 @@ function AppShell(): React.ReactElement {
             onClick={() => setNavigatorCollapsed((value) => !value)}
             aria-pressed={navigatorCollapsed}
             aria-label={navigatorCollapsed ? labels.expandNavigator : labels.collapseNavigator}
-            title={navigatorCollapsed ? labels.expandNavigator : labels.collapseNavigator}
+            title={`${navigatorCollapsed ? labels.expandNavigator : labels.collapseNavigator} · Ctrl+B`}
           >
             {navigatorCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            <span className="workspace-nav-label">{navigatorCollapsed ? labels.expandNavigator : labels.collapseNavigator}</span>
           </button>
           {activeNavigationGroup.modes.map((mode) => <WorkspaceButton key={mode} mode={mode} active={location.mode === mode} onClick={() => navigateTo({ mode })} icon={workspaceIcon(mode)} label={workspaceLabel(mode, labels)} />)}
         </nav>
-        <section className="workspace-host">
+      <section className="workspace-host">
         <Suspense fallback={<section className="workspace-empty">{labels.loadingWorkspace}</section>}>
           {location.mode === 'fsm' ? <FsmWorkspace requestedStateId={location.stateId} /> : null}
           {location.mode === 'lcd' ? <EditorWorkspaceFrame mode="lcd" project={project} labels={labels}><LcdWorkspace requestedScreenId={location.screenId} /></EditorWorkspaceFrame> : null}

@@ -76,6 +76,14 @@ Endpoint:
 http://127.0.0.1:8767/mcp
 ```
 
+Both Electron and Tauri expose an unauthenticated health probe on the same port, so a client can confirm the server is reachable before it has (or needs) a bearer token:
+
+```bash
+curl http://127.0.0.1:8767/health
+```
+
+The Settings workspace (**Settings → API & MCP servers**) shows live running/stopped state, the resolved endpoints and whether token auth is configured for both desktop shells identically — it reads this over IPC (`automationStatus`), not by polling the HTTP port itself.
+
 Electron retains the compatibility resources below; portable clients should prefer registry tools because Tauri intentionally exposes one shared command contract rather than a second project cache:
 
 - `project://current`

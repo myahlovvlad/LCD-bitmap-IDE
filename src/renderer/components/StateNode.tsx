@@ -11,6 +11,10 @@ export interface FsmStateNodeData extends Record<string, unknown> {
   allowedButtons: string[];
   stateMark: { kind: string; label: string };
   editingEnabled?: boolean;
+  noLayerLabel: string;
+  lcdNotLinkedLabel: string;
+  allowedButtonsPrefix: string;
+  noButtonsTitle: string;
 }
 
 export const StateNode = memo(function StateNode({ id, selected, data }: NodeProps): React.ReactElement {
@@ -83,11 +87,11 @@ export const StateNode = memo(function StateNode({ id, selected, data }: NodePro
       ) : (
         <strong>{state.title || id}</strong>
       )}
-      <small>{id} / {state.subsystem || 'unknown'}</small>
+      <small title={id}>{state.subsystem || nodeData.noLayerLabel}</small>
       <span className={`state-node-flags state-node-flags-${stateMark.kind}`}>{stateMark.label}</span>
-      <div className="state-node-runtime" title={nodeData.screenName ? `Связанный LCD-экран: ${nodeData.screenName}` : 'LCD-экран не привязан'}>
-        <span className={nodeData.screenName ? 'state-node-screen linked' : 'state-node-screen'}>{nodeData.screenName ? `LCD · ${nodeData.screenName}` : 'LCD не привязан'}</span>
-        <span className="state-node-buttons" title={allowedButtons.length ? `Разрешены: ${allowedButtons.join(', ')}` : 'Нет разрешённых кнопок'}>
+      <div className="state-node-runtime" title={nodeData.screenName ? nodeData.screenName : nodeData.lcdNotLinkedLabel}>
+        <span className={nodeData.screenName ? 'state-node-screen linked' : 'state-node-screen unlinked'}>{nodeData.screenName ? `LCD · ${nodeData.screenName}` : nodeData.lcdNotLinkedLabel}</span>
+        <span className="state-node-buttons" title={allowedButtons.length ? `${nodeData.allowedButtonsPrefix}: ${allowedButtons.join(', ')}` : nodeData.noButtonsTitle}>
           {allowedButtons.length ? allowedButtons.slice(0, 3).map((button) => <b key={button}>{button}</b>) : <b>—</b>}
           {allowedButtons.length > 3 ? <b>+{allowedButtons.length - 3}</b> : null}
         </span>
