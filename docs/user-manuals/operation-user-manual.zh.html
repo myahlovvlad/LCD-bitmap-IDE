@@ -1,98 +1,198 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LCD-bitmap IDE 操作用户手册</title>
-  <style>
-  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #15211d; background: #f7f8f4; line-height: 1.62; letter-spacing: 0; }
-  header { padding: 48px 56px 34px; background: #10201a; color: #fff; }
-  .eyebrow { margin: 0 0 10px; color: #9ed8bf; font-weight: 700; }
-  h1 { max-width: 920px; margin: 0; font-size: 38px; line-height: 1.12; letter-spacing: 0; }
-  .subtitle { max-width: 860px; margin: 16px 0 0; color: #d9e8df; font-size: 18px; }
-  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 22px 56px; background: #e6eee8; border-bottom: 1px solid #cdd8d0; }
-  .toc a { color: #195d48; text-decoration: none; font-weight: 650; }
-  main { max-width: 980px; margin: 0 auto; padding: 28px 32px 56px; }
-  section { margin: 0 0 34px; padding: 26px; background: #fff; border: 1px solid #d7ded8; border-radius: 8px; break-inside: avoid; }
-  h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
-  p { margin: 0 0 12px; }
-  ol, ul { margin: 8px 0 0; padding-left: 24px; }
-  li { margin: 6px 0; }
-  .checklist li::marker { content: "□ "; color: #20765a; }
-  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-  th, td { border: 1px solid #cfd9d2; padding: 9px 10px; text-align: left; vertical-align: top; }
-  th { background: #eef4ef; }
-  pre { margin: 14px 0 0; padding: 14px; overflow-x: auto; border-radius: 6px; background: #101816; color: #d7f5e7; font-size: 13px; }
-  footer { padding: 24px 56px; color: #5c6761; }
-  @page { size: A4; margin: 14mm; }
-  @media print { header, .toc, footer { padding-left: 0; padding-right: 0; } body { background: #fff; } section { border: 1px solid #cfd9d2; } }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LCD-bitmap IDE 操作手册</title>
+<style>
+  :root {
+    --paper: #f6f5ef; --panel: #eeece1; --line: #d9d7c8; --ink: #1c2118; --ink-soft: #565a4c;
+    --phosphor: #4f6b1a; --phosphor-deep: #3c5313; --blueprint: #3a5a78; --code-bg: #e8e6d8;
+    --shadow: 0 1px 2px rgba(28,33,24,0.06), 0 8px 24px rgba(28,33,24,0.06); --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Charter","Iowan Old Style","Palatino Linotype",Georgia,"Noto Serif","Noto Serif SC",serif; font-size: 16.5px; line-height: 1.62; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: "JetBrains Mono","Cascadia Code",ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace; }
+  a { color: var(--blueprint); }
+  h1, h2, h3 { font-weight: 700; color: var(--ink); }
+  .masthead { border-bottom: 1px solid var(--line); padding: 48px 24px 34px; }
+  .masthead-inner { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; }
+  .badge-lcd { width: 88px; height: 88px; border-radius: 6px; background: var(--phosphor-deep); display: grid; place-items: center; box-shadow: var(--shadow); flex: 0 0 auto; }
+  .badge-lcd svg { width: 60px; height: 36px; }
+  .mast-label { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--phosphor); margin: 0 0 8px; }
+  .langbar { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11.5px; margin: 0 0 8px; color: var(--ink-soft); }
+  .langbar a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px dotted var(--ink-soft); }
+  h1.title { margin: 0 0 8px; font-size: 38px; line-height: 1.08; letter-spacing: -0.01em; }
+  .subtitle { margin: 0; max-width: 64ch; color: var(--ink-soft); font-size: 17px; }
+  .mast-meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 12px; color: var(--ink-soft); }
+  .mast-meta b { color: var(--ink); font-weight: 600; }
+  .shell { max-width: 980px; margin: 0 auto; padding: 36px 24px 90px; display: grid; grid-template-columns: 210px minmax(0,1fr); gap: 44px; align-items: start; }
+  nav.toc { border-right: 1px solid var(--line); padding-right: 18px; }
+  nav.toc h2 { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 12px; font-weight: 600; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: toc; }
+  nav.toc a { counter-increment: toc; display: flex; gap: 8px; padding: 5px 4px; color: var(--ink-soft); text-decoration: none; font-size: 13px; line-height: 1.35; }
+  nav.toc a::before { content: counter(toc, decimal-leading-zero); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 10.5px; color: var(--phosphor); padding-top: 1px; }
+  main { min-width: 0; }
+  section.chapter { padding-top: 6px; margin-bottom: 54px; }
+  .chap-eyebrow { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--phosphor); margin: 0 0 6px; }
+  h2.chap-title { font-size: 25px; margin: 0 0 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .chapter p, .lede { max-width: 68ch; }
+  .lede { font-size: 17.5px; color: var(--ink-soft); }
+  h3.sub { font-size: 16px; margin: 24px 0 8px; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; }
+  ol.steps, ul.points { margin: 10px 0 18px; padding-left: 0; max-width: 68ch; display: grid; gap: 9px; list-style: none; counter-reset: step; }
+  ol.steps li { counter-increment: step; display: grid; grid-template-columns: 24px 1fr; gap: 9px; }
+  ol.steps li::before { content: counter(step); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; font-weight: 700; color: var(--phosphor-deep); background: var(--panel); border: 1px solid var(--line); border-radius: 50%; width: 20px; height: 20px; display: grid; place-items: center; }
+  ul.points li { display: grid; grid-template-columns: 13px 1fr; gap: 9px; }
+  ul.points li::before { content: ""; width: 7px; height: 7px; margin-top: 7px; background: var(--phosphor); border-radius: 1px; }
+  figure.shot { margin: 18px 0 22px; max-width: 100%; }
+  figure.shot img { display: block; width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  figure.shot figcaption { margin-top: 8px; font-size: 12.5px; color: var(--ink-soft); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; line-height: 1.5; }
+  .callout { max-width: 68ch; margin: 16px 0; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--phosphor); border-radius: 8px; font-size: 15px; }
+  .callout.warn { border-left-color: var(--blueprint); }
+  code, kbd { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 0.86em; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; max-width: 100%; font-size: 13.5px; }
+  table th, table td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+  table th { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); background: var(--panel); }
+  .chip { display: inline-block; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); background: var(--panel); }
+  .end { max-width: 68ch; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 13.5px; }
+  @page { size: A4; margin: 16mm 14mm; }
+  @media print {
+    .shell { grid-template-columns: 1fr; }
+    nav.toc { display: none; }
+    section.chapter { break-inside: avoid-page; page-break-inside: avoid; }
+    figure.shot { break-inside: avoid-page; }
+  }
+</style>
 </head>
 <body>
-  <header>
-    <p class="eyebrow">LCD-bitmap IDE</p>
-    <h1>LCD-bitmap IDE 操作用户手册</h1>
-    <p class="subtitle">面向新用户的流程：设计、检查并导出嵌入式 LCD 测量界面。</p>
-  </header>
-  <nav class="toc" aria-label="Table of contents"><a href="#chapter-1">1. 应用程序用途</a>
-<a href="#chapter-2">2. 安装与启动</a>
-<a href="#chapter-3">3. 打开演示项目</a>
-<a href="#chapter-4">4. 工作区概览</a>
-<a href="#chapter-5">5. 构建测量流程</a>
-<a href="#chapter-6">6. 设计 LCD 屏幕</a>
-<a href="#chapter-7">7. 绑定按钮、标签和过程</a>
-<a href="#chapter-8">8. 预览流程</a>
-<a href="#chapter-9">9. 导出到固件</a>
-<a href="#chapter-10">10. 保存、版本管理和交付</a>
-<a href="#chapter-11">11. 故障排除</a></nav>
-  <main><section id="chapter-1"><h2>1. 应用程序用途</h2>
-<p>LCD-bitmap IDE 是离线桌面工作台，用于设计单色 LCD 屏幕、有限状态机导航、控制面板绑定以及可交付给固件的导出文件。</p>
-<p>它适合围绕测量流程设计操作界面：设置、启动、运行进度、结果查看、警告和维护状态。</p>
-<p>应用本身不直接执行物理测量。真实数据采集需要仪器固件、后端服务或硬件连接器。LCD-bitmap IDE 用于在集成到目标固件之前设计和验证界面与运行行为。</p>
-<ul class="checklist"><li>创建或打开项目。</li><li>设计屏幕和 FSM 转换。</li><li>在预览中检查流程。</li><li>导出固件资源。</li></ul>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="badge-lcd" aria-hidden="true"><svg viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="62" height="38" rx="2" stroke="#c8e06a" stroke-width="2"/><rect x="9" y="9" width="4" height="4" fill="#c8e06a"/><rect x="17" y="9" width="4" height="4" fill="#c8e06a"/><rect x="25" y="9" width="4" height="4" fill="#c8e06a"/><rect x="9" y="17" width="4" height="4" fill="#c8e06a"/><rect x="25" y="17" width="4" height="4" fill="#c8e06a"/><rect x="9" y="25" width="4" height="4" fill="#c8e06a"/><rect x="17" y="25" width="4" height="4" fill="#c8e06a"/><rect x="25" y="25" width="4" height="4" fill="#c8e06a"/><circle cx="47" cy="20" r="9" stroke="#c8e06a" stroke-width="2"/><circle cx="47" cy="20" r="2.4" fill="#c8e06a"/><line x1="47" y1="11" x2="47" y2="14.6" stroke="#c8e06a" stroke-width="2"/><line x1="47" y1="25.4" x2="47" y2="29" stroke="#c8e06a" stroke-width="2"/><line x1="38" y1="20" x2="41.6" y2="20" stroke="#c8e06a" stroke-width="2"/><line x1="52.4" y1="20" x2="56" y2="20" stroke="#c8e06a" stroke-width="2"/></svg></div>
+    <div>
+      <p class="langbar"><a href="operation-user-manual.en.html">EN</a> · <a href="operation-user-manual.ru.html">RU</a></p>
+      <p class="mast-label">操作手册</p>
+      <h1 class="title">LCD-bitmap IDE</h1>
+      <p class="subtitle">面向嵌入式设备的单色 LCD 界面桌面设计工具：屏幕、导航状态机、物理控制面板、运行时标签与可直接用于固件的导出——全部保存在一个项目文件中。</p>
+      <div class="mast-meta"><span><b>软件版本</b> 0.1.18</span><span><b>项目格式</b> .lcdproj, schema 6</span><span><b>支持平台</b> Windows · Linux · macOS</span><span><b>桌面构建</b> Electron · Tauri</span></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+  <nav class="toc" aria-label="目录"><h2>目录</h2><ol><li><a href="#start">首次启动</a></li>
+<li><a href="#interface">界面结构</a></li>
+<li><a href="#fsm">FSM 编辑器</a></li>
+<li><a href="#lcd">LCD 屏幕编辑器</a></li>
+<li><a href="#raster">位图导入</a></li>
+<li><a href="#animation">动画</a></li>
+<li><a href="#panel">控制面板</a></li>
+<li><a href="#hmi">HMI 设计器</a></li>
+<li><a href="#hardware">标签、流程与报警</a></li>
+<li><a href="#runtime">运行时预览</a></li>
+<li><a href="#handoff">固件交付</a></li>
+<li><a href="#mcp">API 与 MCP 服务器</a></li>
+<li><a href="#trouble">故障排查</a></li></ol></nav>
+  <main>
+    <section class="chapter" id="start">
+  <p class="chap-eyebrow">第 1 章</p>
+  <h2 class="chap-title">首次启动</h2>
+  <p class="lede">本应用无需联网、无需安装依赖：整个项目就是一个 <code>.lcdproj</code> 文件。</p>
+<ol class="steps"><li><span>从 <a href="https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest">GitHub Releases</a> 下载适合你系统的安装包，或运行源码：<code>npm run electron:dev</code>。</span></li><li><span>在启动界面选择界面语言，然后选择四种入口之一：打开已有的 <code>.lcdproj</code>、新建项目、恢复自动保存，或打开内置演示项目。</span></li><li><span>首次使用建议选择 <b>Demo</b>——其中已包含相互关联的状态、屏幕和转换，可以安全地边看边学。</span></li></ol>
+<figure class="shot"><img src="assets/operation-manual/01-startup.png" alt="带有语言选择和四个入口按钮的 LCD-bitmap IDE 启动界面" /><figcaption><b>启动界面。</b>界面语言选择（EN / RU / ZH）与四个入口：打开项目、新建项目、恢复自动保存或打开演示项目。</figcaption></figure>
+<div class="callout"><p>项目每隔几秒会自动保存到 <code>localStorage</code>。这只是崩溃保护，并不能替代显式的 <b>Save project</b>——关闭会话前请务必手动将文件保存到磁盘。</p></div>
 </section>
-<section id="chapter-2"><h2>2. 安装与启动</h2>
-<ol><li>安装 Node.js 22 或更高版本以及 Git。</li><li>克隆仓库并运行 npm ci。</li><li>使用 npm run dev 启动浏览器版本，或使用 npm run electron:dev 启动桌面版本。</li><li>需要 REST API、MCP 自动化、PDF 导出或应用打包时，请使用桌面版本。</li></ol>
-<pre><code>git clone https://github.com/myahlovvlad/LCD-bitmap-IDE.git
-cd LCD-bitmap-IDE
-npm ci
-npm run electron:dev</code></pre>
+<section class="chapter" id="interface">
+  <p class="chap-eyebrow">第 2 章</p>
+  <h2 class="chap-title">界面结构</h2>
+  <p>左侧是按用途分组的紧凑工作区导航栏：<b>Interface</b>（屏幕与面板）、<b>Logic</b>（FSM 与报警）、<b>Hardware</b>（标签与流程）、<b>Verify &amp; deliver</b>（仿真与固件交付）。每个工作区都拥有各自可独立折叠的侧边栏。</p>
+<ul class="points"><li><span><span class="chip">Collapse navigator</span>（或按 <kbd>Ctrl+B</kbd>）只会把全局导航栏折叠成一条窄图标栏——当前工作区自身的侧边栏不受影响。</span></li><li><span>底部状态栏始终显示显示屏尺寸、FSM 状态/转换数量、屏幕与面板元素数量，以及校验状态和未保存更改的提示。</span></li><li><span>主题切换（Settings → Theme）支持浅色、深色和跟随系统三种模式。</span></li></ul>
 </section>
-<section id="chapter-3"><h2>3. 打开演示项目</h2>
-<p>在启动界面选择内置演示项目，或打开 examples/universal-lcd-demo.lcdproj。</p>
-<p>演示项目是通用的。它展示如何表示测量类界面，而不包含供应商固件、序列号或私有屏幕目录。</p>
-<ol><li>打开演示项目。</li><li>查看 FSM、LCD、Tags 和 Runtime 工作区。</li><li>不要一次修改所有内容。先修改一个屏幕或转换，然后预览。</li></ol>
+<section class="chapter" id="fsm">
+  <p class="chap-eyebrow">第 3 章</p>
+  <h2 class="chap-title">FSM 编辑器</h2>
+  <p class="lede">状态机是设备的导航地图：一个状态对应一个 LCD 屏幕，一次转换对应对按键、定时器或条件的响应。</p>
+<figure class="shot"><img src="assets/operation-manual/02-demo-loaded-fsm.png" alt="演示项目的 FSM 状态图，包含五个相互关联的状态" /><figcaption><b>只读模式下的 FSM 图。</b>左侧为状态目录，中间为转换图，右侧为所选元素的检查器。无论是否处于编辑模式，连接线始终可见。</figcaption></figure>
+<h3 class="sub">编辑模式</h3>
+<p>状态图默认以<i>只读</i>方式打开——这是为防止误改运行中逻辑而做出的有意设计。会修改图结构的控件（添加状态、删除、拖动）只有在显式开启 <span class="chip">Edit graph</span> 后才可用。</p>
+<figure class="shot"><img src="assets/operation-manual/04-fsm-edit-mode.png" alt="开启编辑模式的 FSM 编辑器，画布边框显示为蓝色" /><figcaption><b>编辑模式已开启</b>——画布边框变为蓝色，此时可以创建状态并拖动节点。</figcaption></figure>
+<h3 class="sub">创建状态与转换</h3>
+<ol class="steps"><li><span>开启 <span class="chip">Edit graph</span>，然后点击状态列表上方的 <b>+</b>，或在画布空白处右键 → <b>Add state</b>。</span></li><li><span>为状态命名，并按需要将其标记为 <b>Initial</b>（入口状态）或 <b>Terminal</b>（终止状态）。</span></li><li><span>要创建转换，可以在节点的连接点之间拖拽，也可以使用右侧检查器中的 <b>Transition routes</b> 区域——直接选择目标状态和事件，无需在画布上操作。</span></li><li><span>通过 <b>Linked LCD screen → Edit layout</b> 将状态关联到 LCD 屏幕，可直接跳转到其像素设计界面。</span></li></ol>
+<h3 class="sub">概览与过滤</h3>
+<p>当状态图较大时，开启 <span class="chip">Overview</span>——它只显示每个子系统的一个入口，而非完整图。当 Overview、子系统聚焦或图层过滤隐藏了部分转换时，工具栏会显示<b>“已显示 / 总数”</b>计数器及具体原因，旁边始终提供一键重置过滤的按钮。</p>
+<figure class="shot"><img src="assets/operation-manual/05-fsm-overview.png" alt="概览模式下的 FSM 编辑器，按子系统分组显示放大的状态卡片" /><figcaption><b>概览模式</b>按子系统和入口对状态分组——便于在大型项目中导航。</figcaption></figure>
 </section>
-<section id="chapter-4"><h2>4. 工作区概览</h2>
-<table><thead><tr><th>工作区</th><th>用途</th><th>新手得到的结果</th></tr></thead><tbody><tr><td>FSM</td><td>状态和转换</td><td>清晰的操作流程</td></tr><tr><td>LCD</td><td>128x64 像素级屏幕</td><td>可读的屏幕布局</td></tr><tr><td>Control panel</td><td>按钮和事件绑定</td><td>可预测的操作输入</td></tr><tr><td>Tags</td><td>屏幕和过程使用的命名值</td><td>可追踪的测量值</td></tr><tr><td>Runtime</td><td>交互式流程预览</td><td>固件导出前检查流程</td></tr></tbody></table>
+<section class="chapter" id="lcd">
+  <p class="chap-eyebrow">第 4 章</p>
+  <h2 class="chap-title">LCD 屏幕编辑器</h2>
+  <p class="lede">每个屏幕都是固定尺寸（通常为 128×64）的像素级精确单色帧缓冲，以带类型对象的画布形式编辑：文本、直线、矩形、位图、特殊元素。</p>
+<figure class="shot"><img src="assets/operation-manual/06-lcd-editor.png" alt="LCD 编辑器，左侧为画布工具，中间为屏幕预览，右侧为屏幕属性" /><figcaption><b>LCD 编辑器。</b>左侧为画布工具和对象类型，中间是精确的 128×64 预览，右侧用于将屏幕关联到 FSM 状态与图层。</figcaption></figure>
+<ul class="points"><li><span><b>Select / Add text / Line / Rectangle / Invert row / Special element / Glyph editor</b>——核心绘图工具；在导出之前，每个对象都保持可编辑状态（不会被栅格化）。</span></li><li><span>选中某个位图对象后即可使用 <b>Pixel editor</b>——逐像素精确编辑。</span></li><li><span>通过右侧的 <b>Linked FSM states</b> 面板，每个屏幕都可以同时关联到多个 FSM 状态和某个图层（例如“Demo”或自定义图层）。</span></li></ul>
 </section>
-<section id="chapter-5"><h2>5. 构建测量流程</h2>
-<p>先考虑操作员期望看到的状态，而不是先画像素。简单流程通常包含 Idle、Setup、Ready、Running、Result、Error 和 Service。</p>
-<p>每个状态都应回答一个问题：现在发生了什么，当前最重要的值是什么，用户可以执行什么操作。</p>
-<ol><li>在 FSM 中添加流程状态。</li><li>使用 START、NEXT、CANCEL 或 RETRY 等事件命名转换。</li><li>明确绘制错误转换。</li><li>在详细绘图前先运行 Runtime Preview。</li></ol>
+<section class="chapter" id="raster">
+  <p class="chap-eyebrow">第 5 章</p>
+  <h2 class="chap-title">位图导入</h2>
+  <p>可以把成品图像（徽标、图标、扫描件）转换为 1bpp 图像，并继续作为普通位图层逐像素编辑。</p>
+<figure class="shot"><img src="assets/operation-manual/18-pixel-importer.png" alt="带二值化阈值滑块的图像导入面板" /><figcaption><b>图像导入。</b>LCD 编辑器中的 <span class="chip">Import image</span> 标签页：PNG/JPEG/BMP/SVG → 阈值 + 抖动 → 1bpp。</figcaption></figure>
+<ol class="steps"><li><span>打开要放置图像的屏幕，切换到 <b>Import image</b> 标签页。</span></li><li><span>选择文件，调整 <b>Threshold</b>（阈值）和 <b>Dithering</b>（抖动），直到 128×64 预览清晰可辨。</span></li><li><span>点击 <b>Insert and edit bitmap</b>——图像会立即插入屏幕并被选中，同时打开像素编辑器供进一步精修。</span></li></ol>
 </section>
-<section id="chapter-6"><h2>6. 设计 LCD 屏幕</h2>
-<p>屏幕应便于快速读取。通常将当前状态放在顶部，关键数值放在中间，可执行操作放在底部附近。</p>
-<p>可以使用文本、线条、矩形、位图层以及进度条、指示器等特殊元素。避免装饰性内容占用屏幕。</p>
-<ul class="checklist"><li>文字在 128x64 上可读。</li><li>重要数值带单位。</li><li>当前可用操作清晰可见。</li><li>警告屏幕具有明显区别。</li></ul>
+<section class="chapter" id="animation">
+  <p class="chap-eyebrow">第 6 章</p>
+  <h2 class="chap-title">动画</h2>
+  <p class="lede">动画资源是一组有序的 1bpp 帧，每帧都有自己的持续时间，并共享一个循环标志。一个资源既可以绑定到整个屏幕，也可以只绑定到单个位图层，屏幕其余部分保持静态。</p>
+<figure class="shot"><img src="assets/operation-manual/08-lcd-animations-panel.png" alt="LCD 编辑器中的 Animations 标签页，带有新建动画按钮" /><figcaption><b>动画面板。</b><span class="chip">Animations</span> 标签页与 <span class="chip">Import image</span> 相邻——使用同一套转换流程生成动画帧。</figcaption></figure>
+<ol class="steps"><li><span>点击 <b>New animation</b>，为第一帧选择一张图像——尺寸取自所选位图对象，若未选中对象则取自屏幕尺寸。</span></li><li><span>从其他图像添加更多帧，调整每帧的持续时间（毫秒），并可复制、删除或重新排序。</span></li><li><span>为循环动画（例如等待指示器）开启 <b>Loop</b>，或将其保持关闭以生成单次播放序列。</span></li><li><span>使用播放 / 重播 / 进度条在确定性时钟下预览效果，然后通过 <b>Bind to screen</b>（整屏）或 <b>Bind to selected layer</b>（仅所选位图对象）绑定该资源。</span></li></ol>
+<div class="callout warn"><p>对于不断变化的数值（例如倒计时），请使用绑定 runtime 标签的文本字段，而不是动画：动画用于图形，不应该用几百张几乎相同的数字帧来实现。</p></div>
+<p>导出固件时，每个资源都会生成一个 <code>lcd_animation_frame_t</code> 帧数组（字节数据、字节数、持续时间），并包装为 <code>lcd_animation_t</code>（帧表、帧数、<code>loop</code> 标志）——屏幕与图层的绑定元数据会随之一并导出。</p>
 </section>
-<section id="chapter-7"><h2>7. 绑定按钮、标签和过程</h2>
-<p>按钮应触发与 FSM 转换匹配的事件。Tags 描述测量值、配置值或状态标志。Procedures 描述后端动作，例如开始读数、清除结果或进入维护流程。</p>
-<p>使用稳定的名称。sample_absorbance 比 value1 更容易维护。</p>
+<section class="chapter" id="panel">
+  <p class="chap-eyebrow">第 7 章</p>
+  <h2 class="chap-title">控制面板</h2>
+  <p>按钮和指示灯的物理布局与逻辑设计相互独立，并与 FSM 事件绑定。</p>
+<figure class="shot"><img src="assets/operation-manual/09-control-panel.png" alt="控制面板编辑器，左侧放置 LCD 屏幕，右侧为四个物理按钮" /><figcaption><b>控制面板编辑器。</b><span class="chip">LCD</span>、<span class="chip">Button</span>、<span class="chip">Label</span>、<span class="chip">Rectangle</span>、<span class="chip">Image</span> 等工具可用于搭建精确的外壳布局；每个按钮都绑定到一个 FSM 事件。</figcaption></figure>
+<ul class="points"><li><span><b>Group / Ungroup</b> 及对齐工具便于整齐排布大量元素。</span></li><li><span><b>Grid</b> 与 <b>Snap</b> 可按外壳的像素网格进行精确定位。</span></li><li><span>右下角的 <b>Panel validation</b> 面板会立即提示尚未绑定事件的按钮。</span></li></ul>
 </section>
-<section id="chapter-8"><h2>8. 预览流程</h2>
-<ol><li>打开 Runtime。</li><li>从初始状态开始。</li><li>按照真实操作顺序按下每个按钮。</li><li>检查所有测量状态屏幕是否按正确顺序出现。</li><li>测试错误和取消路径，不要只测试成功路径。</li></ol>
+<section class="chapter" id="hmi">
+  <p class="chap-eyebrow">第 8 章</p>
+  <h2 class="chap-title">HMI 设计器</h2>
+  <p>将屏幕与物理面板整合到同一个场景中，从而一次性检查整个交互场景：哪个按钮在哪个屏幕上做什么，涉及哪些标签和流程。</p>
+<figure class="shot"><img src="assets/operation-manual/10-hmi-designer.png" alt="HMI 设计器，左侧为仪表面板，右侧为场景、标签与流程" /><figcaption><b>HMI Designer。</b>提供 <span class="chip">Design</span> / <span class="chip">Simulate</span> / <span class="chip">Runtime</span> / <span class="chip">Coverage</span> 模式；右侧栏会追踪当前场景涉及的状态、屏幕、按钮、标签、流程与报警。</figcaption></figure>
+<p><b>Coverage</b> 模式有助于找出从未在任何场景中使用过的状态或面板元素——在交付固件团队之前非常有用。</p>
 </section>
-<section id="chapter-9"><h2>9. 导出到固件</h2>
-<p>流程稳定后，可将屏幕导出为 C headers、binary frame buffers、XBM、Arduino PROGMEM、Rust embedded-graphics 或 ESP-IDF 资源。</p>
-<p>刷写硬件之前，请确认目标显示屏使用相同的分辨率、page order、bit order 和单色格式。</p>
+<section class="chapter" id="hardware">
+  <p class="chap-eyebrow">第 9 章</p>
+  <h2 class="chap-title">标签、流程与报警</h2>
+  <p>三个相互关联的注册表描述了设备上实际发生但不直接绘制在屏幕上的内容。</p>
+<table><thead><tr><th>区域</th><th>用途</th><th>位置</th></tr></thead><tbody><tr><td><b>Tag registry</b></td><td>屏幕与流程之间交换的类型化固件数据（float / int / bool / string）</td><td>Hardware → Tag registry</td></tr><tr><td><b>Procedures</b></td><td>带工程说明文档的命名后端流程（例如校准）</td><td>Hardware → Procedures</td></tr><tr><td><b>Alarms</b></td><td>命名的异常状态事件，可在任意 FSM 转换中检查，与当前屏幕无关</td><td>Logic → Alarms</td></tr></tbody></table>
+<figure class="shot"><img src="assets/operation-manual/13-alarms.png" alt="空的报警区域，内置三步提示：标签、报警、转换" /><figcaption><b>创建报警。</b>内置提示给出了确切步骤：在注册表中创建标签 → 创建条件为 <code>@tag_id</code> 的报警 → 在 FSM 转换的 guard 条件中引用它。</figcaption></figure>
+<figure class="shot"><img src="assets/operation-manual/11-tags.png" alt="空的标签注册表，显示可用数据类型 float、int、bool、string" /><figcaption><b>标签注册表。</b>右侧列出新建标签可用的数据类型。</figcaption></figure>
 </section>
-<section id="chapter-10"><h2>10. 保存、版本管理和交付</h2>
-<ul class="checklist"><li>在重要修改后保存 .lcdproj 文件。</li><li>项目文件和生成资源分别提交。</li><li>在评审中包含截图。</li><li>将固件资源追溯到项目版本。</li></ul>
+<section class="chapter" id="runtime">
+  <p class="chap-eyebrow">第 10 章</p>
+  <h2 class="chap-title">运行时预览</h2>
+  <p class="lede">在没有固件的情况下运行 FSM 逻辑：按下虚拟按钮，实时查看 LCD 屏幕渲染和事件日志——然后再将项目交付给嵌入式团队。</p>
+<figure class="shot"><img src="assets/operation-manual/14-runtime.png" alt="运行时预览，左侧为当前状态，中间为实时 LCD 屏幕，右侧为事件日志" /><figcaption><b>运行时预览。</b>左侧显示当前状态及其可用按钮（不可用按钮会变暗并标注原因），中间是精确的屏幕渲染，右侧是事件、标签与流程日志。</figcaption></figure>
+<ul class="points"><li><span><span class="chip">Step mode</span> 每次只执行一个事件——便于追踪复杂逻辑。</span></li><li><span><span class="chip">Express timer</span> 加速模拟定时器，但不改变转换逻辑。</span></li><li><span><span class="chip">Bypass procedures</span> 可在完整运行场景时跳过外部后端流程。</span></li><li><span>左侧的 <b>Validation</b> 面板显示与项目校验器相同的警告——例如无法到达的状态。</span></li></ul>
 </section>
-<section id="chapter-11"><h2>11. 故障排除</h2>
-<table><thead><tr><th>现象</th><th>可能原因</th><th>处理方法</th></tr></thead><tbody><tr><td>Runtime 按钮无反应</td><td>没有对应事件的转换</td><td>检查 FSM 转换事件名称</td></tr><tr><td>导出图像反色</td><td>目标显示屏 bit order 不同</td><td>确认驱动 byte order</td></tr><tr><td>文本被裁剪</td><td>文本对象或字体过大</td><td>缩短文本或调整位置</td></tr><tr><td>API connection refused</td><td>桌面应用未运行</td><td>运行 npm run electron:dev 或 packaged app</td></tr></tbody></table>
-</section></main>
-  <footer>Generated from scripts/generate-user-docs.mjs. For automation details see docs/API_MCP_CONNECTORS.md.</footer>
+<section class="chapter" id="handoff">
+  <p class="chap-eyebrow">第 11 章</p>
+  <h2 class="chap-title">固件交付</h2>
+  <p>发布前的最后一步：为嵌入式团队组装交付包——校验、供应商包、设备连接检查。</p>
+<figure class="shot"><img src="assets/operation-manual/15-handoff.png" alt="HMI Handoff 界面显示校验结果：0 个错误、0 个未覆盖状态、3 个警告" /><figcaption><b>HMI Handoff → Validate。</b>汇总结果将项目整体校验与屏幕覆盖率、按钮路由及界面语言翻译的检查结合在一起。</figcaption></figure>
+<div class="callout warn"><p><b>注意：</b>该交付包是 HMI/FSM 规格说明，并非固件二进制文件。它向供应商提供屏幕、绑定关系、状态转换、文本资源和可追溯的显示字节数据。C/C++ 源代码、MCU 与工具链细节、驱动与协议，以及设备更新流程，仍然是嵌入式团队的职责。</p></div>
+</section>
+<section class="chapter" id="mcp">
+  <p class="chap-eyebrow">第 12 章</p>
+  <h2 class="chap-title">API 与 MCP 服务器</h2>
+  <p class="lede">Electron 和 Tauri 构建运行完全相同的本地自动化协议：REST 位于 <code class="mono">127.0.0.1:8766</code>，MCP（基于 HTTP 的 JSON-RPC）位于 <code class="mono">127.0.0.1:8767/mcp</code>——外部脚本、SCADA 系统和 LLM 代理可借此直接读取和编辑已打开的项目。</p>
+<figure class="shot"><img src="assets/operation-manual/17-settings-api-mcp.png" alt="描述该功能的 API 与 MCP 服务器设置区域" /><figcaption><b>Settings → API &amp; MCP servers。</b>桌面构建会在此显示两个服务器的实时状态、地址以及是否启用了令牌校验；网页版不可用。</figcaption></figure>
+<ul class="points"><li><span>两个服务器都仅绑定到 <code>127.0.0.1</code>，从不监听外部网络接口。</span></li><li><span>MCP 端口上的 <code class="mono">GET /health</code> 是无需令牌、也不访问项目数据的可用性检查。</span></li><li><span>环境变量 <code class="mono">LCD_IDE_AUTOMATION_TOKEN</code> 可为写操作开启强制的 Bearer 鉴权。</span></li><li><span>完整的工具列表、协议结构与集成示例见 <a href="https://github.com/myahlovvlad/LCD-bitmap-IDE/blob/main/docs/API_MCP_CONNECTORS.md">docs/API_MCP_CONNECTORS.md</a>。</span></li></ul>
+</section>
+<section class="chapter" id="trouble">
+  <p class="chap-eyebrow">第 13 章</p>
+  <h2 class="chap-title">故障排查</h2>
+  <table><thead><tr><th>现象</th><th>原因</th><th>解决方法</th></tr></thead><tbody><tr><td>“Add state” 按钮不可用</td><td>FSM 图当前处于只读模式</td><td>在 FSM 工具栏中开启 <span class="chip">Edit graph</span></td></tr><tr><td>画布上的转换消失了</td><td>Overview、子系统聚焦或图层过滤处于激活状态</td><td>查看过滤按钮旁的“已显示 / 总数”计数器，并点击 <b>Reset filters</b></td></tr><tr><td>8766/8767 端口出现 <code class="mono">connection refused</code></td><td>桌面应用未运行，或端口被其他进程占用</td><td>启动 Electron/Tauri 构建并查看其自动化控制台</td></tr><tr><td>API 返回 <code class="mono">project: null</code></td><td>当前没有打开任何项目</td><td>在应用中打开一个 <code>.lcdproj</code> 文件或演示项目</td></tr><tr><td>MCP/REST 请求无响应</td><td>渲染进程未在 5 秒内响应</td><td>确认应用窗口已打开且未被模态对话框阻塞</td></tr></tbody></table>
+</section>
+    <p class="end">LCD-bitmap IDE · 版本 0.1.18 · Electron 与 Tauri 构建共用同一套自动化协议和同一个项目模型。详细技术文档位于仓库的 docs/ 目录。</p>
+  </main>
+</div>
 </body>
 </html>

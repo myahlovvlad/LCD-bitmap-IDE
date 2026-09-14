@@ -1,98 +1,198 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Руководство пользователя LCD-bitmap IDE</title>
-  <style>
-  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #15211d; background: #f7f8f4; line-height: 1.62; letter-spacing: 0; }
-  header { padding: 48px 56px 34px; background: #10201a; color: #fff; }
-  .eyebrow { margin: 0 0 10px; color: #9ed8bf; font-weight: 700; }
-  h1 { max-width: 920px; margin: 0; font-size: 38px; line-height: 1.12; letter-spacing: 0; }
-  .subtitle { max-width: 860px; margin: 16px 0 0; color: #d9e8df; font-size: 18px; }
-  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 22px 56px; background: #e6eee8; border-bottom: 1px solid #cdd8d0; }
-  .toc a { color: #195d48; text-decoration: none; font-weight: 650; }
-  main { max-width: 980px; margin: 0 auto; padding: 28px 32px 56px; }
-  section { margin: 0 0 34px; padding: 26px; background: #fff; border: 1px solid #d7ded8; border-radius: 8px; break-inside: avoid; }
-  h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
-  p { margin: 0 0 12px; }
-  ol, ul { margin: 8px 0 0; padding-left: 24px; }
-  li { margin: 6px 0; }
-  .checklist li::marker { content: "□ "; color: #20765a; }
-  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-  th, td { border: 1px solid #cfd9d2; padding: 9px 10px; text-align: left; vertical-align: top; }
-  th { background: #eef4ef; }
-  pre { margin: 14px 0 0; padding: 14px; overflow-x: auto; border-radius: 6px; background: #101816; color: #d7f5e7; font-size: 13px; }
-  footer { padding: 24px 56px; color: #5c6761; }
-  @page { size: A4; margin: 14mm; }
-  @media print { header, .toc, footer { padding-left: 0; padding-right: 0; } body { background: #fff; } section { border: 1px solid #cfd9d2; } }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Руководство по эксплуатации LCD-bitmap IDE</title>
+<style>
+  :root {
+    --paper: #f6f5ef; --panel: #eeece1; --line: #d9d7c8; --ink: #1c2118; --ink-soft: #565a4c;
+    --phosphor: #4f6b1a; --phosphor-deep: #3c5313; --blueprint: #3a5a78; --code-bg: #e8e6d8;
+    --shadow: 0 1px 2px rgba(28,33,24,0.06), 0 8px 24px rgba(28,33,24,0.06); --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Charter","Iowan Old Style","Palatino Linotype",Georgia,"Noto Serif","Noto Serif SC",serif; font-size: 16.5px; line-height: 1.62; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: "JetBrains Mono","Cascadia Code",ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace; }
+  a { color: var(--blueprint); }
+  h1, h2, h3 { font-weight: 700; color: var(--ink); }
+  .masthead { border-bottom: 1px solid var(--line); padding: 48px 24px 34px; }
+  .masthead-inner { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; }
+  .badge-lcd { width: 88px; height: 88px; border-radius: 6px; background: var(--phosphor-deep); display: grid; place-items: center; box-shadow: var(--shadow); flex: 0 0 auto; }
+  .badge-lcd svg { width: 60px; height: 36px; }
+  .mast-label { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--phosphor); margin: 0 0 8px; }
+  .langbar { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11.5px; margin: 0 0 8px; color: var(--ink-soft); }
+  .langbar a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px dotted var(--ink-soft); }
+  h1.title { margin: 0 0 8px; font-size: 38px; line-height: 1.08; letter-spacing: -0.01em; }
+  .subtitle { margin: 0; max-width: 64ch; color: var(--ink-soft); font-size: 17px; }
+  .mast-meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 12px; color: var(--ink-soft); }
+  .mast-meta b { color: var(--ink); font-weight: 600; }
+  .shell { max-width: 980px; margin: 0 auto; padding: 36px 24px 90px; display: grid; grid-template-columns: 210px minmax(0,1fr); gap: 44px; align-items: start; }
+  nav.toc { border-right: 1px solid var(--line); padding-right: 18px; }
+  nav.toc h2 { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 12px; font-weight: 600; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: toc; }
+  nav.toc a { counter-increment: toc; display: flex; gap: 8px; padding: 5px 4px; color: var(--ink-soft); text-decoration: none; font-size: 13px; line-height: 1.35; }
+  nav.toc a::before { content: counter(toc, decimal-leading-zero); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 10.5px; color: var(--phosphor); padding-top: 1px; }
+  main { min-width: 0; }
+  section.chapter { padding-top: 6px; margin-bottom: 54px; }
+  .chap-eyebrow { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--phosphor); margin: 0 0 6px; }
+  h2.chap-title { font-size: 25px; margin: 0 0 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .chapter p, .lede { max-width: 68ch; }
+  .lede { font-size: 17.5px; color: var(--ink-soft); }
+  h3.sub { font-size: 16px; margin: 24px 0 8px; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; }
+  ol.steps, ul.points { margin: 10px 0 18px; padding-left: 0; max-width: 68ch; display: grid; gap: 9px; list-style: none; counter-reset: step; }
+  ol.steps li { counter-increment: step; display: grid; grid-template-columns: 24px 1fr; gap: 9px; }
+  ol.steps li::before { content: counter(step); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; font-weight: 700; color: var(--phosphor-deep); background: var(--panel); border: 1px solid var(--line); border-radius: 50%; width: 20px; height: 20px; display: grid; place-items: center; }
+  ul.points li { display: grid; grid-template-columns: 13px 1fr; gap: 9px; }
+  ul.points li::before { content: ""; width: 7px; height: 7px; margin-top: 7px; background: var(--phosphor); border-radius: 1px; }
+  figure.shot { margin: 18px 0 22px; max-width: 100%; }
+  figure.shot img { display: block; width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  figure.shot figcaption { margin-top: 8px; font-size: 12.5px; color: var(--ink-soft); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; line-height: 1.5; }
+  .callout { max-width: 68ch; margin: 16px 0; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--phosphor); border-radius: 8px; font-size: 15px; }
+  .callout.warn { border-left-color: var(--blueprint); }
+  code, kbd { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 0.86em; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; max-width: 100%; font-size: 13.5px; }
+  table th, table td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+  table th { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); background: var(--panel); }
+  .chip { display: inline-block; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); background: var(--panel); }
+  .end { max-width: 68ch; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 13.5px; }
+  @page { size: A4; margin: 16mm 14mm; }
+  @media print {
+    .shell { grid-template-columns: 1fr; }
+    nav.toc { display: none; }
+    section.chapter { break-inside: avoid-page; page-break-inside: avoid; }
+    figure.shot { break-inside: avoid-page; }
+  }
+</style>
 </head>
 <body>
-  <header>
-    <p class="eyebrow">LCD-bitmap IDE</p>
-    <h1>Руководство пользователя LCD-bitmap IDE</h1>
-    <p class="subtitle">Пошаговый workflow для новичков: проектирование, проверка и экспорт LCD-интерфейсов для измерительных сценариев.</p>
-  </header>
-  <nav class="toc" aria-label="Table of contents"><a href="#chapter-1">1. Что делает приложение</a>
-<a href="#chapter-2">2. Установка и запуск</a>
-<a href="#chapter-3">3. Открытие demo-проекта</a>
-<a href="#chapter-4">4. Основные рабочие области</a>
-<a href="#chapter-5">5. Построение измерительного workflow</a>
-<a href="#chapter-6">6. Проектирование LCD-экранов</a>
-<a href="#chapter-7">7. Привязка кнопок, tags и procedures</a>
-<a href="#chapter-8">8. Проверка workflow</a>
-<a href="#chapter-9">9. Экспорт для firmware</a>
-<a href="#chapter-10">10. Сохранение, версии и передача</a>
-<a href="#chapter-11">11. Устранение неполадок</a></nav>
-  <main><section id="chapter-1"><h2>1. Что делает приложение</h2>
-<p>LCD-bitmap IDE - offline desktop-инструмент для проектирования монохромных LCD-экранов, FSM-навигации, привязок панели управления и firmware-ready экспортов.</p>
-<p>Используйте его для проектирования интерфейса вокруг измерительного workflow: настройка, старт, ход выполнения, просмотр результата, предупреждения и сервисные состояния.</p>
-<p>Само приложение не выполняет физические измерения. Для реального снятия данных нужен firmware прибора, backend-сервис или hardware connector. В LCD-bitmap IDE вы проектируете и проверяете интерфейс и runtime-поведение до интеграции с целевой прошивкой.</p>
-<ul class="checklist"><li>Создать или открыть проект.</li><li>Спроектировать экраны и FSM-переходы.</li><li>Проверить workflow в preview.</li><li>Экспортировать firmware assets.</li></ul>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="badge-lcd" aria-hidden="true"><svg viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="62" height="38" rx="2" stroke="#c8e06a" stroke-width="2"/><rect x="9" y="9" width="4" height="4" fill="#c8e06a"/><rect x="17" y="9" width="4" height="4" fill="#c8e06a"/><rect x="25" y="9" width="4" height="4" fill="#c8e06a"/><rect x="9" y="17" width="4" height="4" fill="#c8e06a"/><rect x="25" y="17" width="4" height="4" fill="#c8e06a"/><rect x="9" y="25" width="4" height="4" fill="#c8e06a"/><rect x="17" y="25" width="4" height="4" fill="#c8e06a"/><rect x="25" y="25" width="4" height="4" fill="#c8e06a"/><circle cx="47" cy="20" r="9" stroke="#c8e06a" stroke-width="2"/><circle cx="47" cy="20" r="2.4" fill="#c8e06a"/><line x1="47" y1="11" x2="47" y2="14.6" stroke="#c8e06a" stroke-width="2"/><line x1="47" y1="25.4" x2="47" y2="29" stroke="#c8e06a" stroke-width="2"/><line x1="38" y1="20" x2="41.6" y2="20" stroke="#c8e06a" stroke-width="2"/><line x1="52.4" y1="20" x2="56" y2="20" stroke="#c8e06a" stroke-width="2"/></svg></div>
+    <div>
+      <p class="langbar"><a href="operation-user-manual.en.html">EN</a> · <a href="operation-user-manual.zh.html">ZH</a></p>
+      <p class="mast-label">Руководство по эксплуатации</p>
+      <h1 class="title">LCD-bitmap IDE</h1>
+      <p class="subtitle">Настольная среда для проектирования монохромных LCD-интерфейсов встраиваемых устройств: экраны, конечный автомат навигации, физическая панель, runtime-теги и firmware-ready экспорт — в одном файле проекта.</p>
+      <div class="mast-meta"><span><b>Версия ПО</b> 0.1.18</span><span><b>Формат проекта</b> .lcdproj, schema 6</span><span><b>Платформы</b> Windows · Linux · macOS</span><span><b>Сборки</b> Electron · Tauri</span></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+  <nav class="toc" aria-label="Содержание"><h2>Содержание</h2><ol><li><a href="#start">Первый запуск</a></li>
+<li><a href="#interface">Устройство интерфейса</a></li>
+<li><a href="#fsm">Редактор FSM</a></li>
+<li><a href="#lcd">Редактор LCD-экранов</a></li>
+<li><a href="#raster">Импорт растра</a></li>
+<li><a href="#animation">Анимации</a></li>
+<li><a href="#panel">Панель управления</a></li>
+<li><a href="#hmi">HMI Designer</a></li>
+<li><a href="#hardware">Теги, процедуры, аварии</a></li>
+<li><a href="#runtime">Runtime-предпросмотр</a></li>
+<li><a href="#handoff">Передача прошивке</a></li>
+<li><a href="#mcp">API и MCP-серверы</a></li>
+<li><a href="#trouble">Диагностика</a></li></ol></nav>
+  <main>
+    <section class="chapter" id="start">
+  <p class="chap-eyebrow">Глава 1</p>
+  <h2 class="chap-title">Первый запуск</h2>
+  <p class="lede">Приложение не требует установки зависимостей и не обращается в сеть: весь проект — это один файл <code>.lcdproj</code>.</p>
+<ol class="steps"><li><span>Установите сборку под вашу ОС со страницы <a href="https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest">GitHub Releases</a>, либо запустите исходники командой <code>npm run electron:dev</code>.</span></li><li><span>На стартовом экране выберите язык интерфейса и один из четырёх путей: открыть существующий <code>.lcdproj</code>, создать новый проект, восстановить автосохранение или открыть встроенный демо-проект.</span></li><li><span>Для первого знакомства выбирайте <b>Demo</b> — он уже содержит связанные состояния, экраны и переходы, на которых можно учиться, ничем не рискуя.</span></li></ol>
+<figure class="shot"><img src="assets/operation-manual/01-startup.png" alt="Стартовый экран LCD-bitmap IDE с выбором языка и четырьмя вариантами начала работы" /><figcaption><b>Стартовый экран.</b> Выбор языка интерфейса (EN / RU / ZH) и точки входа: открыть проект, создать новый, восстановить автосохранение или открыть демо.</figcaption></figure>
+<div class="callout"><p>Проект автосохраняется в <code>localStorage</code> каждые несколько секунд. Это подстраховка на случай сбоя, а не замена явному <b>Save project</b> — сохраняйте файл на диск вручную перед закрытием сессии.</p></div>
 </section>
-<section id="chapter-2"><h2>2. Установка и запуск</h2>
-<ol><li>Установите Node.js 22 или новее и Git.</li><li>Склонируйте репозиторий и выполните npm ci.</li><li>Запустите browser-сборку через npm run dev или desktop-сборку через npm run electron:dev.</li><li>Desktop-сборка нужна для REST API, MCP-автоматизации, PDF-экспорта и packaging.</li></ol>
-<pre><code>git clone https://github.com/myahlovvlad/LCD-bitmap-IDE.git
-cd LCD-bitmap-IDE
-npm ci
-npm run electron:dev</code></pre>
+<section class="chapter" id="interface">
+  <p class="chap-eyebrow">Глава 2</p>
+  <h2 class="chap-title">Устройство интерфейса</h2>
+  <p>Слева — компактный навигатор рабочих областей, сгруппированных по смыслу: <b>Interface</b> (экраны и панель), <b>Logic</b> (FSM и аварии), <b>Hardware</b> (теги и процедуры), <b>Verify &amp; deliver</b> (симуляция и передача прошивке). Каждая рабочая область имеет собственные независимо сворачиваемые боковые панели.</p>
+<ul class="points"><li><span>Кнопка <span class="chip">Collapse navigator</span> (или <kbd>Ctrl+B</kbd>) сворачивает только глобальный навигатор в узкую иконочную полосу — боковые панели конкретной рабочей области при этом остаются на месте.</span></li><li><span>Строка состояния внизу всегда показывает размер дисплея, число состояний/переходов FSM, число экранов и элементов панели, а также статус валидации и наличие несохранённых изменений.</span></li><li><span>Переключатель темы (Settings → Theme) поддерживает светлую, тёмную и системную схему.</span></li></ul>
 </section>
-<section id="chapter-3"><h2>3. Открытие demo-проекта</h2>
-<p>На стартовом экране выберите встроенный demo-проект или откройте examples/universal-lcd-demo.lcdproj.</p>
-<p>Demo специально сделан универсальным. Он показывает, как представить измерительный интерфейс без vendor implementation files, private device identifiers и приватных каталогов экранов.</p>
-<ol><li>Откройте demo.</li><li>Посмотрите вкладки FSM, LCD, Tags и Runtime.</li><li>Не меняйте всё сразу. Измените один экран или переход, затем проверьте preview.</li></ol>
+<section class="chapter" id="fsm">
+  <p class="chap-eyebrow">Глава 3</p>
+  <h2 class="chap-title">Редактор FSM</h2>
+  <p class="lede">Конечный автомат — это карта навигации устройства: состояние соответствует одному LCD-экрану, переход — реакции на кнопку, таймер или условие.</p>
+<figure class="shot"><img src="assets/operation-manual/02-demo-loaded-fsm.png" alt="Граф состояний FSM демо-проекта с пятью связанными состояниями" /><figcaption><b>Граф FSM в режиме чтения.</b> Слева — каталог состояний, по центру — граф переходов, справа — инспектор выбранного элемента. Связи видны независимо от режима редактирования.</figcaption></figure>
+<h3 class="sub">Режим редактирования</h3>
+<p>Граф по умолчанию открывается <i>только для чтения</i> — это намеренная защита от случайного изменения рабочей логики. Кнопки, изменяющие граф (добавление состояния, удаление, перетаскивание), становятся активны только после явного включения <span class="chip">Edit graph</span>.</p>
+<figure class="shot"><img src="assets/operation-manual/04-fsm-edit-mode.png" alt="FSM-редактор с включённым режимом редактирования, видна синяя рамка холста" /><figcaption><b>Режим редактирования включён</b> — рамка холста подсвечена синим, доступны создание состояний и перетаскивание узлов.</figcaption></figure>
+<h3 class="sub">Создание состояния и перехода</h3>
+<ol class="steps"><li><span>Включите <span class="chip">Edit graph</span>, затем нажмите <b>+</b> над списком состояний либо кликните правой кнопкой по пустому месту холста → <b>Add state</b>.</span></li><li><span>Назовите состояние и при необходимости отметьте его как <b>Initial</b> (точка входа) или <b>Terminal</b> (конечное).</span></li><li><span>Для перехода между состояниями либо перетащите связь между точками соединения на узлах, либо используйте раздел <b>Transition routes</b> в инспекторе справа — выберите целевое состояние и событие, не работая с холстом напрямую.</span></li><li><span>Свяжите состояние с LCD-экраном через <b>Linked LCD screen → Edit layout</b>, чтобы сразу перейти к его пиксельному дизайну.</span></li></ol>
+<h3 class="sub">Обзор и фильтры</h3>
+<p>При большом графе включите <span class="chip">Overview</span> — он показывает по одному входу на каждую подсистему вместо полного графа. Если из-за обзора, фокуса на подсистеме или фильтра слоёв часть переходов скрыта, панель инструментов показывает счётчик <b>«показано / всего»</b> и причину — рядом всегда доступна кнопка сброса фильтров в один клик.</p>
+<figure class="shot"><img src="assets/operation-manual/05-fsm-overview.png" alt="FSM-редактор в обзорном режиме с укрупнёнными карточками состояний по подсистемам" /><figcaption><b>Обзорный режим</b> группирует состояния по подсистемам и точкам входа — удобен для навигации по большим проектам.</figcaption></figure>
 </section>
-<section id="chapter-4"><h2>4. Основные рабочие области</h2>
-<table><thead><tr><th>Область</th><th>Назначение</th><th>Результат для новичка</th></tr></thead><tbody><tr><td>FSM</td><td>Состояния и переходы</td><td>Понятный операторский flow</td></tr><tr><td>LCD</td><td>Пиксельные экраны 128x64</td><td>Читаемые screen layouts</td></tr><tr><td>Control panel</td><td>Привязка кнопок и событий</td><td>Предсказуемый ввод оператора</td></tr><tr><td>Tags</td><td>Именованные значения экранов и процедур</td><td>Traceable измерительные значения</td></tr><tr><td>Runtime</td><td>Интерактивная проверка flow</td><td>Проверенный workflow до firmware export</td></tr></tbody></table>
+<section class="chapter" id="lcd">
+  <p class="chap-eyebrow">Глава 4</p>
+  <h2 class="chap-title">Редактор LCD-экранов</h2>
+  <p class="lede">Каждый экран — это точный по пикселям монохромный framebuffer заданного размера (обычно 128×64), редактируемый как холст с типизированными объектами: текст, линии, прямоугольники, битовые изображения, спецэлементы.</p>
+<figure class="shot"><img src="assets/operation-manual/06-lcd-editor.png" alt="LCD-редактор с инструментами холста слева, превью дисплея по центру и свойствами экрана справа" /><figcaption><b>LCD-редактор.</b> Слева — инструменты холста и типы объектов, по центру — точное превью 128×64, справа — привязка экрана к состояниям FSM и слоям.</figcaption></figure>
+<ul class="points"><li><span><b>Select / Add text / Line / Rectangle / Invert row / Special element / Glyph editor</b> — основной набор инструментов рисования; каждый объект остаётся редактируемым (не растеризуется) до экспорта.</span></li><li><span><b>Pixel editor</b> становится доступен для выбранного bitmap-объекта — точечное редактирование конкретных пикселей.</span></li><li><span>Каждый экран можно привязать сразу к нескольким состояниям FSM и слою (например, «Демо» или пользовательский слой) через панель <b>Linked FSM states</b> справа.</span></li></ul>
 </section>
-<section id="chapter-5"><h2>5. Построение измерительного workflow</h2>
-<p>Начинайте не с пикселей, а с состояний, которые ожидает оператор. Простой workflow обычно включает Idle, Setup, Ready, Running, Result, Error и Service.</p>
-<p>Каждое состояние должно отвечать на один вопрос пользователя: что происходит, какое значение важно сейчас и какое действие доступно.</p>
-<ol><li>Добавьте состояния во вкладке FSM.</li><li>Назовите переходы событиями START, NEXT, CANCEL или RETRY.</li><li>Сделайте error transitions явными.</li><li>Проверьте workflow в Runtime Preview до детальной графики.</li></ol>
+<section class="chapter" id="raster">
+  <p class="chap-eyebrow">Глава 5</p>
+  <h2 class="chap-title">Импорт растра</h2>
+  <p>Готовую графику (логотип, иконку, скан) можно превратить в 1bpp-изображение и продолжить редактировать её попиксельно как обычный bitmap-слой.</p>
+<figure class="shot"><img src="assets/operation-manual/18-pixel-importer.png" alt="Панель импорта изображений с ползунком порога бинаризации" /><figcaption><b>Импорт изображения.</b> Вкладка <span class="chip">Import image</span> в LCD-редакторе: PNG/JPEG/BMP/SVG → порог + дизеринг → 1bpp.</figcaption></figure>
+<ol class="steps"><li><span>Откройте экран, на который нужно поместить изображение, и перейдите на вкладку <b>Import image</b>.</span></li><li><span>Выберите файл, настройте <b>Threshold</b> (порог бинаризации) и <b>Dithering</b>, пока превью 128×64 не станет читаемым.</span></li><li><span>Нажмите <b>Insert and edit bitmap</b> — изображение сразу вставится на экран, выделится и откроется в пиксельном редакторе для точечной доработки.</span></li></ol>
 </section>
-<section id="chapter-6"><h2>6. Проектирование LCD-экранов</h2>
-<p>Проектируйте экран для быстрого чтения. Текущее состояние обычно сверху, ключевое значение в центре, доступное действие ближе к нижней части.</p>
-<p>Используйте текст, линии, прямоугольники, bitmap-слои и special elements: progress bar, indicators, checkbox/radio. Не перегружайте экран декоративными деталями.</p>
-<ul class="checklist"><li>Текст читается на 128x64.</li><li>Важные значения имеют единицы измерения.</li><li>Доступное действие видно.</li><li>Warning screens визуально отличаются.</li></ul>
+<section class="chapter" id="animation">
+  <p class="chap-eyebrow">Глава 6</p>
+  <h2 class="chap-title">Анимации</h2>
+  <p class="lede">Ресурс анимации — это упорядоченный набор 1bpp-кадров с длительностью каждого кадра и флагом зацикливания. Один ресурс можно привязать целиком к экрану или только к одному bitmap-слою, оставив остальной экран статичным.</p>
+<figure class="shot"><img src="assets/operation-manual/08-lcd-animations-panel.png" alt="Вкладка Animations в LCD-редакторе с кнопкой создания новой анимации" /><figcaption><b>Панель анимаций.</b> Вкладка <span class="chip">Animations</span> рядом с <span class="chip">Import image</span> — тот же конвейер конвертации создаёт кадры анимации.</figcaption></figure>
+<ol class="steps"><li><span>Нажмите <b>New animation</b> и выберите изображение для первого кадра — по размеру выбранного bitmap-объекта, либо по размеру экрана, если объект не выбран.</span></li><li><span>Добавляйте следующие кадры из других изображений, настраивайте длительность каждого в миллисекундах, дублируйте, удаляйте и переупорядочивайте их.</span></li><li><span>Включите <b>Loop</b> для повторяющейся анимации (например, индикатор ожидания) или оставьте выключенным для одноразовой последовательности.</span></li><li><span>Просмотрите результат через play / replay / ползунок на детерминированных часах, затем привяжите ресурс кнопкой <b>Bind to screen</b> (весь экран) или <b>Bind to selected layer</b> (только выбранный bitmap-объект).</span></li></ol>
+<div class="callout warn"><p>Для меняющихся числовых значений (например, обратный отсчёт таймера) используйте текстовое поле с runtime-тегом, а не анимацию: анимация предназначена для графики, а не для сотен почти одинаковых кадров с цифрами.</p></div>
+<p>При экспорте прошивки каждый ресурс превращается в массив кадров <code>lcd_animation_frame_t</code> (байты, их количество, длительность) и обёртку <code>lcd_animation_t</code> (таблица кадров, их число, флаг <code>loop</code>) — метаданные привязки к экранам и слоям экспортируются вместе с ними.</p>
 </section>
-<section id="chapter-7"><h2>7. Привязка кнопок, tags и procedures</h2>
-<p>Кнопки должны генерировать события, совпадающие с FSM transitions. Tags описывают измерительные значения, настройки или status flags. Procedures описывают backend-действия: старт измерения, сброс результата, сервисная процедура.</p>
-<p>Используйте стабильные имена. Tag sample_absorbance проще поддерживать, чем value1.</p>
+<section class="chapter" id="panel">
+  <p class="chap-eyebrow">Глава 7</p>
+  <h2 class="chap-title">Панель управления</h2>
+  <p>Физическая раскладка кнопок и индикаторов проектируется отдельно от логики и связывается с событиями FSM.</p>
+<figure class="shot"><img src="assets/operation-manual/09-control-panel.png" alt="Редактор панели управления с расположенным LCD-экраном и четырьмя физическими кнопками" /><figcaption><b>Редактор панели управления.</b> Инструменты <span class="chip">LCD</span>, <span class="chip">Button</span>, <span class="chip">Label</span>, <span class="chip">Rectangle</span>, <span class="chip">Image</span> позволяют собрать точную раскладку корпуса прибора; каждая кнопка привязывается к событию FSM.</figcaption></figure>
+<ul class="points"><li><span><b>Group / Ungroup</b> и инструменты выравнивания — для аккуратной раскладки множества элементов.</span></li><li><span><b>Grid</b> и <b>Snap</b> обеспечивают точное позиционирование по сетке в пикселях корпуса.</span></li><li><span>Панель <b>Panel validation</b> справа снизу сразу показывает, есть ли кнопки без привязанного события.</span></li></ul>
 </section>
-<section id="chapter-8"><h2>8. Проверка workflow</h2>
-<ol><li>Откройте Runtime.</li><li>Начните с initial state.</li><li>Нажимайте кнопки в порядке реального оператора.</li><li>Проверьте, что все status screens появляются в правильной последовательности.</li><li>Проверьте error и cancel paths, а не только успешный сценарий.</li></ol>
+<section class="chapter" id="hmi">
+  <p class="chap-eyebrow">Глава 8</p>
+  <h2 class="chap-title">HMI Designer</h2>
+  <p>Объединяет экран и физическую панель в одну сцену для проверки сценария взаимодействия целиком: какая кнопка что делает на каком экране, какие теги и процедуры задействованы.</p>
+<figure class="shot"><img src="assets/operation-manual/10-hmi-designer.png" alt="HMI Designer с приборной панелью слева и сценарием, тегами и процедурами справа" /><figcaption><b>HMI Designer.</b> Режимы <span class="chip">Design</span> / <span class="chip">Simulate</span> / <span class="chip">Runtime</span> / <span class="chip">Coverage</span>; правая колонка трассирует, какое состояние, экран, кнопка, тег, процедура и авария задействованы в текущем сценарии.</figcaption></figure>
+<p>Режим <b>Coverage</b> помогает найти состояния или элементы панели, ни разу не задействованные ни в одном сценарии — полезно перед передачей прошивке.</p>
 </section>
-<section id="chapter-9"><h2>9. Экспорт для firmware</h2>
-<p>Когда workflow стабилен, экспортируйте экраны как C headers, binary frame buffers, XBM, Arduino PROGMEM, Rust embedded-graphics или ESP-IDF assets.</p>
-<p>Перед прошивкой hardware проверьте, что целевой дисплей использует ту же resolution, page order, bit order и monochrome format.</p>
+<section class="chapter" id="hardware">
+  <p class="chap-eyebrow">Глава 9</p>
+  <h2 class="chap-title">Теги, процедуры, аварии</h2>
+  <p>Три связанных реестра описывают то, что физически происходит на приборе, но не рисуется на экране напрямую.</p>
+<table><thead><tr><th>Раздел</th><th>Назначение</th><th>Где</th></tr></thead><tbody><tr><td><b>Tag registry</b></td><td>Типизированные данные прошивки (float / int / bool / string), которыми обмениваются экраны и процедуры</td><td>Hardware → Tag registry</td></tr><tr><td><b>Procedures</b></td><td>Именованные backend-процессы (например, калибровка), документируемые инженерными заметками</td><td>Hardware → Procedures</td></tr><tr><td><b>Alarms</b></td><td>Именованные события аварийного состояния, проверяемые из любого перехода FSM независимо от текущего экрана</td><td>Logic → Alarms</td></tr></tbody></table>
+<figure class="shot"><img src="assets/operation-manual/13-alarms.png" alt="Пустой раздел аварий со встроенной подсказкой из трёх шагов: тег, авария, переход" /><figcaption><b>Создание аварии.</b> Встроенная подсказка описывает точную последовательность: тег в реестре → авария с условием <code>@tag_id</code> → ссылка на неё в guard-условии перехода FSM.</figcaption></figure>
+<figure class="shot"><img src="assets/operation-manual/11-tags.png" alt="Пустой реестр тегов с доступными типами данных float, int, bool, string" /><figcaption><b>Реестр тегов.</b> Правая колонка показывает поддерживаемые типы данных для новых тегов.</figcaption></figure>
 </section>
-<section id="chapter-10"><h2>10. Сохранение, версии и передача</h2>
-<ul class="checklist"><li>Сохраняйте .lcdproj после смысловых изменений.</li><li>Коммитьте project files и generated assets отдельно.</li><li>Добавляйте screenshots в review.</li><li>Связывайте firmware artifacts с версией проекта.</li></ul>
+<section class="chapter" id="runtime">
+  <p class="chap-eyebrow">Глава 10</p>
+  <h2 class="chap-title">Runtime-предпросмотр</h2>
+  <p class="lede">Прогон логики FSM без прошивки: нажимайте виртуальные кнопки, смотрите на живой рендер LCD-экрана и журнал событий — прежде чем передавать проект встраиваемой команде.</p>
+<figure class="shot"><img src="assets/operation-manual/14-runtime.png" alt="Runtime-предпросмотр с текущим состоянием слева, живым LCD-экраном по центру и журналом событий справа" /><figcaption><b>Runtime-предпросмотр.</b> Слева — текущее состояние и доступные из него кнопки (недоступные подсвечены с указанием причины), по центру — точный рендер экрана, справа — журнал событий, тегов и процедур.</figcaption></figure>
+<ul class="points"><li><span><span class="chip">Step mode</span> выполняет переходы по одному событию за раз — удобно для разбора сложной логики.</span></li><li><span><span class="chip">Express timer</span> ускоряет симулированные таймеры, не меняя логику переходов.</span></li><li><span><span class="chip">Bypass procedures</span> позволяет пропустить внешние backend-процедуры при прогоне сценария целиком.</span></li><li><span>Панель <b>Validation</b> слева выводит те же предупреждения, что видит валидатор проекта — например, недостижимые состояния.</span></li></ul>
 </section>
-<section id="chapter-11"><h2>11. Устранение неполадок</h2>
-<table><thead><tr><th>Симптом</th><th>Вероятная причина</th><th>Действие</th></tr></thead><tbody><tr><td>Кнопка Runtime ничего не делает</td><td>Нет transition для события</td><td>Проверьте event names в FSM</td></tr><tr><td>Export выглядит инвертированным</td><td>Bit order целевого дисплея отличается</td><td>Проверьте byte order драйвера</td></tr><tr><td>Текст обрезан</td><td>Объект или шрифт слишком большой</td><td>Сократите текст или измените позицию</td></tr><tr><td>API connection refused</td><td>Desktop app не запущен</td><td>Запустите npm run electron:dev или packaged app</td></tr></tbody></table>
-</section></main>
-  <footer>Generated from scripts/generate-user-docs.mjs. For automation details see docs/API_MCP_CONNECTORS.md.</footer>
+<section class="chapter" id="handoff">
+  <p class="chap-eyebrow">Глава 11</p>
+  <h2 class="chap-title">Передача прошивке</h2>
+  <p>Финальный шаг перед выпуском — сборка пакета для встраиваемой команды: валидация, пакет для поставщика, проверка соединения с устройством.</p>
+<figure class="shot"><img src="assets/operation-manual/15-handoff.png" alt="Экран HMI Handoff с результатами валидации: 0 ошибок, 0 непокрытых состояний, 3 предупреждения" /><figcaption><b>HMI Handoff → Validate.</b> Сводка объединяет общую валидацию проекта с проверкой покрытия экранов, маршрутов кнопок и переводов на все языки интерфейса.</figcaption></figure>
+<div class="callout warn"><p><b>Важно:</b> этот пакет — спецификация HMI/FSM, а не бинарник прошивки. Он передаёт поставщику экраны, привязки, переходы состояний, текстовые ресурсы и байты дисплея с трассируемостью. Исходники C/C++, детали MCU и тулчейна, драйверы и протоколы, процедура обновления устройства — по-прежнему задача встраиваемой команды.</p></div>
+</section>
+<section class="chapter" id="mcp">
+  <p class="chap-eyebrow">Глава 12</p>
+  <h2 class="chap-title">API и MCP-серверы</h2>
+  <p class="lede">Electron- и Tauri-сборки запускают одинаковый локальный контракт автоматизации: REST на <code class="mono">127.0.0.1:8766</code> и MCP (JSON-RPC/HTTP) на <code class="mono">127.0.0.1:8767/mcp</code> — это позволяет внешним скриптам, SCADA-системам и LLM-агентам читать и редактировать открытый проект напрямую.</p>
+<figure class="shot"><img src="assets/operation-manual/17-settings-api-mcp.png" alt="Раздел настроек API и MCP серверов с описанием возможностей" /><figcaption><b>Settings → API &amp; MCP servers.</b> В десктопных сборках здесь отображается живой статус обоих серверов, их адреса и включена ли проверка токена; недоступно в веб-сборке.</figcaption></figure>
+<ul class="points"><li><span>Оба сервера привязаны только к <code>127.0.0.1</code> и никогда не слушают внешний интерфейс.</span></li><li><span><code class="mono">GET /health</code> на MCP-порту — проверка доступности без токена и без доступа к проекту.</span></li><li><span>Переменная окружения <code class="mono">LCD_IDE_AUTOMATION_TOKEN</code> включает обязательную Bearer-авторизацию для операций записи.</span></li><li><span>Полный список инструментов, схемы и примеры интеграции — в <a href="https://github.com/myahlovvlad/LCD-bitmap-IDE/blob/main/docs/API_MCP_CONNECTORS.md">docs/API_MCP_CONNECTORS.md</a>.</span></li></ul>
+</section>
+<section class="chapter" id="trouble">
+  <p class="chap-eyebrow">Глава 13</p>
+  <h2 class="chap-title">Диагностика</h2>
+  <table><thead><tr><th>Симптом</th><th>Причина</th><th>Решение</th></tr></thead><tbody><tr><td>Кнопка «Add state» неактивна</td><td>Граф FSM открыт в режиме только для чтения</td><td>Включите <span class="chip">Edit graph</span> в панели инструментов FSM</td></tr><tr><td>Переходы исчезли на холсте</td><td>Активны Overview, фокус подсистемы или фильтр слоёв</td><td>Проверьте счётчик «показано / всего» рядом с фильтрами и нажмите <b>Reset filters</b></td></tr><tr><td><code class="mono">connection refused</code> на 8766/8767</td><td>Десктопное приложение не запущено, либо порт занят другим процессом</td><td>Запустите Electron/Tauri сборку и проверьте её консоль автоматизации</td></tr><tr><td>API возвращает <code class="mono">project: null</code></td><td>Ни один проект не открыт</td><td>Откройте <code>.lcdproj</code> или демо-проект в приложении</td></tr><tr><td>Запрос к MCP/REST не отвечает</td><td>Renderer не ответил в течение 5 секунд</td><td>Убедитесь, что окно приложения открыто и не заблокировано модальным диалогом</td></tr></tbody></table>
+</section>
+    <p class="end">LCD-bitmap IDE · версия 0.1.18 · Electron и Tauri сборки собираются из одного контракта автоматизации и одной модели проекта. Подробные технические документы — в каталоге docs/ репозитория.</p>
+  </main>
+</div>
 </body>
 </html>
