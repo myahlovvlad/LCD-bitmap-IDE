@@ -73,6 +73,8 @@ export interface BitmapCanvasObject extends CanvasObjectBase {
   width: number;
   height: number;
   bytes: number[];
+  /** Optional in raw legacy projects; migration converts invalid bindings to null. */
+  animationId?: string | null;
 }
 
 export interface SpecialCanvasObject extends CanvasObjectBase {

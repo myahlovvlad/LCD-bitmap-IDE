@@ -7,6 +7,7 @@ import type {
 } from '../domain/project';
 import { describeTransitionBehavior, parseBackendBehaviorStorage } from '../fsm-behavior';
 import { validateDisplayProfile } from '../domain/displayProfile';
+import { validateAnimationResource } from '../domain/animation';
 
 export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -36,6 +37,11 @@ export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
   validateRecordIds(project.fsm.events, 'fsm', 'event', add);
   validateRecordIds(project.backendProcesses, 'fsm', 'backend-process', add);
   validateRecordIds(project.controlPanel.elements, 'control-panel', 'element', add);
+  for (const resource of Object.values(project.animations?.resources ?? {})) {
+    for (const message of validateAnimationResource(resource)) {
+      add('error', 'lcd', 'animation-resource-invalid', message, 'animation-resource', resource.id);
+    }
+  }
 
   for (const diagnostic of validateDisplayProfile(project.display)) {
     add(
@@ -64,9 +70,15 @@ export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
     if (!linkedScreens.has(screen.id)) {
       add('info', 'lcd', 'screen-unbound', `Screen "${screen.id}" is not linked to an FSM state.`, 'screen', screen.id);
     }
+    if (screen.animationId && !project.animations?.resources[screen.animationId]) {
+      add('error', 'lcd', 'screen-animation-invalid', `Screen "${screen.id}" references missing animation "${screen.animationId}".`, 'screen', screen.id);
+    }
     for (const object of screen.objects) {
       if (object.type === 'icon' && object.iconId && !project.glyphs[object.iconId]) {
         add('error', 'lcd', 'glyph-missing', `Screen "${screen.id}" uses missing glyph "${object.iconId}".`, 'screen-object', object.id);
+      }
+      if (object.type === 'bitmap' && object.animationId && !project.animations?.resources[object.animationId]) {
+        add('error', 'lcd', 'bitmap-animation-invalid', `Bitmap "${object.id}" references missing animation "${object.animationId}".`, 'screen-object', object.id);
       }
     }
   }

@@ -1,6 +1,7 @@
 import { createMutableFontGlyphs, type FontGlyphs } from '../domain/fonts';
 import { normalizeDisplayProfile } from '../domain/displayProfile';
 import { DEFAULT_DISPLAY_CONFIG } from '../domain/display';
+import { normalizeAnimationCatalog } from '../domain/animation';
 import { readProjectPayload } from './projectInterop';
 import type {
   CanvasData,
@@ -148,6 +149,7 @@ function migrateLegacyProject(
     screenOrder: Object.keys(screens),
     fonts: Object.fromEntries((loadedFonts ?? []).map((font) => [font.id, { ...font, glyphIds: [] }])),
     glyphs: {},
+    animations: { resources: {}, order: [] },
     fsm: {
       states: Object.fromEntries(
         stateOrder
@@ -236,6 +238,14 @@ export function createDefaultControlPanel(width: number, height: number, events:
 }
 
 function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
+  const animations = normalizeAnimationCatalog(project.animations);
+  const screens = Object.fromEntries(Object.entries(project.screens).map(([id, screen]) => [id, {
+    ...screen,
+    animationId: screen.animationId && animations.resources[screen.animationId] ? screen.animationId : null,
+    objects: screen.objects.map((object) => object.type === 'bitmap'
+      ? { ...object, animationId: object.animationId && animations.resources[object.animationId] ? object.animationId : null }
+      : object)
+  }]));
   const states = Object.fromEntries(Object.entries(project.fsm.states).map(([id, state]) => [
     id,
     {
@@ -266,6 +276,8 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
   const normalized: LcdBitmapProject = {
     ...project,
     meta: { ...project.meta, schemaVersion: PROJECT_SCHEMA_VERSION },
+    screens,
+    animations,
     display: normalizeDisplayProfile(project.display, DEFAULT_DISPLAY_CONFIG),
     screenOrder: project.screenOrder.filter((id) => Boolean(project.screens[id])),
     fsm: {

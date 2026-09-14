@@ -69,6 +69,14 @@ export type {
 } from './portableFormula';
 export type { TrendDefinition } from './trend';
 export {
+  MAX_ANIMATION_FRAME_DURATION_MS,
+  MIN_ANIMATION_FRAME_DURATION_MS,
+  normalizeAnimationCatalog,
+  resolveAnimationFrame,
+  validateAnimationResource
+} from './animation';
+export type { AnimationCatalog, AnimationFrame, AnimationResource } from './animation';
+export {
   CANVAS_OBJECT_DEFAULTS,
   DEFAULT_DISPLAY_CONFIG,
   DEFAULT_LANGUAGE,

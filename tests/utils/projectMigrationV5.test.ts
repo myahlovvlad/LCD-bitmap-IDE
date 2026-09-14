@@ -80,4 +80,58 @@ describe('v5 project migration', () => {
     expect(restored.project.screenOrder).toContain('main-menu');
     expect(restored.project.screens['main-menu'].objects[0]?.id).toBe('main-title');
   });
+
+  it('migrates projects with no animation field to an empty catalog', () => {
+    const snapshot = migrateLegacySnapshot(createDemoProject());
+    const legacyProject = { ...snapshot.project } as Record<string, unknown>;
+    delete legacyProject.animations;
+
+    expect(migrateProject(legacyProject).project.animations).toEqual({ resources: {}, order: [] });
+  });
+
+  it('removes a binding to a resource missing after migration', () => {
+    const snapshot = migrateLegacySnapshot(createDemoProject());
+    const screen = snapshot.project.screens['main-menu'];
+    const project = {
+      ...snapshot.project,
+      screens: {
+        ...snapshot.project.screens,
+        'main-menu': { ...screen, animationId: 'missing-animation' }
+      }
+    };
+
+    expect(migrateProject(project).project.screens['main-menu'].animationId).toBeNull();
+  });
+
+  it('normalizes animation resources, order, duration and object bindings', () => {
+    const snapshot = migrateLegacySnapshot(createDemoProject());
+    const screen = snapshot.project.screens['main-menu'];
+    const project = {
+      ...snapshot.project,
+      animations: {
+        resources: {
+          spinner: {
+            id: 'spinner', name: 'Spinner', width: 8, height: 8, loop: true,
+            frames: [{ id: 'frame', bytes: [0], durationMs: 0 }]
+          }
+        },
+        order: ['missing', 'spinner', 'spinner']
+      },
+      screens: {
+        ...snapshot.project.screens,
+        'main-menu': {
+          ...screen,
+          objects: [{
+            id: 'bitmap', type: 'bitmap', name: 'Animated bitmap', x: 0, y: 0, width: 8, height: 8,
+            bytes: [0], zIndex: 1, visible: true, locked: false, source: 'user', animationId: 'missing'
+          }]
+        }
+      }
+    };
+    const migrated = migrateProject(project).project;
+
+    expect(migrated.animations.order).toEqual(['spinner']);
+    expect(migrated.animations.resources.spinner.frames[0].durationMs).toBe(1);
+    expect(migrated.screens['main-menu'].objects[0].type === 'bitmap' && migrated.screens['main-menu'].objects[0].animationId).toBeNull();
+  });
 });

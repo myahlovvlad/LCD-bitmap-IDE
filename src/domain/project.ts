@@ -6,6 +6,7 @@ import type { HmiBindings, HmiTag, DataSource } from './tag';
 import type { BackendProcedure, CliCommandDefinition } from './procedure';
 import type { AlarmDefinition } from './alarm';
 import type { TrendDefinition } from './trend';
+import type { AnimationCatalog } from './animation';
 
 export const PROJECT_SCHEMA_VERSION = 7 as const;
 export const PROJECT_SCHEMA_VERSION_PREVIOUS = 6 as const;
@@ -64,6 +65,8 @@ export interface LcdScreen {
   selectedObjectIds: string[];
   createdAt: string;
   updatedAt: string;
+  /** Optional in raw legacy projects; migration converts missing and invalid bindings to null. */
+  animationId?: string | null;
 }
 
 export interface BitmapFont extends FontMetadata {
@@ -302,6 +305,7 @@ export interface LcdBitmapProject {
   screenOrder: string[];
   fonts: Record<string, BitmapFont>;
   glyphs: Record<string, ProjectGlyph>;
+  animations: AnimationCatalog;
   fsm: FsmModel;
   controlPanel: ControlPanelModel;
   backendProcesses: Record<string, BackendProcess>;
