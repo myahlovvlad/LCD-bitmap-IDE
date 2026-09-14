@@ -4,6 +4,7 @@ import { defaultFontRenderer, resolveLocalizedBitmapText } from '../core/fonts';
 import type { FontRenderer } from '../core/fonts';
 import { renderCanvasObjects } from '../core/rendererEngine';
 import type { CanvasData, CanvasObject, LanguageCode } from '../types/domain';
+import type { AnimationCatalog } from '../../domain/animation';
 import { DESIGN_TOKENS } from '../../shared/constants/tokens';
 
 export interface MarqueeRect {
@@ -21,6 +22,8 @@ interface LCDCanvasProps {
   interactive?: boolean;
   className?: string;
   fontRenderer?: FontRenderer;
+  animationCatalog?: AnimationCatalog;
+  elapsedMs?: number;
   marquee?: MarqueeRect | null;
   onSelectObject?: (objectId: string | null) => void;
   onCanvasMouseDown?: (event: React.MouseEvent<HTMLCanvasElement>) => void;
@@ -36,6 +39,8 @@ export function LCDCanvas({
   interactive = false,
   className,
   fontRenderer = defaultFontRenderer,
+  animationCatalog,
+  elapsedMs = 0,
   marquee = null,
   onSelectObject,
   onCanvasMouseDown,
@@ -59,7 +64,9 @@ export function LCDCanvas({
       language,
       width: canvasData.width,
       height: canvasData.height,
-      fontRenderer
+      fontRenderer,
+      animationCatalog,
+      elapsedMs
     });
 
     ctx.imageSmoothingEnabled = false;
@@ -89,7 +96,7 @@ export function LCDCanvas({
     if (marquee) {
       drawMarquee(ctx, marquee, scale);
     }
-  }, [canvasData, language, scale, showPixelGrid, fontRenderer, marquee]);
+  }, [canvasData, language, scale, showPixelGrid, fontRenderer, animationCatalog, elapsedMs, marquee]);
 
   return (
     <canvas

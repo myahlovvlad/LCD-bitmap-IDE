@@ -1,6 +1,7 @@
 import { DISPLAY_CONSTRAINTS } from '../config/constants';
 import type { BitmapCanvasObject, CanvasObject, FontVariant, LanguageCode, SpecialCanvasObject } from '../types/domain';
 import { defaultFontRenderer, resolveLocalizedBitmapText, type FontRenderer, type FontVariantKey, type Glyph } from '../core/fonts';
+import { resolveAnimationFrame, type AnimationCatalog } from '../../domain/animation';
 
 export type FrameBuffer = boolean[][];
 
@@ -9,6 +10,8 @@ export interface RenderOptions {
   width?: number;
   height?: number;
   fontRenderer?: FontRenderer;
+  animationCatalog?: AnimationCatalog;
+  elapsedMs?: number;
 }
 
 export function createFrameBuffer(
@@ -60,7 +63,10 @@ export function renderCanvasObjects(
     } else if (object.type === 'icon') {
       drawRect(frameBuffer, object.x, object.y, object.width, object.height, false);
     } else if (object.type === 'bitmap') {
-      drawBitmap(frameBuffer, object);
+      drawBitmap(frameBuffer, {
+        ...object,
+        bytes: bytesForBitmap(object, options.animationCatalog, options.elapsedMs ?? 0)
+      });
     } else if (object.type === 'special') {
       drawSpecialElement(frameBuffer, object, fontRenderer);
     } else if (object.type === 'invert') {
@@ -69,6 +75,17 @@ export function renderCanvasObjects(
   }
 
   return frameBuffer;
+}
+
+export function bytesForBitmap(
+  object: BitmapCanvasObject,
+  animationCatalog: AnimationCatalog | undefined,
+  elapsedMs: number
+): number[] {
+  const resource = object.animationId ? animationCatalog?.resources[object.animationId] : null;
+  return resource && resource.width === object.width && resource.height === object.height
+    ? resolveAnimationFrame(resource, elapsedMs)?.bytes ?? object.bytes
+    : object.bytes;
 }
 
 export function drawText(
