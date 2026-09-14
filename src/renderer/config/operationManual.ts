@@ -1777,13 +1777,142 @@ const API_MCP_CONNECTORS_ZH: ManualSection = {
   ]
 };
 
+const ANIMATION_WORKFLOW_EN: ManualSection = {
+  id: 'animation-workflow',
+  title: '18. Raster import and 1bpp animations',
+  summary: 'Importing artwork, editing it by hand, building timed animation resources and reading them from firmware.',
+  blocks: [
+    {
+      kind: 'task',
+      task: 'Import a PNG/JPEG/BMP/SVG and finish it by hand as a bitmap layer.',
+      principle: 'Import → LCD editor → Import image converts artwork to 1bpp at the current screen size; applying it inserts a bitmap object you can keep editing pixel-by-pixel.',
+      steps: [
+        'Open the LCD editor for the target screen, then click "Import image".',
+        'Choose a file; adjust Threshold and Dithering until the LCD preview reads correctly at 1bpp.',
+        '"Insert and edit bitmap" both inserts the object on the current screen and selects it, so the pixel editor opens directly on the imported artwork.',
+        'Refine the result with the normal pixel tools (select, line, rect, invert row, glyph edit).'
+      ]
+    },
+    {
+      kind: 'task',
+      task: 'Build a timed animation resource and bind it to a screen or a layer.',
+      principle: 'Animations are project resources: ordered 1bpp frames with a per-frame duration and a loop flag. One resource can either replace an entire screen or animate a single bitmap object while the rest of the screen stays static — both reuse the same imported-artwork pipeline used for static bitmaps.',
+      steps: [
+        'Open the LCD editor "Animations" tab and click "New animation": pick an image for the first frame (sized to the selected bitmap, or to the screen if none is selected).',
+        'Add further frames from more images, then tune each frame duration in milliseconds and duplicate/remove/reorder frames as needed.',
+        'Toggle Loop for a repeating sequence (e.g. a spinner) or leave it off for a one-shot sequence.',
+        'Use Play/Replay/scrub to preview the resource on a deterministic clock before binding it.',
+        '"Bind to screen" replaces that screen\'s static content whenever every frame matches the screen size; "Bind to selected layer" instead animates only the selected bitmap object, so it must match that object\'s size.',
+        'For a numeric countdown, prefer a runtime-tag text field over an animation: an animation is for pixel graphics, not for hundreds of near-identical frames.'
+      ]
+    },
+    {
+      kind: 'table',
+      headers: ['Firmware symbol', 'Meaning'],
+      rows: [
+        ['lcd_animation_frame_t', 'One frame: pointer to its 1bpp byte array, byte count and duration_ms.'],
+        ['lcd_animation_t', 'One resource: pointer to its ordered frame table, frame_count and a loop flag.'],
+        ['Binding metadata', 'Exported alongside the C arrays, mapping each animated screen or bitmap object to its lcd_animation_t so firmware can drive the frame clock.']
+      ]
+    },
+    { kind: 'note', text: 'A project saved before this feature loads unchanged: screens and bitmap objects with no animation binding keep rendering their static bytes, and the exported C output is byte-for-byte identical.' },
+    { kind: 'note', text: 'In the FSM editor, transitions render even outside edit mode; the toolbar reports "shown / total" transitions and offers a one-click filter reset whenever Overview, a focused subsystem or a layer filter hides any of them.' }
+  ]
+};
+
+const ANIMATION_WORKFLOW_RU: ManualSection = {
+  id: 'animation-workflow',
+  title: '18. Импорт растров и 1bpp-анимации',
+  summary: 'Импорт изображений, ручная доработка, сборка анимаций с таймингом кадров и их использование в прошивке.',
+  blocks: [
+    {
+      kind: 'task',
+      task: 'Импортировать PNG/JPEG/BMP/SVG и доработать вручную как bitmap-слой.',
+      principle: 'LCD-редактор → «Импорт изображения» конвертирует изображение в 1bpp по размеру текущего экрана; применение создаёт bitmap-объект, который можно редактировать попиксельно.',
+      steps: [
+        'Откройте LCD-редактор нужного экрана и нажмите «Импорт изображения».',
+        'Выберите файл; настройте порог и дизеринг, пока превью LCD не станет корректным в 1bpp.',
+        '«Вставить и редактировать bitmap» одновременно вставляет объект на экран и выделяет его, поэтому пиксельный редактор сразу открывается на импортированном изображении.',
+        'Доработайте результат обычными инструментами холста (выделение, линия, прямоугольник, инверсия строки, редактор глифа).'
+      ]
+    },
+    {
+      kind: 'task',
+      task: 'Собрать анимацию с таймингом и привязать её к экрану или слою.',
+      principle: 'Анимация — это ресурс проекта: упорядоченные 1bpp-кадры с длительностью каждого кадра и флагом зацикливания. Один ресурс можно привязать целиком к экрану или к одному bitmap-объекту, пока остальной экран остаётся статичным — оба сценария используют тот же конвейер импорта, что и статичные bitmap.',
+      steps: [
+        'Откройте вкладку «Анимации» в LCD-редакторе и нажмите «Новая анимация»: выберите изображение для первого кадра (по размеру выбранного bitmap-объекта или экрана, если объект не выбран).',
+        'Добавьте следующие кадры из других изображений, настройте длительность каждого кадра в миллисекундах, дублируйте/удаляйте/переупорядочивайте кадры по необходимости.',
+        'Включите «Зациклить» для повторяющейся последовательности (например, индикатор загрузки) или оставьте выключенным для одноразовой анимации.',
+        'Используйте Play/Заново/ползунок, чтобы просмотреть ресурс на детерминированных часах перед привязкой.',
+        '«Привязать к экрану» заменяет статичное содержимое экрана, если размеры всех кадров совпадают с экраном; «Привязать к выбранному слою» вместо этого анимирует только выбранный bitmap-объект — тогда размеры кадров должны совпадать с этим объектом.',
+        'Для отсчёта числовых значений используйте текстовое поле с runtime-тегом, а не анимацию: анимация предназначена для графики, а не для сотен почти одинаковых кадров.'
+      ]
+    },
+    {
+      kind: 'table',
+      headers: ['Символ в прошивке', 'Назначение'],
+      rows: [
+        ['lcd_animation_frame_t', 'Один кадр: указатель на массив 1bpp-байт, их количество и duration_ms.'],
+        ['lcd_animation_t', 'Один ресурс: указатель на упорядоченную таблицу кадров, frame_count и флаг loop.'],
+        ['Метаданные привязки', 'Экспортируются вместе с C-массивами и сопоставляют каждый анимированный экран или bitmap-объект с его lcd_animation_t, чтобы прошивка могла управлять таймингом кадров.']
+      ]
+    },
+    { kind: 'note', text: 'Проект, сохранённый до появления этой функции, загружается без изменений: экраны и bitmap-объекты без привязки анимации продолжают рендерить статичные байты, а экспортированный C-код побайтово идентичен прежнему.' },
+    { kind: 'note', text: 'В FSM-редакторе переходы отображаются даже вне режима редактирования; панель инструментов показывает «показано / всего» переходов и предлагает сброс фильтров в один клик, если Обзор, фокус подсистемы или фильтр слоёв скрывают часть переходов.' }
+  ]
+};
+
+const ANIMATION_WORKFLOW_ZH: ManualSection = {
+  id: 'animation-workflow',
+  title: '18. 位图导入与 1bpp 动画',
+  summary: '导入图像、手动精修、构建带时序的动画资源，以及在固件中读取它们。',
+  blocks: [
+    {
+      kind: 'task',
+      task: '导入 PNG/JPEG/BMP/SVG 并作为位图层手动精修。',
+      principle: 'LCD 编辑器 →「导入图像」会按当前屏幕尺寸将图像转换为 1bpp；应用后会插入一个可以继续逐像素编辑的位图对象。',
+      steps: [
+        '打开目标屏幕的 LCD 编辑器，点击「导入图像」。',
+        '选择文件；调整阈值和抖动，直到 LCD 预览在 1bpp 下正确显示。',
+        '「插入并编辑位图」会同时插入对象并将其选中，因此像素编辑器会直接在导入的图像上打开。',
+        '使用常规像素工具（选择、直线、矩形、反转行、字形编辑）继续精修结果。'
+      ]
+    },
+    {
+      kind: 'task',
+      task: '构建带时序的动画资源，并绑定到屏幕或图层。',
+      principle: '动画是项目资源：一组有序的 1bpp 帧，每帧有各自的持续时间和循环标志。一个资源既可以替换整个屏幕，也可以只让某个位图对象动起来而屏幕其余部分保持静态——两种方式复用与静态位图相同的导入流程。',
+      steps: [
+        '打开 LCD 编辑器的「动画」标签页，点击「新建动画」：为第一帧选择一张图像（尺寸取所选位图对象，若未选择则取屏幕尺寸）。',
+        '从更多图像添加后续帧，调整每帧的持续时间（毫秒），并按需复制/删除/重新排序帧。',
+        '为循环序列（例如加载指示器）开启「循环」，或为单次播放的序列关闭它。',
+        '绑定前使用播放/重播/进度条在确定性时钟下预览该资源。',
+        '当所有帧尺寸与屏幕一致时，「绑定到屏幕」会替换该屏幕的静态内容；「绑定到所选图层」则只让所选位图对象动起来，此时帧尺寸必须与该对象一致。',
+        '对于数字倒计时，优先使用绑定 runtime 标签的文本字段而非动画：动画用于像素图形，不应为此生成成百上千张几乎相同的帧。'
+      ]
+    },
+    {
+      kind: 'table',
+      headers: ['固件符号', '含义'],
+      rows: [
+        ['lcd_animation_frame_t', '单帧：指向其 1bpp 字节数组的指针、字节数和 duration_ms。'],
+        ['lcd_animation_t', '单个资源：指向有序帧表的指针、frame_count 和循环标志。'],
+        ['绑定元数据', '与 C 数组一同导出，将每个动画化的屏幕或位图对象映射到其 lcd_animation_t，供固件驱动帧时钟。']
+      ]
+    },
+    { kind: 'note', text: '在此功能之前保存的项目可无变化加载：没有动画绑定的屏幕和位图对象继续渲染其静态字节，导出的 C 代码逐字节保持不变。' },
+    { kind: 'note', text: '在 FSM 编辑器中，即使在非编辑模式下过渡也会渲染；工具栏会显示“已显示 / 总数”，当概览、子系统聚焦或图层过滤隐藏了部分过渡时，可一键重置筛选。' }
+  ]
+};
+
 export const OPERATION_MANUAL_BY_LANGUAGE = {
   en: [...OPERATION_MANUAL_EN, CURRENT_FUNCTIONALITY_EN, HMI_TAGS_EN, HMI_PROCEDURES_EN, MASTER_WIZARD_EN,
-       ELK_SWIMLANES_EN, TEXT_REGISTRY_EN, TAG_BINDINGS_EN, GUIDED_TOUR_EN, SETTINGS_PANEL_EN, API_MCP_CONNECTORS_EN],
+       ELK_SWIMLANES_EN, TEXT_REGISTRY_EN, TAG_BINDINGS_EN, GUIDED_TOUR_EN, SETTINGS_PANEL_EN, API_MCP_CONNECTORS_EN, ANIMATION_WORKFLOW_EN],
   ru: [...OPERATION_MANUAL_RU, CURRENT_FUNCTIONALITY_RU, HMI_TAGS_RU, HMI_PROCEDURES_RU, MASTER_WIZARD_RU,
-       ELK_SWIMLANES_RU, TEXT_REGISTRY_RU, TAG_BINDINGS_RU, GUIDED_TOUR_RU, SETTINGS_PANEL_RU, API_MCP_CONNECTORS_RU],
+       ELK_SWIMLANES_RU, TEXT_REGISTRY_RU, TAG_BINDINGS_RU, GUIDED_TOUR_RU, SETTINGS_PANEL_RU, API_MCP_CONNECTORS_RU, ANIMATION_WORKFLOW_RU],
   zh: [...OPERATION_MANUAL_ZH, CURRENT_FUNCTIONALITY_ZH, HMI_TAGS_ZH, HMI_PROCEDURES_ZH, MASTER_WIZARD_ZH,
-       ELK_SWIMLANES_EN, TEXT_REGISTRY_EN, TAG_BINDINGS_EN, GUIDED_TOUR_EN, SETTINGS_PANEL_EN, API_MCP_CONNECTORS_ZH]
+       ELK_SWIMLANES_EN, TEXT_REGISTRY_EN, TAG_BINDINGS_EN, GUIDED_TOUR_EN, SETTINGS_PANEL_EN, API_MCP_CONNECTORS_ZH, ANIMATION_WORKFLOW_ZH]
 } as const;
 
 export const OPERATION_MANUAL = OPERATION_MANUAL_EN;
