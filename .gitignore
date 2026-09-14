@@ -22,6 +22,7 @@ release/
 release-*/
 build-diagnostics/
 graphify-out/
+.worktrees/
 
 # OS/editor noise
 .DS_Store
