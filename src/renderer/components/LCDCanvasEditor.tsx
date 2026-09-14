@@ -662,6 +662,11 @@ export function LCDCanvasEditor({
           <div className="block text-sm text-gray-400 mb-3 font-bold uppercase tracking-wider">
             {labels.canvasTools}
           </div>
+          {firstSelected ? (
+            <div className="selected-canvas-object-status text-xs text-gray-400 mb-3" data-testid="selected-canvas-object">
+              {('name' in firstSelected && firstSelected.name) || firstSelected.id}
+            </div>
+          ) : null}
           <div className="editor-toolbar grid grid-cols-2 gap-2" aria-label={labels.canvasTools}>
             <ToolButton mode="select" activeMode={mode} onSelect={setMode} label={labels.select} />
             <ToolButton mode="text" activeMode={mode} onSelect={setMode} label={labels.addText} />

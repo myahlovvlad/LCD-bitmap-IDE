@@ -24,6 +24,22 @@ async function openDemoAndFsm(page: Page): Promise<void> {
   await expect(page.getByTestId('fsm-workspace')).toBeVisible();
 }
 
+async function openDemoAndLcd(page: Page): Promise<void> {
+  await openWorkspace(page, 'lcd');
+  await expect(page.getByTestId('lcd-open-animations')).toBeVisible();
+}
+
+const TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFklEQVR4nGNgYGD4//8/lESwIAC7DABt4hfpRWPJuwAAAABJRU5ErkJggg==';
+
+async function importFixture(page: Page, fileName: string): Promise<void> {
+  await page.getByTestId('lcd-open-pixel-importer').click();
+  await page.locator('.pixel-importer-panel input[type="file"]').setInputFiles({
+    name: fileName,
+    mimeType: 'image/png',
+    buffer: Buffer.from(TINY_PNG_BASE64, 'base64')
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
@@ -545,4 +561,23 @@ test('loads without uncaught page errors', async ({ page }) => {
   await page.reload();
   await expect(page.getByRole('heading', { name: /LCD-bitmap IDE/i })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('insert and edit selects the imported bitmap before returning to editor', async ({ page }) => {
+  await openDemoAndLcd(page);
+  await importFixture(page, 'two-pixel.png');
+  await page.getByRole('button', { name: /Insert and edit bitmap|Вставить и редактировать bitmap/ }).click();
+  await expect(page.locator('[data-testid="selected-canvas-object"]')).toHaveText(/pixel-import/);
+});
+
+test('animation editor creates a resource and shows a live preview', async ({ page }) => {
+  await openDemoAndLcd(page);
+  await page.getByTestId('lcd-open-animations').click();
+  await page.locator('.animation-editor-panel input[type="file"]').setInputFiles({
+    name: 'frame.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(TINY_PNG_BASE64, 'base64')
+  });
+  await expect(page.getByTestId('animation-preview')).toBeVisible();
+  await expect(page.getByTestId('animation-bind-screen')).toBeVisible();
 });

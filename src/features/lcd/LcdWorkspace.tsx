@@ -21,13 +21,15 @@ import { LCDCanvasEditor } from '../../renderer/components/LCDCanvasEditor';
 import { UI_TEXT } from '../../renderer/config/i18n';
 import { useProjectStore } from '../../renderer/store/projectStore';
 import type { LcdScreen } from '../../domain/project';
+import type { BitmapCanvasObject } from '../../renderer/types/domain';
 import { ValidationPanel } from '../validation/ValidationPanel';
 import { GlyphCGenerator } from './GlyphCGenerator';
 import { ScreenDslStudio } from '../screen-dsl-studio';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 import { ScreenLayerManager } from '../fsm/ScreenLayerManager';
+import { AnimationEditor } from '../animation-editor/AnimationEditor';
 
-type LcdToolPanel = 'editor' | 'pixel-import' | 'glyph-c' | 'templates' | 'screen-dsl';
+type LcdToolPanel = 'editor' | 'pixel-import' | 'glyph-c' | 'templates' | 'screen-dsl' | 'animations';
 const SCREEN_TEMPLATES_KEY = 'lcd-bitmap-ide.screen-templates.v1';
 const LCD_LAYOUT_KEY = 'lcd-bitmap-ide.workspace.lcd-layout.v1';
 
@@ -113,6 +115,10 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
     return !query || item.name.toLowerCase().includes(query) || item.id.toLowerCase().includes(query);
   });
   const screen = selectedScreenId ? project.screens[selectedScreenId] : null;
+  const selectedBitmap = screen
+    ? screen.objects.find((object): object is BitmapCanvasObject =>
+        object.type === 'bitmap' && screen.selectedObjectIds.includes(object.id)) ?? null
+    : null;
   const linkedStates = screen
     ? project.fsm.stateOrder.map((id) => project.fsm.states[id]).filter((state) => state.screenId === screen.id)
     : [];
@@ -133,6 +139,8 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
         importedOriginal: labels.importedOriginal
       }}
     />
+  ) : toolPanel === 'animations' ? (
+    <AnimationEditor language={language} selectedScreen={screen} selectedBitmap={selectedBitmap} />
   ) : toolPanel === 'glyph-c' ? (
     <GlyphCGenerator fontGlyphs={fontGlyphs} labels={labels} />
   ) : toolPanel === 'templates' ? (
@@ -245,10 +253,11 @@ export function LcdWorkspace({ requestedScreenId }: { requestedScreenId?: string
       <main className="workspace-canvas-column">
         <header className="workspace-toolbar">
           <button type="button" className={toolPanel === 'editor' ? 'active' : ''} onClick={() => setToolPanel('editor')}>{labels.canvas}</button>
-          <button type="button" className={toolPanel === 'pixel-import' ? 'active' : ''} onClick={() => setToolPanel('pixel-import')}>
+          <button type="button" className={toolPanel === 'pixel-import' ? 'active' : ''} onClick={() => setToolPanel('pixel-import')} data-testid="lcd-open-pixel-importer">
             <Upload size={15} /> {labels.importImage}
           </button>
           <button type="button" className={toolPanel === 'glyph-c' ? 'active' : ''} onClick={() => setToolPanel('glyph-c')}>{labels.cGlyphTab}</button>
+          <button type="button" className={toolPanel === 'animations' ? 'active' : ''} onClick={() => setToolPanel('animations')} data-testid="lcd-open-animations">{labels.animations}</button>
           <button type="button" className={toolPanel === 'templates' ? 'active' : ''} onClick={() => setToolPanel('templates')}>{labels.templates}</button>
           <button
             type="button"

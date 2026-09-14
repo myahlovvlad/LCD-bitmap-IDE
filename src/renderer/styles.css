@@ -1914,7 +1914,8 @@ button:disabled {
 .lcd-auxiliary-panel .pixel-importer-panel,
 .lcd-auxiliary-panel .screen-dsl-studio,
 .lcd-auxiliary-panel .glyph-c-generator,
-.lcd-auxiliary-panel .template-gallery {
+.lcd-auxiliary-panel .template-gallery,
+.lcd-auxiliary-panel .animation-editor-panel {
   min-width: 0;
 }
 
@@ -2297,6 +2298,140 @@ button:disabled {
 .pixel-importer-actions span {
   color: #9ca3af;
   font-size: 12px;
+}
+
+.animation-editor-panel {
+  display: grid;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid #4b5563;
+  border-radius: 12px;
+  background: rgba(31, 41, 55, 0.92);
+  padding: 16px;
+  color: #e5e7eb;
+}
+
+.animation-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.animation-editor-header h2 {
+  margin: 0;
+}
+
+.animation-editor-body {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+.animation-list {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  overflow: auto;
+}
+
+.animation-detail {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.animation-name-field {
+  display: grid;
+  gap: 5px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.animation-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.animation-preview {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 12px;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background: #111827;
+}
+
+.animation-transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.animation-transport input[type='range'] {
+  flex: 1;
+}
+
+.animation-frame-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.animation-frame-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.animation-frame-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+
+.animation-frame-item {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 8px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background: #111827;
+}
+
+.animation-frame-item input[type='number'] {
+  width: 72px;
+}
+
+.animation-frame-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.animation-frame-thumb {
+  border: 1px solid #4b5563;
+}
+
+.animation-binding-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .preview-stage {
