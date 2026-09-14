@@ -10,6 +10,8 @@ import {
   History,
   Monitor,
   Network,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelTop,
   PanelsTopLeft,
   Package,
@@ -62,6 +64,16 @@ const LEGACY_AUTOSAVE_KEYS = [
   'spectrodesigner.project.autosave.v2'
 ] as const;
 const LOCAL_HISTORY_KEY = 'lcd-bitmap-ide.project-history.v5';
+const NAVIGATOR_COLLAPSED_KEY = 'lcd-bitmap-ide.workspace-navigator-collapsed.v1';
+
+function readNavigatorCollapsed(): boolean {
+  try {
+    return JSON.parse(localStorage.getItem(NAVIGATOR_COLLAPSED_KEY) ?? 'false') === true;
+  } catch {
+    return false;
+  }
+}
+
 const FsmWorkspace = lazy(() => import('../features/fsm/FsmWorkspace').then((module) => ({ default: module.FsmWorkspace })));
 const LcdWorkspace = lazy(() => import('../features/lcd/LcdWorkspace').then((module) => ({ default: module.LcdWorkspace })));
 const ControlPanelWorkspace = lazy(() => import('../features/control-panel/ControlPanelWorkspace').then((module) => ({ default: module.ControlPanelWorkspace })));
@@ -104,6 +116,14 @@ function AppShell(): React.ReactElement {
   const labels = UI_TEXT[language];
   const theme = useAppTheme();
   const [activeWorkspaceGroup, setActiveWorkspaceGroup] = useState<WorkspaceGroupId>(() => groupForWorkspace(location.mode));
+  const [navigatorCollapsed, setNavigatorCollapsed] = useState<boolean>(() => readNavigatorCollapsed());
+  useEffect(() => {
+    try {
+      localStorage.setItem(NAVIGATOR_COLLAPSED_KEY, JSON.stringify(navigatorCollapsed));
+    } catch {
+      // Persisting the preference is best-effort only.
+    }
+  }, [navigatorCollapsed]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showManual, setShowManual] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
@@ -439,7 +459,7 @@ function AppShell(): React.ReactElement {
         <input ref={fileInputRef} type="file" accept=".json,.lcdproj,application/json" hidden onChange={(event) => void openProject(event)} />
       </header>
 
-      <section className="ide-workbench">
+      <section className={navigatorCollapsed ? 'ide-workbench ide-workbench-navigator-collapsed' : 'ide-workbench'}>
         <nav className="activity-bar" aria-label={labels.workspaces}>
           {WORKSPACE_GROUPS.map((group) => (
             <button key={group.id} type="button" data-testid={`activity-${group.id}`} className={group.id === activeNavigationGroup.id ? 'active' : ''} aria-pressed={group.id === activeNavigationGroup.id} onClick={() => setActiveWorkspaceGroup(group.id)}>
@@ -448,7 +468,22 @@ function AppShell(): React.ReactElement {
             </button>
           ))}
         </nav>
-        <nav className="workspace-navigation workspace-navigator" aria-label={labels.workspaces} data-testid="workspace-navigator">
+        <nav
+          className={navigatorCollapsed ? 'workspace-navigation workspace-navigator navigator-compact' : 'workspace-navigation workspace-navigator'}
+          aria-label={labels.workspaces}
+          data-testid="workspace-navigator"
+        >
+          <button
+            type="button"
+            className="workspace-navigator-toggle"
+            data-testid="workspace-navigator-toggle"
+            onClick={() => setNavigatorCollapsed((value) => !value)}
+            aria-pressed={navigatorCollapsed}
+            aria-label={navigatorCollapsed ? labels.expandNavigator : labels.collapseNavigator}
+            title={navigatorCollapsed ? labels.expandNavigator : labels.collapseNavigator}
+          >
+            {navigatorCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
           {activeNavigationGroup.modes.map((mode) => <WorkspaceButton key={mode} mode={mode} active={location.mode === mode} onClick={() => navigateTo({ mode })} icon={workspaceIcon(mode)} label={workspaceLabel(mode, labels)} />)}
         </nav>
         <section className="workspace-host">
@@ -514,8 +549,8 @@ function WorkspaceButton({
   label: string;
 }): React.ReactElement {
   return (
-    <button type="button" data-workspace={mode} data-testid={`workspace-${mode}`} className={active ? 'active' : ''} onClick={onClick}>
-      {icon}{label}
+    <button type="button" data-workspace={mode} data-testid={`workspace-${mode}`} className={active ? 'active' : ''} onClick={onClick} title={label}>
+      {icon}<span className="workspace-nav-label">{label}</span>
     </button>
   );
 }
