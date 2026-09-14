@@ -2,6 +2,7 @@ import type { CodegenArtifactSet } from '../artifacts/codegenArtifacts';
 import { createCodegenArtifact, createCodegenArtifactSet } from '../artifacts/codegenArtifacts';
 import type { LoweredScreenIr, LoweredTargetIrV1 } from '../target-ir/targetIr';
 import type { CodegenBackend, CodegenRequest } from './codegenBackend';
+import { generateAnimationCHeader } from '../animation/animationCodegen';
 
 export const LEGACY_C_BACKEND_ID = 'legacy-c-backend';
 const LEGACY_DOCUMENTATION_HEADER = 'LCD, glyph and FSM interface workbench';
@@ -88,6 +89,14 @@ export function generateAllScreensCHeader(targetIr: LoweredTargetIrV1, projectSy
     const symbolName = screenSymbolName(baseName, screen.id);
     return `  { "${escapeCString(screen.id)}", ${symbolName}, ${screen.framebufferBytes.length} }`;
   });
+  const animationHeader = targetIr.animations.resources.length > 0
+    ? generateAnimationCHeader(
+      targetIr.animations.resources,
+      baseName,
+      targetIr.targetProfile.codegen.cArrayBytesPerRow,
+      targetIr.animations.bindings
+    )
+    : '';
 
   return [
     `#ifndef ${guard}`,
@@ -95,6 +104,7 @@ export function generateAllScreensCHeader(targetIr: LoweredTargetIrV1, projectSy
     '',
     '#include <stdint.h>',
     '#include <stddef.h>',
+    ...(animationHeader ? ['#include <stdbool.h>'] : []),
     '',
     `// ${LEGACY_DOCUMENTATION_HEADER}`,
     `// LCD screens: 1bpp, vertical pages, LSB at top`,
@@ -106,6 +116,7 @@ export function generateAllScreensCHeader(targetIr: LoweredTargetIrV1, projectSy
     `} ${targetIr.targetProfile.codegen.structName};`,
     '',
     arrays.join('\n\n'),
+    ...(animationHeader ? ['', animationHeader] : []),
     '',
     `static const ${targetIr.targetProfile.codegen.structName} ${baseName}_screens[${targetIr.screens.length}] = {`,
     tableRows.join(',\n'),

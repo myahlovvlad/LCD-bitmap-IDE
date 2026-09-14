@@ -10,6 +10,7 @@ import { normalizeLocalization, normalizeResources } from './normalizeLocalizati
 import { normalizeScreens } from './normalizeScreens';
 import { normalizeSymbols } from './normalizeSymbols';
 import { getEncodedDisplayByteLength } from '../encoding/displayEncoder';
+import { sanitizeCompilerSymbol } from '../ir/symbolTable';
 
 export function normalizeProject(source: CompilerSourceSnapshot): NormalizedCompilerIrResult {
   const sourceDiagnostics = validateCompilerSource(source);
@@ -19,6 +20,7 @@ export function normalizeProject(source: CompilerSourceSnapshot): NormalizedComp
   const fsm = normalizeFsm(source, symbols);
   const localization = normalizeLocalization(source);
   const resources = normalizeResources(source, symbols);
+  const animations = normalizeAnimations(source);
   const diagnostics = [...sourceDiagnostics, ...symbolResult.diagnostics];
   const ir = {
     irVersion: COMPILER_IR_VERSION,
@@ -37,6 +39,7 @@ export function normalizeProject(source: CompilerSourceSnapshot): NormalizedComp
     screens,
     localization,
     resources,
+    animations,
     symbols,
     traceability: { links: collectTraceLinks(screens, fsm) }
   };
@@ -58,6 +61,40 @@ export function normalizeProject(source: CompilerSourceSnapshot): NormalizedComp
     canonicalJson,
     fingerprint: fingerprintIr(ir)
   };
+}
+
+function normalizeAnimations(source: CompilerSourceSnapshot) {
+  const catalog = source.project.animations ?? { resources: {}, order: [] };
+  const resources = catalog.order
+    .map((id) => catalog.resources[id])
+    .filter((resource): resource is NonNullable<typeof resource> => Boolean(resource))
+    .map((resource, index) => ({
+      id: resource.id,
+      symbol: uniqueAnimationSymbol(resource.id, index, catalog.order),
+      loop: resource.loop,
+      frames: resource.frames.map((frame) => ({ id: frame.id, bytes: [...frame.bytes], durationMs: frame.durationMs }))
+    }));
+  const resourceIds = new Set(resources.map((resource) => resource.id));
+  const bindings = source.project.screenOrder.flatMap((screenId) => {
+    const screen = source.project.screens[screenId];
+    if (!screen) return [];
+    return [
+      ...(screen.animationId && resourceIds.has(screen.animationId)
+        ? [{ screenId: screen.id, objectId: null, animationId: screen.animationId }]
+        : []),
+      ...screen.objects.flatMap((object) => object.type === 'bitmap' && object.animationId && resourceIds.has(object.animationId)
+        ? [{ screenId: screen.id, objectId: object.id, animationId: object.animationId }]
+        : [])
+    ];
+  });
+  return { resources, bindings };
+}
+
+function uniqueAnimationSymbol(id: string, index: number, order: readonly string[]): string {
+  const base = sanitizeCompilerSymbol(id, 'animation');
+  return order.slice(0, index).some((previous) => sanitizeCompilerSymbol(previous, 'animation') === base)
+    ? `${base}_${index + 1}`
+    : base;
 }
 
 function collectTraceLinks(

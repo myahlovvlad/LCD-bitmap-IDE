@@ -62,6 +62,13 @@ export function lowerToTargetIr(ir: NormalizedCompilerIrV1, options: LowerToTarg
     resources: {
       fontGlyphCount: ir.resources.fontGlyphs.length
     },
+    animations: {
+      resources: ir.animations.resources.map((resource) => ({
+        ...resource,
+        frames: resource.frames.map((frame) => ({ ...frame, bytes: [...frame.bytes] }))
+      })),
+      bindings: ir.animations.bindings.map((binding) => ({ ...binding }))
+    },
     memory: {
       screenCount: screens.length,
       totalScreenBytes: screens.reduce((sum, screen) => sum + screen.byteLength, 0),

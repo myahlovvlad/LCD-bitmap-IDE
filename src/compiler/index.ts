@@ -18,6 +18,7 @@ export * from './encoding/displayDecoder';
 export * from './raster/canonicalRaster';
 export * from './backends/codegenBackend';
 export * from './backends/legacyCBackend';
+export * from './animation/animationCodegen';
 export * from './artifacts/codegenArtifacts';
 export * from './artifacts/sha256';
 export * from './verification/codegenEquivalence';

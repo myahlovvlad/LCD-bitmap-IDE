@@ -26,11 +26,34 @@ export interface LoweredTargetIrV1 {
   readonly resources: {
     readonly fontGlyphCount: number;
   };
+  readonly animations: {
+    readonly resources: readonly LoweredAnimationIr[];
+    readonly bindings: readonly LoweredAnimationBindingIr[];
+  };
   readonly memory: {
     readonly screenCount: number;
     readonly totalScreenBytes: number;
     readonly maxScreenBytes: number;
   };
+}
+
+export interface LoweredAnimationIr {
+  readonly id: string;
+  readonly symbol: string;
+  readonly loop: boolean;
+  readonly frames: readonly LoweredAnimationFrameIr[];
+}
+
+export interface LoweredAnimationFrameIr {
+  readonly id: string;
+  readonly bytes: readonly number[];
+  readonly durationMs: number;
+}
+
+export interface LoweredAnimationBindingIr {
+  readonly screenId: string;
+  readonly objectId: string | null;
+  readonly animationId: string;
 }
 
 export interface LoweredScreenIr {

@@ -25,8 +25,29 @@ export interface NormalizedCompilerIrV1 {
   readonly screens: readonly NormalizedScreenIr[];
   readonly localization: NormalizedLocalizationIr;
   readonly resources: NormalizedResourceIr;
+  readonly animations: {
+    readonly resources: readonly NormalizedAnimationIr[];
+    readonly bindings: readonly NormalizedAnimationBindingIr[];
+  };
   readonly symbols: CompilerSymbolTable;
   readonly traceability: CompilerTraceabilityMap;
+}
+
+export interface NormalizedAnimationIr {
+  readonly id: string;
+  readonly symbol: string;
+  readonly loop: boolean;
+  readonly frames: readonly {
+    readonly id: string;
+    readonly bytes: readonly number[];
+    readonly durationMs: number;
+  }[];
+}
+
+export interface NormalizedAnimationBindingIr {
+  readonly screenId: string;
+  readonly objectId: string | null;
+  readonly animationId: string;
 }
 
 export interface CompilerCompletenessReport {
