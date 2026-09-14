@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { drawLine, drawRect, packFrameBuffer, renderCanvasObjects, unpackBytesToFrameBuffer } from '../../src/renderer/utils/render';
 import type { CanvasObject } from '../../src/renderer/types/domain';
 import { createMutableFontGlyphs, FontRenderer, resolveLocalizedBitmapText } from '../../src/renderer/core/fonts';
+import type { AnimationCatalog } from '../../src/domain';
 
 describe('render utils', () => {
   it('creates a 128x64 framebuffer from canvas objects', () => {
@@ -55,6 +56,24 @@ describe('render utils', () => {
     const frameBuffer = renderCanvasObjects(objects, { language: 'en' });
     expect(frameBuffer[0][0]).toBe(true);
     expect(frameBuffer.some((row) => row.some(Boolean))).toBe(true);
+  });
+
+  it('renders an animation-bound bitmap frame without changing its static bytes', () => {
+    const objects: CanvasObject[] = [{
+      id: 'bitmap-1', type: 'bitmap', name: 'Animated', x: 1, y: 1, width: 1, height: 1,
+      bytes: [0], animationId: 'spin', zIndex: 0, visible: true, locked: false, source: 'user'
+    }];
+    const animations: AnimationCatalog = {
+      resources: {
+        spin: { id: 'spin', name: 'Spin', width: 1, height: 1, loop: true, frames: [{ id: 'on', bytes: [1], durationMs: 50 }] }
+      },
+      order: ['spin']
+    };
+
+    const frameBuffer = renderCanvasObjects(objects, { language: 'en', width: 8, height: 8, animationCatalog: animations, elapsedMs: 0 });
+
+    expect(frameBuffer[1][1]).toBe(true);
+    expect(objects[0]).toMatchObject({ bytes: [0] });
   });
 
   it('falls back to a renderable localized text when active language glyphs are unavailable', () => {

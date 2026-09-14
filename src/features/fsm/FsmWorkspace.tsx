@@ -15,9 +15,10 @@ import {
   type EdgeProps,
   type EdgeTypes,
   type Node,
-  type NodeTypes
+  type NodeTypes,
+  type Viewport
 } from '@xyflow/react';
-import { Copy, Expand, HelpCircle, LayoutGrid, Minimize2, Monitor, Plus, Search, Trash2 } from 'lucide-react';
+import { Copy, Expand, HelpCircle, LayoutGrid, Minimize2, Monitor, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Search, Trash2 } from 'lucide-react';
 import { useWorkspaceRouter } from '../../app/WorkspaceRouter';
 import { LCDCanvas } from '../../renderer/components/LCDCanvas';
 import { StateNode, type FsmStateNodeData } from '../../renderer/components/StateNode';
@@ -32,6 +33,7 @@ import { ValidationPanel } from '../validation/ValidationPanel';
 import { FsmScriptStudio } from '../fsm-script/FsmScriptStudio';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 import { ScreenLayerManager } from './ScreenLayerManager';
+import { fsmViewportCache, type FsmViewportContext } from './fsmViewportCache';
 const FsmWebGlGraph = lazy(() => import('./FsmWebGlGraph').then((module) => ({ default: module.FsmWebGlGraph })));
 
 /** Swimlane background band — rendered as a ReactFlow node at zIndex -1. */
@@ -79,13 +81,38 @@ const FSM_LAYOUT_KEY = 'lcd-bitmap-ide.workspace.fsm-layout.v1';
 type CanvasPresentation = '2d' | '3d';
 type LayoutTemplate = 'hierarchy' | 'tree' | 'lanes';
 
-function edgeDisplayLabel(project: LcdBitmapProject, transition: FsmTransition): string {
-  if (transition.labelMode === 'auto') return 'Auto';
+interface FsmFlowInstance {
+  fitView: (opts?: { padding?: number; duration?: number; nodes?: Node[] }) => void;
+  getViewport: () => Viewport;
+  setViewport: (viewport: Viewport, options?: { duration?: number }) => void;
+}
+
+function edgeDisplayLabel(project: LcdBitmapProject, transition: FsmTransition, labels: UiText): string {
+  if (transition.labelMode === 'auto') return labels.autoLabel;
   const button = transition.trigger.buttonId
     ? project.controlPanel.elements[transition.trigger.buttonId]
     : null;
-  if (transition.labelMode === 'event') return project.fsm.events[transition.trigger.eventId]?.name ?? 'Auto';
-  return button?.type === 'button' && button.label.trim() ? button.label : 'Auto';
+  if (transition.labelMode === 'event') return project.fsm.events[transition.trigger.eventId]?.name ?? labels.autoLabel;
+  return button?.type === 'button' && button.label.trim() ? button.label : labels.autoLabel;
+}
+
+function transitionKindLabel(kind: string, labels: UiText): string {
+  switch (kind) {
+    case 'navigation': return labels.transitionKindNavigation;
+    case 'guarded': return labels.transitionKindGuarded;
+    case 'timeout': return labels.transitionKindTimeout;
+    case 'backend': return labels.transitionKindBackend;
+    default: return kind;
+  }
+}
+
+function mechanismLabel(mechanism: string | undefined, labels: UiText): string {
+  switch (mechanism) {
+    case 'button': return labels.mechanismButton;
+    case 'timer': return labels.mechanismTimer;
+    case 'fact': return labels.mechanismFact;
+    default: return labels.mechanismEvent;
+  }
 }
 
 /** One entry state per subsystem makes the default canvas a readable system map. */
@@ -116,6 +143,8 @@ function collectOverviewStateIds(project: LcdBitmapProject): Set<string> {
 interface FsmWorkspaceLayout {
   leftWidth: number;
   rightWidth: number;
+  leftCollapsed: boolean;
+  rightCollapsed: boolean;
 }
 
 interface SidebarResize {
@@ -183,7 +212,8 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   const workspaceRef = useRef<HTMLElement | null>(null);
   const groupDragRef = useRef<{ stateIds: string[]; anchorId: string; anchorPosition: { x: number; y: number }; positions: Record<string, { x: number; y: number }> } | null>(null);
   const fsmClipboardRef = useRef<Array<{ state: FsmState; position: { x: number; y: number } }>>([]);
-  const reactFlowInstanceRef = useRef<{ fitView: (opts?: { padding?: number; duration?: number; nodes?: Node[] }) => void } | null>(null);
+  const reactFlowInstanceRef = useRef<FsmFlowInstance | null>(null);
+  const appliedViewportTargetRef = useRef<string | null>(null);
   const labels = UI_TEXT[language];
 
   const toggleFullscreen = async (): Promise<void> => {
@@ -372,27 +402,6 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
     };
   });
 
-  // Fullscreen changes the grid width after the browser fires
-  // `fullscreenchange`.  Fit on the next two frames so React Flow measures the
-  // final canvas, not the old zero-height/zero-width intermediate rectangle.
-  useEffect(() => {
-    if (!isFullscreen || presentation !== '2d') return;
-    let first = 0;
-    let second = 0;
-    const refreshViewport = (): void => {
-      first = requestAnimationFrame(() => {
-        second = requestAnimationFrame(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0 }));
-      });
-    };
-    refreshViewport();
-    window.addEventListener('resize', refreshViewport);
-    return () => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-      window.removeEventListener('resize', refreshViewport);
-    };
-  }, [isFullscreen, fullscreenInspectorOpen, presentation]);
-
   const overviewStateIds = useMemo(() => project ? collectOverviewStateIds(project) : new Set<string>(), [project]);
   const layerList = useMemo<FsmLayer[]>(() => {
     if (!project) return [];
@@ -402,6 +411,22 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
   }, [project]);
   const subsystems = useMemo(() => layerList.map((layer) => layer.id), [layerList]);
   const activeSubsystems = useMemo(() => new Set(visibleSubsystems.length ? visibleSubsystems : subsystems), [subsystems, visibleSubsystems]);
+  const viewportContext = useMemo<FsmViewportContext | null>(() => {
+    if (!project) return null;
+    if (focusedSubsystem) {
+      return { projectId: project.meta.id, representation: `subsystem:${focusedSubsystem}` };
+    }
+    if (overviewMode) {
+      return { projectId: project.meta.id, representation: 'overview' };
+    }
+    const active = [...activeSubsystems].sort();
+    return active.length === subsystems.length
+      ? { projectId: project.meta.id, representation: 'all' }
+      : { projectId: project.meta.id, representation: `layers:${active.join(',')}` };
+  }, [activeSubsystems, focusedSubsystem, overviewMode, project, subsystems.length]);
+  const viewportTargetKey = viewportContext
+    ? `${viewportContext.projectId}\u0000${viewportContext.representation}`
+    : null;
   const overviewLayout = useMemo(() => {
     const layout = new Map<string, { x: number; y: number }>();
     if (!project) return layout;
@@ -468,6 +493,10 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         allowedButtons: [...new Set(allowedButtons)],
         stateMark,
         editingEnabled: editing,
+        noLayerLabel: labels.noLayerAssigned,
+        lcdNotLinkedLabel: labels.lcdNotLinked,
+        allowedButtonsPrefix: labels.allowedButtonsPrefix,
+        noButtonsTitle: labels.noButtonsTrigger,
       } satisfies FsmStateNodeData];
     }));
   }, [editing, project, labels]);
@@ -486,38 +515,47 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           // onSelectionChange creates a selection -> nodes -> selection loop
           // for marquee and multi-select gestures.
           zIndex: 1,
-          data: stateNodeData.get(stateId) ?? { compact: true, state, allowedButtons: [], stateMark: { kind: 'process', label: labels.processState } }
+          data: stateNodeData.get(stateId) ?? {
+            compact: true,
+            state,
+            allowedButtons: [],
+            stateMark: { kind: 'process', label: labels.processState },
+            noLayerLabel: labels.noLayerAssigned,
+            lcdNotLinkedLabel: labels.lcdNotLinked,
+            allowedButtonsPrefix: labels.allowedButtonsPrefix,
+            noButtonsTitle: labels.noButtonsTrigger
+          }
         };
       })
-    : [], [project, canvasStateIds, focusedSubsystem, overviewMode, overviewLayout, overviewOverrides, stateNodeData, labels.processState]);
+    : [], [project, canvasStateIds, focusedSubsystem, overviewMode, overviewLayout, overviewOverrides, stateNodeData, labels]);
 
-  // Swimlane bands are intentionally excluded from fitView: a tall layer
-  // background must never push every actual state node outside the viewport.
-  // The delayed resize fit also covers fullscreen and sidebar changes.
+  const restoreCanvasViewport = (): void => {
+    if (presentation !== '2d' || !viewportContext || !viewportTargetKey || !calculatedNodes.length) return;
+    if (appliedViewportTargetRef.current === viewportTargetKey) return;
+    const instance = reactFlowInstanceRef.current;
+    if (!instance) return;
+
+    appliedViewportTargetRef.current = viewportTargetKey;
+    const storedViewport = fsmViewportCache.read(viewportContext);
+    if (storedViewport) {
+      instance.setViewport(storedViewport, { duration: 0 });
+      return;
+    }
+
+    // Bands are intentionally excluded: their height must not make the state
+    // graph illegible. This fit happens once only for an unseen view.
+    instance.fitView({ padding: 0.12, duration: 0, nodes: calculatedNodes });
+    globalThis.setTimeout(() => {
+      if (appliedViewportTargetRef.current !== viewportTargetKey) return;
+      fsmViewportCache.write(viewportContext, instance.getViewport());
+    }, 0);
+  };
+
   useEffect(() => {
-    if (presentation !== '2d' || !calculatedNodes.length) return;
-    let first = 0;
-    let second = 0;
-    let delayed: ReturnType<typeof globalThis.setTimeout> | undefined;
-    const fit = (): void => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-      first = requestAnimationFrame(() => {
-        second = requestAnimationFrame(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0, nodes: calculatedNodes }));
-      });
-    };
-    fit();
-    // React Flow receives controlled nodes one render after the workspace;
-    // retry after they have dimensions, otherwise fitView sees an empty box.
-    delayed = globalThis.setTimeout(fit, 260);
-    window.addEventListener('resize', fit);
-    return () => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-      if (delayed !== undefined) globalThis.clearTimeout(delayed);
-      window.removeEventListener('resize', fit);
-    };
-  }, [presentation, canvasStateSignature]);
+    if (presentation !== '2d' || !viewportTargetKey) return;
+    const frame = requestAnimationFrame(restoreCanvasViewport);
+    return () => cancelAnimationFrame(frame);
+  }, [presentation, viewportTargetKey, canvasStateSignature]);
   const swimlaneNodes = useMemo<Node[]>(() => showSwimlanes && !overviewMode
     ? swimlaneBands.filter((band) => !focusedSubsystem || band.subsystem === focusedSubsystem).map((band) => ({
         id: `__swimlane_${band.subsystem}`,
@@ -568,7 +606,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         source: transition.from,
         target: transition.to,
         label: [
-          edgeDisplayLabel(project, transition),
+          edgeDisplayLabel(project, transition, labels),
           transition.condition ? `[${transition.condition}]` : ''
         ].filter(Boolean).join(' '),
         type: 'fsmTransition',
@@ -584,11 +622,43 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
         zIndex: transition.id === selectedTransitionId ? 90 : 0
       };
     });
-  }, [project, selectedTransitionId, canvasTransitions, edgeRoutes]);
+  }, [project, selectedTransitionId, canvasTransitions, edgeRoutes, labels]);
 
   if (!project) {
     return <section className="workspace-empty">{labels.noProjectLoaded}</section>;
   }
+
+  const totalTransitionCount = project.fsm.transitionOrder.length;
+  const shownTransitionCount = canvasTransitions.length;
+  const hiddenTransitionReason: 'subsystem' | 'overview' | 'layers' | null = focusedSubsystem
+    ? 'subsystem'
+    : overviewMode
+      ? 'overview'
+      : activeSubsystems.size < subsystems.length
+        ? 'layers'
+        : null;
+  const hiddenTransitionReasonLabel = hiddenTransitionReason === 'subsystem'
+    ? labels.transitionSummaryReasonSubsystem
+    : hiddenTransitionReason === 'overview'
+      ? labels.transitionSummaryReasonOverview
+      : hiddenTransitionReason === 'layers'
+        ? labels.transitionSummaryReasonLayers
+        : null;
+  const resetGraphFilters = (): void => {
+    setFocusedSubsystem(null);
+    setOverviewMode(false);
+    setVisibleSubsystems([]);
+  };
+
+  // A first-time user reads "Add state" as the obvious first action; requiring
+  // a separate, unexplained "Edit graph" toggle first is the single biggest
+  // source of "I clicked + and nothing happened" confusion. Turning edit mode
+  // on as part of the same click keeps the safety of a read-only default
+  // without making it a hidden prerequisite.
+  const addStateAndEnableEditing = (): void => {
+    if (!editing) setEditing(true);
+    addFsmState();
+  };
 
   const selectedState = selectedStateId ? project.fsm.states[selectedStateId] : null;
   const selectedTransition = selectedTransitionId ? project.fsm.transitions[selectedTransitionId] : null;
@@ -639,6 +709,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       ? { ...current, leftWidth: clampSidebarWidth(sidebarResize.startWidth + delta, 190, 520) }
       : { ...current, rightWidth: clampSidebarWidth(sidebarResize.startWidth - delta, 260, 620) });
   };
+  const collapsedRailWidth = 46;
 
   return (
     <section
@@ -646,17 +717,40 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       className={`workspace-root fsm-workspace fsm-workspace-resizable ${editing ? 'fsm-edit-mode' : 'fsm-readonly-mode'}${isFullscreen ? ' fsm-fullscreen' : ''}${isFullscreen && fullscreenInspectorOpen ? ' fsm-fullscreen-inspector-open' : ''}`}
       aria-label={labels.fsmEditor}
       data-testid="fsm-workspace"
-      style={{ gridTemplateColumns: `${layout.leftWidth}px 6px minmax(430px, 1fr) 6px ${layout.rightWidth}px` }}
+      style={{ gridTemplateColumns: `${layout.leftCollapsed ? collapsedRailWidth : layout.leftWidth}px 6px minmax(430px, 1fr) 6px ${layout.rightCollapsed ? collapsedRailWidth : layout.rightWidth}px` }}
       onPointerMove={updateSidebarResize}
       onPointerUp={() => setSidebarResize(null)}
       onPointerCancel={() => setSidebarResize(null)}
     >
-      <aside className="workspace-sidebar fsm-state-catalog">
+      <aside className={layout.leftCollapsed ? 'workspace-sidebar fsm-state-catalog collapsible-sidebar collapsed' : 'workspace-sidebar fsm-state-catalog collapsible-sidebar'}>
         <header className="workspace-section-header">
           <h2>{labels.states}</h2>
-          <button type="button" onClick={addFsmState} title={labels.addState} data-testid="fsm-add-state" disabled={!editing}><Plus size={16} /></button>
+          <div className="sidebar-header-actions">
+            {!layout.leftCollapsed ? (
+              <button
+                type="button"
+                onClick={addFsmState}
+                title={editing ? labels.addState : labels.addStateNeedsEditing}
+                data-testid="fsm-add-state"
+                disabled={!editing}
+              >
+                <Plus size={16} />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="sidebar-collapse-button"
+              data-testid={layout.leftCollapsed ? 'fsm-expand-state-catalog' : 'fsm-collapse-state-catalog'}
+              onClick={() => setLayout((current) => ({ ...current, leftCollapsed: !current.leftCollapsed }))}
+              aria-expanded={!layout.leftCollapsed}
+              aria-label={layout.leftCollapsed ? labels.openLeftSidebar : labels.collapseLeftSidebar}
+              title={layout.leftCollapsed ? labels.openLeftSidebar : labels.collapseLeftSidebar}
+            >
+              {layout.leftCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
+          </div>
         </header>
-        <div className="sidebar-search">
+        <div className="sidebar-search sidebar-content">
           <Search size={14} />
           <input
             value={stateSearch}
@@ -665,7 +759,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
             aria-label={labels.search}
           />
         </div>
-        <div className="entity-list">
+        <div className="sidebar-content entity-list">
           {visibleStateIds.map((stateId) => {
             const state = project.fsm.states[stateId];
             return (
@@ -698,39 +792,42 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
             );
           })}
         </div>
-        <button type="button" className={showScripts ? 'workspace-tool active' : 'workspace-tool'} onClick={() => setShowScripts((value) => !value)} data-testid="fsm-open-script-studio">
-          {labels.fsmScripts}
-        </button>
-        <ValidationPanel
-          issues={project.validation.issues}
-          domain="fsm"
-          title={labels.fsmValidation}
-          labels={labels}
-          defaultCollapsed
-          onSelectEntity={(entityType, entityId) => {
-            if (entityType === 'state') {
-              selectState(entityId);
-            } else if (entityType === 'transition') {
-              selectTransition(entityId);
-            }
-          }}
-          onFixInitialState={() => {
-            const candidateId =
-              project.fsm.stateOrder.find((id) => /main|home|init|start/i.test(id)) ?? project.fsm.stateOrder[0];
-            if (candidateId) {
-              updateFsmState(candidateId, { initial: true });
-              selectState(candidateId);
-            }
-          }}
-        />
+        <div className="sidebar-content">
+          <button type="button" className={showScripts ? 'workspace-tool active' : 'workspace-tool'} onClick={() => setShowScripts((value) => !value)} data-testid="fsm-open-script-studio">
+            {labels.fsmScripts}
+          </button>
+          <ValidationPanel
+            issues={project.validation.issues}
+            domain="fsm"
+            title={labels.fsmValidation}
+            labels={labels}
+            defaultCollapsed
+            onSelectEntity={(entityType, entityId) => {
+              if (entityType === 'state') {
+                selectState(entityId);
+              } else if (entityType === 'transition') {
+                selectTransition(entityId);
+              }
+            }}
+            onFixInitialState={() => {
+              const candidateId =
+                project.fsm.stateOrder.find((id) => /main|home|init|start/i.test(id)) ?? project.fsm.stateOrder[0];
+              if (candidateId) {
+                updateFsmState(candidateId, { initial: true });
+                selectState(candidateId);
+              }
+            }}
+          />
+        </div>
       </aside>
 
       <div
-        className="workspace-splitter fsm-left-splitter"
+        className={layout.leftCollapsed ? 'workspace-splitter fsm-left-splitter disabled' : 'workspace-splitter fsm-left-splitter'}
         role="separator"
         aria-label={labels.resizeFsmStates}
         aria-orientation="vertical"
         onPointerDown={(event) => {
+          if (layout.leftCollapsed) return;
           event.currentTarget.setPointerCapture(event.pointerId);
           setSidebarResize({ side: 'left', startX: event.clientX, startWidth: layout.leftWidth });
         }}
@@ -807,6 +904,24 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           <button type="button" className={!overviewMode && !focusedSubsystem ? 'active' : ''} onClick={() => { setFocusedSubsystem(null); setOverviewMode(false); }} title={labels.allScreensButtonTitle}>
             {labels.allScreensButton}
           </button>
+          <span
+            className={hiddenTransitionReasonLabel ? 'fsm-transition-summary fsm-transition-summary-filtered' : 'fsm-transition-summary'}
+            data-testid="fsm-transition-summary"
+            title={hiddenTransitionReasonLabel ?? undefined}
+          >
+            {hiddenTransitionReasonLabel
+              ? `${shownTransitionCount} ${labels.transitionSummaryOf} ${totalTransitionCount} ${labels.transitionSummaryFiltered} · ${hiddenTransitionReasonLabel}`
+              : `${shownTransitionCount} / ${totalTransitionCount} ${labels.transitionSummaryAll}`}
+          </span>
+          <button
+            type="button"
+            data-testid="fsm-reset-graph-filters"
+            onClick={resetGraphFilters}
+            disabled={!hiddenTransitionReason}
+            title={labels.resetGraphFilters}
+          >
+            {labels.resetGraphFilters}
+          </button>
           <button type="button" className={presentation === '3d' ? 'active' : ''} onClick={() => {
             if (presentation === '2d') { assign3dDepths(); setPresentation('3d'); }
             else setPresentation('2d');
@@ -848,6 +963,17 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           ) : null
         ) : (
           <section className={`fsm-canvas fsm-canvas-${presentation}`}>
+            {project.fsm.stateOrder.length === 0 ? (
+              <div className="fsm-empty-state" data-testid="fsm-empty-state">
+                <div className="fsm-empty-state-card">
+                  <h3>{labels.emptyFsmTitle}</h3>
+                  <p>{labels.emptyFsmBody}</p>
+                  <button type="button" onClick={addStateAndEnableEditing} data-testid="fsm-empty-state-cta">
+                    <Plus size={16} /> {labels.emptyFsmCta}
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {presentation === '3d' ? (
               <>
                 <Suspense fallback={<div className="fsm-webgl-loading">{labels.loading3dView}</div>}>
@@ -909,8 +1035,18 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
               }}
               onPaneClick={() => { setContextMenu(null); setSelectedStateIds([]); }}
               onInit={(instance) => {
-                reactFlowInstanceRef.current = instance as { fitView: (opts?: { padding?: number; duration?: number; nodes?: Node[] }) => void };
-                globalThis.setTimeout(() => reactFlowInstanceRef.current?.fitView({ padding: 0.12, duration: 0, nodes: calculatedNodes }), 260);
+                reactFlowInstanceRef.current = instance as unknown as FsmFlowInstance;
+                restoreCanvasViewport();
+              }}
+              onMove={(_, viewport) => {
+                if (presentation === '2d' && viewportContext) {
+                  fsmViewportCache.write(viewportContext, viewport);
+                }
+              }}
+              onMoveEnd={(_, viewport) => {
+                if (presentation === '2d' && viewportContext) {
+                  fsmViewportCache.write(viewportContext, viewport);
+                }
               }}
               onNodeDragStart={(_, node) => {
                 const stateIds = selectedStateIds.includes(node.id) ? selectedStateIds : [node.id];
@@ -946,7 +1082,6 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
               selectionOnDrag
               panOnDrag={[1, 2]}
               minZoom={0.03}
-              fitView
             >
               <Background />
               <Controls />
@@ -982,7 +1117,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
           ) : null}
           {!contextMenu.stateId && !contextMenu.transitionId ? (
             <>
-              <button type="button" role="menuitem" onClick={() => { addFsmState(); setContextMenu(null); }}>{labels.addState}</button>
+              <button type="button" role="menuitem" onClick={() => { addFsmState(); setContextMenu(null); }} disabled={!editing} title={editing ? undefined : labels.addStateNeedsEditing}>{labels.addState}</button>
               <button type="button" role="menuitem" onClick={() => { void runElkLayout('tree'); setContextMenu(null); }}>{labels.ctxArrangeTree}</button>
               <button type="button" role="menuitem" onClick={() => { setFocusedSubsystem(null); setOverviewMode(true); setContextMenu(null); }}>{labels.ctxShowOverview}</button>
               <button type="button" role="menuitem" onClick={() => { setFocusedSubsystem(null); setOverviewMode(false); setContextMenu(null); }}>{labels.ctxShowAllScreens}</button>
@@ -992,17 +1127,33 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
       ) : null}
 
       <div
-        className="workspace-splitter fsm-right-splitter"
+        className={layout.rightCollapsed ? 'workspace-splitter fsm-right-splitter disabled' : 'workspace-splitter fsm-right-splitter'}
         role="separator"
         aria-label={labels.resizeFsmInspector}
         aria-orientation="vertical"
         onPointerDown={(event) => {
+          if (layout.rightCollapsed) return;
           event.currentTarget.setPointerCapture(event.pointerId);
           setSidebarResize({ side: 'right', startX: event.clientX, startWidth: layout.rightWidth });
         }}
       />
 
-      <aside className="workspace-inspector fsm-transition-sidebar">
+      <aside className={layout.rightCollapsed ? 'workspace-inspector fsm-transition-sidebar collapsible-sidebar collapsed' : 'workspace-inspector fsm-transition-sidebar collapsible-sidebar'}>
+        <header className="sidebar-drawer-header">
+          <strong>{labels.fsmInspectorTitle}</strong>
+          <button
+            type="button"
+            className="sidebar-collapse-button"
+            data-testid={layout.rightCollapsed ? 'fsm-expand-inspector' : 'fsm-collapse-inspector'}
+            onClick={() => setLayout((current) => ({ ...current, rightCollapsed: !current.rightCollapsed }))}
+            aria-expanded={!layout.rightCollapsed}
+            aria-label={layout.rightCollapsed ? labels.openRightSidebar : labels.collapseRightSidebar}
+            title={layout.rightCollapsed ? labels.openRightSidebar : labels.collapseRightSidebar}
+          >
+            {layout.rightCollapsed ? <PanelRightOpen size={17} /> : <PanelRightClose size={17} />}
+          </button>
+        </header>
+        <div className="sidebar-content">
         {selectedTransition ? (
           <>
             <TransitionLinkPreview transition={selectedTransition} language={language} fontGlyphs={fontGlyphs} labels={labels} />
@@ -1106,6 +1257,7 @@ export function FsmWorkspace({ requestedStateId }: { requestedStateId?: string }
             </section>
           </>
         ) : <p>{labels.selectStateOrTransition}</p>}
+        </div>
       </aside>
       {showTutorial ? (
         <TutorialOverlay workspace="fsm" language={language} onClose={() => setShowTutorial(false)} />
@@ -1319,12 +1471,12 @@ function TransitionLinkPreview({
   const button = transition.trigger.buttonId ? project.controlPanel.elements[transition.trigger.buttonId] : null;
   const caption = button?.type === 'button'
     ? button.label
-    : transition.labelMode === 'auto' ? 'Auto' : project.fsm.events[transition.trigger.eventId]?.name ?? 'Auto';
+    : transition.labelMode === 'auto' ? labels.autoLabel : project.fsm.events[transition.trigger.eventId]?.name ?? labels.autoLabel;
   const backendProcess = transition.backendProcessId ? project.backendProcesses[transition.backendProcessId] : null;
   const cliCommands = backendProcess?.commands.map((command) => project.cliCatalog?.[command]?.command ?? command) ?? [];
   const cards = [
-    { title: 'Исходное состояние', state: from },
-    { title: 'Целевое состояние', state: to }
+    { title: labels.sourceState, state: from },
+    { title: labels.targetState, state: to }
   ];
   return (
     <section className="transition-link-preview" aria-label={labels.transitionLinkedScreensAria}>
@@ -1340,7 +1492,7 @@ function TransitionLinkPreview({
             <article key={title}>
               <small>{title}</small>
               <button type="button" onClick={() => state && selectState(state.id)} title={labels.selectStateOnCanvas}>
-                <strong>{state?.title ?? 'Состояние отсутствует'}</strong>
+                <strong>{state?.title ?? labels.stateNotAssigned}</strong>
                 {screen ? (
                   <LCDCanvas
                     canvasData={{ stateId: screen.id, width: screen.width, height: screen.height, objects: screen.objects, selectedObjectIds: [], updatedAt: screen.updatedAt }}
@@ -1355,7 +1507,7 @@ function TransitionLinkPreview({
           );
         })}
       </div>
-      <small className="transition-link-meta">{transition.kind} · {transition.trigger.mechanism ?? 'event'}{transition.condition ? ` · ${transition.condition}` : ''}</small>
+      <small className="transition-link-meta">{transitionKindLabel(transition.kind, labels)} · {mechanismLabel(transition.trigger.mechanism, labels)}{transition.condition ? ` · ${transition.condition}` : ''}</small>
       {cliCommands.length ? (
         <section className="transition-cli-command" aria-label={labels.cliTransitionCommandsAria}>
           <strong>{labels.cliPrefixLabel} {backendProcess?.name}</strong>
@@ -1754,10 +1906,12 @@ function readFsmWorkspaceLayout(): FsmWorkspaceLayout {
     const value = JSON.parse(localStorage.getItem(FSM_LAYOUT_KEY) ?? '{}') as Partial<FsmWorkspaceLayout>;
     return {
       leftWidth: clampSidebarWidth(value.leftWidth ?? 270, 190, 520),
-      rightWidth: clampSidebarWidth(value.rightWidth ?? 390, 260, 620)
+      rightWidth: clampSidebarWidth(value.rightWidth ?? 390, 260, 620),
+      leftCollapsed: value.leftCollapsed ?? false,
+      rightCollapsed: value.rightCollapsed ?? false
     };
   } catch {
-    return { leftWidth: 270, rightWidth: 390 };
+    return { leftWidth: 270, rightWidth: 390, leftCollapsed: false, rightCollapsed: false };
   }
 }
 

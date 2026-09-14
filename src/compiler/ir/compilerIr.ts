@@ -1,4 +1,5 @@
 import type { CompilerDiagnostic } from '../validation/compilerDiagnostics';
+import type { DisplayProfile } from '../../domain/displayProfile';
 import type { NormalizedFsmIr } from './fsmIr';
 import type { NormalizedLocalizationIr, NormalizedResourceIr } from './localizationIr';
 import type { NormalizedScreenIr } from './screenIr';
@@ -6,11 +7,7 @@ import type { CompilerSymbolTable } from './symbolTable';
 import type { CompilerTraceabilityMap } from './traceability';
 import type { CompilerIrVersion } from './version';
 
-export interface NormalizedDisplayIr {
-  readonly width: number;
-  readonly height: number;
-  readonly colorMode: 'monochrome';
-  readonly packing: 'vertical-lsb';
+export interface NormalizedDisplayIr extends DisplayProfile {
   readonly byteLength: number;
 }
 
@@ -28,8 +25,29 @@ export interface NormalizedCompilerIrV1 {
   readonly screens: readonly NormalizedScreenIr[];
   readonly localization: NormalizedLocalizationIr;
   readonly resources: NormalizedResourceIr;
+  readonly animations: {
+    readonly resources: readonly NormalizedAnimationIr[];
+    readonly bindings: readonly NormalizedAnimationBindingIr[];
+  };
   readonly symbols: CompilerSymbolTable;
   readonly traceability: CompilerTraceabilityMap;
+}
+
+export interface NormalizedAnimationIr {
+  readonly id: string;
+  readonly symbol: string;
+  readonly loop: boolean;
+  readonly frames: readonly {
+    readonly id: string;
+    readonly bytes: readonly number[];
+    readonly durationMs: number;
+  }[];
+}
+
+export interface NormalizedAnimationBindingIr {
+  readonly screenId: string;
+  readonly objectId: string | null;
+  readonly animationId: string;
 }
 
 export interface CompilerCompletenessReport {

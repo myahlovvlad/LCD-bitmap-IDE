@@ -1,5 +1,7 @@
 import type {
   CanvasObject,
+  AnimationFrame,
+  AnimationResource,
   DisplayConfig,
   FontMetadata,
   FontVariantKey,
@@ -191,6 +193,24 @@ export type CanvasObjectsDeleteCommand = BaseProjectCommand<
   { screenId: string; objectIds: string[] }
 >;
 
+export type AnimationCreateCommand = BaseProjectCommand<'animation.create', { animation: AnimationResource }>;
+export type AnimationUpdateCommand = BaseProjectCommand<
+  'animation.update',
+  { animationId: string; updates: Partial<Pick<AnimationResource, 'name' | 'width' | 'height' | 'loop'>> }
+>;
+export type AnimationDeleteCommand = BaseProjectCommand<'animation.delete', { animationId: string }>;
+export type AnimationFrameAddCommand = BaseProjectCommand<'animation.frame.add', { animationId: string; frame: AnimationFrame }>;
+export type AnimationFrameUpdateCommand = BaseProjectCommand<
+  'animation.frame.update',
+  { animationId: string; frameId: string; updates: Partial<Pick<AnimationFrame, 'bytes' | 'durationMs'>> }
+>;
+export type AnimationFrameRemoveCommand = BaseProjectCommand<'animation.frame.remove', { animationId: string; frameId: string }>;
+export type AnimationFrameReorderCommand = BaseProjectCommand<'animation.frame.reorder', { animationId: string; frameIds: string[] }>;
+export type AnimationBindingSetCommand = BaseProjectCommand<
+  'animation.binding.set',
+  { screenId: string; objectId?: string; animationId: string | null }
+>;
+
 export type FontGlyphUpdateCommand = BaseProjectCommand<
   'font.glyph.update',
   { variant: FontVariantKey; char: string; glyph: Glyph }
@@ -260,6 +280,14 @@ export type ProjectCommand =
   | CanvasBitmapLayerAddCommand
   | CanvasObjectsUpdateCommand
   | CanvasObjectsDeleteCommand
+  | AnimationCreateCommand
+  | AnimationUpdateCommand
+  | AnimationDeleteCommand
+  | AnimationFrameAddCommand
+  | AnimationFrameUpdateCommand
+  | AnimationFrameRemoveCommand
+  | AnimationFrameReorderCommand
+  | AnimationBindingSetCommand
   | FontGlyphUpdateCommand
   | FontGlyphsImportCommand
   | MeasurementAddCommand
@@ -284,6 +312,7 @@ export const PROJECT_COMMAND_TYPES = [
   'controlPanel.element.add', 'controlPanel.element.update', 'controlPanel.elements.update', 'controlPanel.elements.delete',
   'controlPanel.elements.group', 'controlPanel.elements.ungroup', 'controlPanel.elements.align', 'controlPanel.settings.update',
   'canvas.object.update', 'canvas.selection.set', 'canvas.object.add', 'canvas.bitmapLayer.add', 'canvas.objects.update', 'canvas.objects.delete',
+  'animation.create', 'animation.update', 'animation.delete', 'animation.frame.add', 'animation.frame.update', 'animation.frame.remove', 'animation.frame.reorder', 'animation.binding.set',
   'font.glyph.update', 'font.glyphs.import',
   'measurement.add', 'measurement.update', 'measurement.delete',
   'tag.upsert', 'tag.delete', 'procedure.upsert', 'procedure.delete', 'alarm.upsert', 'alarm.delete'

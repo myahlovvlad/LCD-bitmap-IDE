@@ -5,6 +5,7 @@ import type {
   GraphPosition,
   LanguageCode
 } from '../domain';
+import { normalizeDisplayProfile } from '../domain';
 import type {
   BackendProcess,
   ControlPanelElement,
@@ -16,6 +17,7 @@ import type {
   LcdBitmapProject,
   LcdScreen
 } from '../domain/project';
+import type { AnimationFrame, AnimationResource } from '../domain/animation';
 import { applyFsmInterchangeToProject } from '../fsm-interchange';
 import { screenInterchangeToLcdScreens } from '../screen-interchange';
 import type { ApplicationCommandContext } from './commandContext';
@@ -118,6 +120,22 @@ export function applyProjectCommandMutation(
       return updateCanvasObjects(workspace, command.payload.screenId, command.payload.objects, context);
     case 'canvas.objects.delete':
       return deleteCanvasObjects(workspace, command.payload.screenId, command.payload.objectIds, context);
+    case 'animation.create':
+      return createAnimation(workspace, command.payload.animation, context);
+    case 'animation.update':
+      return updateAnimation(workspace, command.payload.animationId, command.payload.updates, context);
+    case 'animation.delete':
+      return deleteAnimation(workspace, command.payload.animationId, context);
+    case 'animation.frame.add':
+      return addAnimationFrame(workspace, command.payload.animationId, command.payload.frame, context);
+    case 'animation.frame.update':
+      return updateAnimationFrame(workspace, command.payload.animationId, command.payload.frameId, command.payload.updates, context);
+    case 'animation.frame.remove':
+      return removeAnimationFrame(workspace, command.payload.animationId, command.payload.frameId, context);
+    case 'animation.frame.reorder':
+      return reorderAnimationFrames(workspace, command.payload.animationId, command.payload.frameIds, context);
+    case 'animation.binding.set':
+      return bindAnimation(workspace, command.payload, context);
     case 'font.glyph.update':
       return updateGlyph(workspace, command.payload.variant, command.payload.char, command.payload.glyph);
     case 'font.glyphs.import':
@@ -184,12 +202,11 @@ function updateDisplayConfig(
   context: ApplicationCommandContext
 ): ProjectMutationResult {
   const project = workspace.project;
-  const nextDisplay: DisplayConfig = {
-    width: clamp(display.width, 16, 512),
-    height: clamp(display.height, 16, 512),
-    colorMode: 'monochrome',
-    packing: 'vertical-lsb'
-  };
+  const nextDisplay: DisplayConfig = normalizeDisplayProfile({
+    ...display,
+    width: clamp(display.width, 16, 4096),
+    height: clamp(display.height, 16, 4096)
+  }, project.display);
   const screens = Object.fromEntries(Object.entries(project.screens).map(([id, screen]) => [
     id,
     { ...screen, width: nextDisplay.width, height: nextDisplay.height, updatedAt: context.now() }
@@ -1082,6 +1099,159 @@ function deleteCanvasObjects(workspace: ApplicationWorkspace, screenId: string, 
     selectedObjectIds: [],
     updatedAt: context.now()
   }), objectIds.map((id) => deleted('canvas-object', id, `/screens/${screenId}/objects/${id}`, workspace.project.screens[screenId]?.objects.find((object) => object.id === id))));
+}
+
+function createAnimation(workspace: ApplicationWorkspace, animation: AnimationResource, context: ApplicationCommandContext): ProjectMutationResult {
+  const project = workspace.project;
+  if (!animation.id || project.animations.resources[animation.id]) return noChange(workspace);
+  const nextAnimation = { ...animation, id: animation.id };
+  return changedProject(workspace, {
+    ...project,
+    meta: { ...project.meta, updatedAt: context.now() },
+    animations: {
+      resources: { ...project.animations.resources, [animation.id]: nextAnimation },
+      order: [...project.animations.order, animation.id]
+    }
+  }, [created('animation', animation.id, `/animations/resources/${animation.id}`, nextAnimation)]);
+}
+
+function updateAnimation(
+  workspace: ApplicationWorkspace,
+  animationId: string,
+  updates: Partial<Pick<AnimationResource, 'name' | 'width' | 'height' | 'loop'>>,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const animation = project.animations.resources[animationId];
+  if (!animation) return noChange(workspace);
+  const nextAnimation = { ...animation, ...updates, id: animationId };
+  if (sameJson(animation, nextAnimation)) return noChange(workspace);
+  if (hasIncompatibleAnimationBinding(project, animationId, nextAnimation)) return noChange(workspace);
+  return replaceAnimation(workspace, animationId, nextAnimation, context, [{
+    kind: 'updated', entityType: 'animation', entityId: animationId, path: `/animations/resources/${animationId}`, before: animation, after: nextAnimation
+  }]);
+}
+
+function hasIncompatibleAnimationBinding(project: LcdBitmapProject, animationId: string, resource: AnimationResource): boolean {
+  return Object.values(project.screens).some((screen) => (
+    (screen.animationId === animationId && (screen.width !== resource.width || screen.height !== resource.height))
+    || screen.objects.some((object) => object.type === 'bitmap'
+      && object.animationId === animationId
+      && (object.width !== resource.width || object.height !== resource.height))
+  ));
+}
+
+function deleteAnimation(workspace: ApplicationWorkspace, animationId: string, context: ApplicationCommandContext): ProjectMutationResult {
+  const project = workspace.project;
+  const animation = project.animations.resources[animationId];
+  if (!animation) return noChange(workspace);
+  const screens = Object.fromEntries(Object.entries(project.screens).map(([screenId, screen]) => [screenId, {
+    ...screen,
+    animationId: screen.animationId === animationId ? null : screen.animationId,
+    objects: screen.objects.map((object) => object.type === 'bitmap' && object.animationId === animationId
+      ? { ...object, animationId: null }
+      : object),
+    updatedAt: screen.animationId === animationId || screen.objects.some((object) => object.type === 'bitmap' && object.animationId === animationId)
+      ? context.now()
+      : screen.updatedAt
+  }]));
+  const changes: SemanticChange[] = [deleted('animation', animationId, `/animations/resources/${animationId}`, animation)];
+  Object.entries(project.screens).forEach(([screenId, screen]) => {
+    const nextScreen = screens[screenId];
+    if (!sameJson(screen, nextScreen)) changes.push({ kind: 'updated', entityType: 'screen', entityId: screenId, path: `/screens/${screenId}`, before: screen, after: nextScreen });
+  });
+  return changedProject(workspace, {
+    ...project,
+    meta: { ...project.meta, updatedAt: context.now() },
+    animations: { resources: omit(project.animations.resources, animationId), order: project.animations.order.filter((id) => id !== animationId) },
+    screens
+  }, changes);
+}
+
+function addAnimationFrame(workspace: ApplicationWorkspace, animationId: string, frame: AnimationFrame, context: ApplicationCommandContext): ProjectMutationResult {
+  const animation = workspace.project.animations.resources[animationId];
+  if (!animation || !frame.id || animation.frames.some((existing) => existing.id === frame.id)) return noChange(workspace);
+  const nextAnimation = { ...animation, frames: [...animation.frames, frame] };
+  return replaceAnimation(workspace, animationId, nextAnimation, context, [created('animation-frame', frame.id, `/animations/resources/${animationId}/frames/${frame.id}`, frame)]);
+}
+
+function updateAnimationFrame(
+  workspace: ApplicationWorkspace,
+  animationId: string,
+  frameId: string,
+  updates: Partial<Pick<AnimationFrame, 'bytes' | 'durationMs'>>,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const animation = workspace.project.animations.resources[animationId];
+  const frame = animation?.frames.find((existing) => existing.id === frameId);
+  if (!animation || !frame) return noChange(workspace);
+  const nextFrame = { ...frame, ...updates, id: frameId };
+  if (sameJson(frame, nextFrame)) return noChange(workspace);
+  const nextAnimation = { ...animation, frames: animation.frames.map((existing) => existing.id === frameId ? nextFrame : existing) };
+  return replaceAnimation(workspace, animationId, nextAnimation, context, [{
+    kind: 'updated', entityType: 'animation-frame', entityId: frameId, path: `/animations/resources/${animationId}/frames/${frameId}`, before: frame, after: nextFrame
+  }]);
+}
+
+function removeAnimationFrame(workspace: ApplicationWorkspace, animationId: string, frameId: string, context: ApplicationCommandContext): ProjectMutationResult {
+  const animation = workspace.project.animations.resources[animationId];
+  const frame = animation?.frames.find((existing) => existing.id === frameId);
+  if (!animation || !frame) return noChange(workspace);
+  const nextAnimation = { ...animation, frames: animation.frames.filter((existing) => existing.id !== frameId) };
+  return replaceAnimation(workspace, animationId, nextAnimation, context, [deleted('animation-frame', frameId, `/animations/resources/${animationId}/frames/${frameId}`, frame)]);
+}
+
+function reorderAnimationFrames(workspace: ApplicationWorkspace, animationId: string, frameIds: string[], context: ApplicationCommandContext): ProjectMutationResult {
+  const animation = workspace.project.animations.resources[animationId];
+  if (!animation || frameIds.length !== animation.frames.length || new Set(frameIds).size !== frameIds.length || frameIds.some((id) => !animation.frames.some((frame) => frame.id === id))) return noChange(workspace);
+  const nextFrames = frameIds.map((id) => animation.frames.find((frame) => frame.id === id)!);
+  if (sameJson(animation.frames, nextFrames)) return noChange(workspace);
+  const nextAnimation = { ...animation, frames: nextFrames };
+  return replaceAnimation(workspace, animationId, nextAnimation, context, [{
+    kind: 'updated', entityType: 'animation', entityId: animationId, path: `/animations/resources/${animationId}/frames`, before: animation.frames, after: nextFrames
+  }]);
+}
+
+function bindAnimation(
+  workspace: ApplicationWorkspace,
+  payload: Extract<ProjectCommand, { type: 'animation.binding.set' }>['payload'],
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const screen = project.screens[payload.screenId];
+  const resource = payload.animationId ? project.animations.resources[payload.animationId] : null;
+  if (!screen || (payload.animationId && !resource)) return noChange(workspace);
+  if (payload.objectId) {
+    const target = screen.objects.find((object): object is Extract<CanvasObject, { type: 'bitmap' }> => object.id === payload.objectId && object.type === 'bitmap');
+    if (!target || (resource && (resource.width !== target.width || resource.height !== target.height))) return noChange(workspace);
+    const objects = screen.objects.map((object) => object.id === payload.objectId ? { ...target, animationId: payload.animationId } : object);
+    const nextScreen = { ...screen, objects, updatedAt: context.now() };
+    if (sameJson(screen, nextScreen)) return noChange(workspace);
+    return changedProject(workspace, { ...project, meta: { ...project.meta, updatedAt: context.now() }, screens: { ...project.screens, [screen.id]: nextScreen } }, [{
+      kind: 'updated', entityType: 'canvas-object', entityId: payload.objectId, path: `/screens/${screen.id}/objects/${payload.objectId}/animationId`, before: target.animationId ?? null, after: payload.animationId
+    }]);
+  }
+  if (resource && (resource.width !== screen.width || resource.height !== screen.height)) return noChange(workspace);
+  const nextScreen = { ...screen, animationId: payload.animationId, updatedAt: context.now() };
+  if (sameJson(screen, nextScreen)) return noChange(workspace);
+  return changedProject(workspace, { ...project, meta: { ...project.meta, updatedAt: context.now() }, screens: { ...project.screens, [screen.id]: nextScreen } }, [{
+    kind: 'updated', entityType: 'screen', entityId: screen.id, path: `/screens/${screen.id}/animationId`, before: screen.animationId ?? null, after: payload.animationId
+  }]);
+}
+
+function replaceAnimation(
+  workspace: ApplicationWorkspace,
+  animationId: string,
+  animation: AnimationResource,
+  context: ApplicationCommandContext,
+  changes: SemanticChange[]
+): ProjectMutationResult {
+  const project = workspace.project;
+  return changedProject(workspace, {
+    ...project,
+    meta: { ...project.meta, updatedAt: context.now() },
+    animations: { ...project.animations, resources: { ...project.animations.resources, [animationId]: animation } }
+  }, changes);
 }
 
 function updateGlyph(workspace: ApplicationWorkspace, variant: keyof FontGlyphs, char: string, glyph: FontGlyphs[keyof FontGlyphs][string]): ProjectMutationResult {

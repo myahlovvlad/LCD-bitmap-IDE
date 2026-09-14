@@ -15,6 +15,19 @@
   --ide-danger: #dc2626;
   --ide-warning: #f59e0b;
   --ide-success: #16a34a;
+  --ide-header: #182131;
+  --ide-sidebar: #151d2a;
+  --ide-sidebar-raised: #1a2433;
+  --ide-control: #253247;
+  --ide-control-hover: #31415a;
+  --ide-control-text: #f8fafc;
+  --ide-canvas: #0f172a;
+  --ide-card: #172132;
+  --ide-input: #0f172a;
+  --ide-selection: rgba(59, 130, 246, 0.2);
+  --ide-selection-border: #60a5fa;
+  --ide-focus: #93c5fd;
+  --ide-shadow: rgba(0, 0, 0, 0.26);
 
   /* Device defaults. Project-level device tokens override these in SVG. */
   --device-panel-background: #315f45;
@@ -76,6 +89,56 @@
   background: var(--dk-bg);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-theme='light'] {
+  --ide-background: #f3f5f8;
+  --ide-surface: #ffffff;
+  --ide-surface-elevated: #e9edf3;
+  --ide-border: #cbd3de;
+  --ide-text-primary: #172033;
+  --ide-text-secondary: #5d6979;
+  --ide-accent: #1769c2;
+  --ide-accent-hover: #0f5cad;
+  --ide-danger: #b42318;
+  --ide-warning: #a15c00;
+  --ide-success: #177245;
+  --ide-header: #ffffff;
+  --ide-sidebar: #edf1f6;
+  --ide-sidebar-raised: #f7f9fb;
+  --ide-control: #ffffff;
+  --ide-control-hover: #e6edf7;
+  --ide-control-text: #172033;
+  --ide-canvas: #f8fafc;
+  --ide-card: #ffffff;
+  --ide-input: #ffffff;
+  --ide-selection: #dbeafe;
+  --ide-selection-border: #1769c2;
+  --ide-focus: #075ca8;
+  --ide-shadow: rgba(30, 41, 59, 0.13);
+
+  --dk-bg: var(--ide-background);
+  --dk-surface: var(--ide-surface);
+  --dk-surface-mid: var(--ide-surface-elevated);
+  --dk-card: rgba(255, 255, 255, 0.88);
+  --dk-header: var(--ide-header);
+  --dk-header-dark: var(--ide-header);
+  --dk-primary: var(--ide-control);
+  --dk-primary-mid: var(--ide-control-hover);
+  --dk-primary-dark: var(--ide-control);
+  --dk-accent: var(--ide-accent);
+  --dk-accent-glow: rgba(23, 105, 194, 0.2);
+  --dk-text: var(--ide-text-primary);
+  --dk-text-muted: var(--ide-text-secondary);
+  --dk-text-label: #344054;
+  --dk-border: var(--ide-border);
+  --dk-border-light: #8fa0b5;
+  --dk-border-subtle: var(--ide-border);
+  --dk-node-bg: #ffffff;
+  --dk-node-border: #98a5b7;
+  --dk-scroll-track: #edf1f6;
+  --dk-scroll-thumb: #bcc6d3;
+  --dk-scroll-hover: #9daabd;
 }
 
 * {
@@ -1535,6 +1598,15 @@ button:disabled {
   opacity: 1;
 }
 
+/*
+  Outside edit mode the handles stay mounted (so persisted transitions have a
+  DOM anchor) but must not intercept clicks or appear as a connect affordance.
+*/
+.node-handles-passive .node-handle {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 .fsm-edge {
   stroke: #cbd5e1;
   stroke-width: 2;
@@ -1583,6 +1655,11 @@ button:disabled {
 }
 
 .state-node-screen.linked { color: #bfdbfe; }
+
+.state-node-screen.unlinked {
+  color: #fbbf24;
+  font-weight: 600;
+}
 
 .state-node-buttons {
   display: flex;
@@ -1842,7 +1919,8 @@ button:disabled {
 .lcd-auxiliary-panel .pixel-importer-panel,
 .lcd-auxiliary-panel .screen-dsl-studio,
 .lcd-auxiliary-panel .glyph-c-generator,
-.lcd-auxiliary-panel .template-gallery {
+.lcd-auxiliary-panel .template-gallery,
+.lcd-auxiliary-panel .animation-editor-panel {
   min-width: 0;
 }
 
@@ -2225,6 +2303,140 @@ button:disabled {
 .pixel-importer-actions span {
   color: #9ca3af;
   font-size: 12px;
+}
+
+.animation-editor-panel {
+  display: grid;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid #4b5563;
+  border-radius: 12px;
+  background: rgba(31, 41, 55, 0.92);
+  padding: 16px;
+  color: #e5e7eb;
+}
+
+.animation-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.animation-editor-header h2 {
+  margin: 0;
+}
+
+.animation-editor-body {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+.animation-list {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  overflow: auto;
+}
+
+.animation-detail {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.animation-name-field {
+  display: grid;
+  gap: 5px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.animation-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.animation-preview {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 12px;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background: #111827;
+}
+
+.animation-transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.animation-transport input[type='range'] {
+  flex: 1;
+}
+
+.animation-frame-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.animation-frame-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.animation-frame-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+
+.animation-frame-item {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 8px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background: #111827;
+}
+
+.animation-frame-item input[type='number'] {
+  width: 72px;
+}
+
+.animation-frame-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.animation-frame-thumb {
+  border: 1px solid #4b5563;
+}
+
+.animation-binding-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .preview-stage {
@@ -3488,14 +3700,14 @@ button:disabled {
   overflow: hidden;
 }
 
-.lcd-workspace .workspace-canvas-column {
+.workspace-canvas-column {
   container-type: inline-size;
 }
 
 .workspace-toolbar {
   flex: 0 0 auto;
   border-bottom: 1px solid var(--ide-border);
-  background: #26364d;
+  background: var(--ide-sidebar-raised);
   padding: 7px;
 }
 
@@ -3579,7 +3791,7 @@ button:disabled {
   gap: 7px;
   border: 1px solid var(--ide-border);
   border-radius: 7px;
-  background: #0f172a;
+  background: var(--ide-input);
   color: var(--ide-text-secondary);
   padding: 6px 8px;
 }
@@ -3602,7 +3814,7 @@ button:disabled {
   min-width: 0;
   border: 1px solid var(--ide-border);
   border-radius: 7px;
-  background: #111827;
+  background: var(--ide-card);
   color: var(--ide-text-primary);
   padding: 8px;
   text-align: left;
@@ -3622,8 +3834,8 @@ button:disabled {
 
 .entity-row.active,
 .entity-card.active {
-  border-color: #60a5fa;
-  background: rgba(37, 99, 235, 0.18);
+  border-color: var(--ide-selection-border);
+  background: var(--ide-selection);
 }
 
 .entity-card {
@@ -3648,9 +3860,56 @@ button:disabled {
 }
 
 .fsm-canvas {
+  position: relative;
   flex: 1;
   min-height: 380px;
-  background: #0f172a;
+  background: var(--ide-canvas);
+}
+
+.fsm-empty-state {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.fsm-empty-state-card {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+  max-width: 360px;
+  padding: 28px 32px;
+  border: 1px dashed rgba(148, 163, 184, 0.55);
+  border-radius: 14px;
+  background: var(--ide-surface-raised, rgba(17, 24, 39, 0.92));
+  pointer-events: auto;
+}
+
+.fsm-empty-state-card h3 {
+  margin: 0;
+  color: var(--ide-text-primary);
+}
+
+.fsm-empty-state-card p {
+  margin: 0;
+  color: var(--ide-text-secondary);
+  font-size: 13px;
+}
+
+.fsm-empty-state-card button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1px solid var(--ide-selection-border, #60a5fa);
+  border-radius: 8px;
+  background: var(--ide-accent, #2563eb);
+  color: #fff;
+  font-weight: 600;
 }
 
 .fsm-readonly-mode .fsm-canvas {
@@ -3701,7 +3960,7 @@ button:disabled {
   padding: 8px;
   border: 1px solid #475569;
   border-radius: 8px;
-  background: #0f172a;
+  background: var(--ide-card);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.42);
 }
 
@@ -3722,6 +3981,19 @@ button:disabled {
   color: var(--ide-text-secondary);
   font-size: 11px;
   white-space: nowrap;
+}
+
+.fsm-transition-summary {
+  color: var(--ide-text-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.fsm-transition-summary-filtered {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
 }
 
 .screen-layer-manager {
@@ -4013,7 +4285,7 @@ button:disabled {
   gap: 9px;
   border: 1px solid var(--ide-border);
   border-radius: 8px;
-  background: rgba(17, 24, 39, 0.72);
+  background: var(--ide-card);
   padding: 10px;
 }
 
@@ -4031,7 +4303,7 @@ button:disabled {
   min-width: 0;
   border: 1px solid var(--ide-border);
   border-radius: 6px;
-  background: #0f172a;
+  background: var(--ide-input);
   color: var(--ide-text-primary);
   padding: 7px;
 }
@@ -5065,6 +5337,339 @@ button:disabled {
   color: #86efac;
 }
 
+/* Minimal IDE shell: global navigation is intentionally separate from each
+   editor's own navigator/canvas/inspector layout. */
+.app-shell {
+  gap: 8px;
+  padding: 10px;
+  background: var(--ide-background);
+  color: var(--ide-text-primary);
+}
+
+.project-header {
+  grid-template-columns: minmax(300px, 1fr) auto;
+  margin: 0;
+  border-color: var(--ide-border);
+  border-radius: 8px;
+  background: var(--ide-header);
+  box-shadow: 0 3px 14px var(--ide-shadow);
+}
+
+.project-identity h1,
+.project-identity label {
+  color: var(--ide-text-primary);
+}
+
+.project-identity input,
+.project-actions select,
+.theme-selector select {
+  border-color: var(--ide-border);
+  background: var(--ide-control);
+  color: var(--ide-control-text);
+}
+
+.project-version,
+.software-version {
+  border-color: var(--ide-border);
+  background: var(--ide-sidebar-raised);
+  color: var(--ide-text-secondary);
+}
+
+.software-version {
+  flex: 0 0 auto;
+  border-left: 1px solid var(--ide-border);
+  padding-left: 10px;
+  font: 700 11px/1 ui-monospace, monospace;
+  white-space: nowrap;
+}
+
+.project-actions button {
+  border-color: var(--ide-border);
+  background: var(--ide-control);
+  color: var(--ide-control-text);
+}
+
+.project-actions button:hover {
+  border-color: var(--ide-selection-border);
+  background: var(--ide-control-hover);
+}
+
+.theme-selector {
+  display: grid;
+  gap: 6px;
+  color: var(--ide-text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.theme-selector select {
+  min-height: 32px;
+  border: 1px solid var(--ide-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.theme-selector-compact {
+  display: block;
+}
+
+.theme-selector-compact > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.ide-workbench {
+  display: grid;
+  grid-template-columns: 62px 190px minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid var(--ide-border);
+  border-radius: 8px;
+  background: var(--ide-surface);
+}
+
+/*
+  Collapsing the global navigator only narrows this column to an icon rail.
+  It must never affect a workspace's own local sidebars (FSM state catalog,
+  inspector panes, etc.) -- those are collapsed independently by each
+  workspace and own their own grid columns further down the tree.
+*/
+.ide-workbench.ide-workbench-navigator-collapsed {
+  grid-template-columns: 62px 46px minmax(0, 1fr);
+}
+
+.activity-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 5px;
+  border-right: 1px solid var(--ide-border);
+  background: var(--ide-sidebar);
+}
+
+.activity-bar button {
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  min-height: 58px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ide-text-secondary);
+  cursor: pointer;
+  font-size: 9px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.activity-bar button:hover,
+.activity-bar button.active {
+  border-color: var(--ide-selection-border);
+  background: var(--ide-selection);
+  color: var(--ide-text-primary);
+}
+
+.activity-bar button:focus-visible,
+.project-actions button:focus-visible,
+.workspace-navigation button:focus-visible,
+.theme-selector select:focus-visible {
+  outline: 2px solid var(--ide-focus);
+  outline-offset: 2px;
+}
+
+.workspace-navigation.workspace-navigator {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: 3px;
+  margin: 0;
+  overflow: auto;
+  border: 0;
+  border-right: 1px solid var(--ide-border);
+  border-radius: 0;
+  background: var(--ide-sidebar-raised);
+  padding: 8px;
+}
+
+.workspace-navigation.workspace-navigator button {
+  min-height: 34px;
+  justify-content: flex-start;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ide-text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.workspace-navigation.workspace-navigator button:hover {
+  border-color: transparent;
+  background: var(--ide-control-hover);
+}
+
+.workspace-navigation.workspace-navigator button.active {
+  border-color: var(--ide-selection-border);
+  background: var(--ide-selection);
+  box-shadow: none;
+  color: var(--ide-text-primary);
+}
+
+.workspace-navigator-toggle {
+  justify-content: center !important;
+  margin-bottom: 4px;
+}
+
+.workspace-navigator.navigator-compact {
+  padding-left: 4px;
+  padding-right: 4px;
+  align-items: center;
+}
+
+.workspace-navigator.navigator-compact button {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.workspace-navigator.navigator-compact .workspace-nav-label {
+  display: none;
+}
+
+.ide-workbench .workspace-host {
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+  background: var(--ide-surface);
+}
+
+.editor-workspace-frame {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--ide-border);
+  border-radius: 8px;
+  background: var(--ide-work-area);
+}
+
+.editor-context-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--ide-border);
+  background: var(--ide-sidebar-raised);
+}
+
+.editor-context-copy {
+  display: grid;
+  grid-template-columns: auto auto minmax(160px, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.editor-context-stage {
+  border: 1px solid var(--ide-border);
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: var(--ide-text-secondary);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.editor-context-copy strong {
+  color: var(--ide-text-primary);
+  font-size: 14px;
+}
+
+.editor-context-copy > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ide-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-context-metrics {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  color: var(--ide-text-secondary);
+  font-size: 11px;
+}
+
+.editor-context-metrics span {
+  border-left: 1px solid var(--ide-border);
+  padding-left: 10px;
+}
+
+.editor-context-valid { color: var(--ide-success) !important; }
+.editor-context-errors { color: var(--ide-danger) !important; }
+
+.editor-workspace-body {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px;
+  background: var(--ide-work-area);
+}
+
+.editor-workspace-body > .workspace-root {
+  height: 100%;
+}
+
+@media (max-width: 1180px) {
+  .editor-context-copy { grid-template-columns: auto auto; }
+  .editor-context-copy > span:last-child { display: none; }
+}
+
+.statusbar {
+  margin: 0;
+  border-color: var(--ide-border);
+  border-radius: 6px;
+  background: var(--ide-header);
+  color: var(--ide-text-secondary);
+}
+
+.startup-dialog {
+  border-color: var(--ide-border);
+  background: var(--ide-surface);
+  color: var(--ide-text-primary);
+  box-shadow: 0 24px 70px var(--ide-shadow);
+}
+
+.startup-dialog h1,
+.startup-dialog p,
+.startup-language {
+  color: var(--ide-text-primary);
+}
+
+.startup-language select,
+.startup-actions button {
+  border-color: var(--ide-border);
+  background: var(--ide-control);
+  color: var(--ide-control-text);
+}
+
+@media (max-width: 1050px) {
+  .ide-workbench { grid-template-columns: 52px 160px minmax(620px, 1fr); overflow: auto; }
+  .project-header { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 1400px) {
   .project-header {
     grid-template-columns: 1fr;
@@ -5074,9 +5679,19 @@ button:disabled {
     justify-content: flex-start;
   }
 
+  /*
+    FSM/LCD workspaces set gridTemplateColumns inline from resizable-sidebar
+    state (see FsmWorkspace.tsx / LcdWorkspace.tsx). An inline style always
+    beats a stylesheet rule regardless of specificity, so this breakpoint
+    needs !important to actually take effect -- the same technique already
+    used by the FSM fullscreen override below. Both workspaces render five
+    grid children (sidebar, splitter, canvas, splitter, sidebar), so the
+    override must define five tracks too, or the splitter/inspector panes
+    get auto-placed into implicit tracks and the canvas collapses.
+  */
   .fsm-workspace,
   .lcd-workspace {
-    grid-template-columns: 220px minmax(390px, 1fr) 310px;
+    grid-template-columns: 220px 6px minmax(390px, 1fr) 6px 310px !important;
   }
 }
 
@@ -5097,14 +5712,10 @@ button:disabled {
 
   .workspace-root,
   .fsm-workspace,
+  .lcd-workspace,
   .control-panel-workspace,
   .preview-workspace {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-
-  .lcd-workspace:not(.lcd-workspace-resizable) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     height: auto;
   }
 
@@ -5129,7 +5740,11 @@ button:disabled {
   }
 }
 
-@container (max-width: 640px) {
+/* Keep the tool inspector and the 128×64 device preview side by side on
+   ordinary desktop workspaces. Only stack them when the actual canvas column
+   is phone-sized; the surrounding IDE sidebars already consume substantial
+   width at 1366–1536 px window sizes. */
+@container (max-width: 520px) {
   .lcd-editor {
     grid-template-columns: 1fr;
     height: auto;
@@ -5156,6 +5771,68 @@ button:disabled {
   flex-direction: column;
   gap: 0;
   overflow-y: auto;
+}
+
+.hmi-trace-chain {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.hmi-trace-stage {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 56px;
+  padding: 7px;
+  border: 1px solid var(--ide-border);
+  border-radius: 6px;
+  background: var(--ide-sidebar-raised);
+}
+
+.hmi-trace-stage:not(:nth-child(3n))::after {
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  z-index: 1;
+  color: var(--ide-text-muted);
+  content: '›';
+}
+
+.hmi-trace-stage > span {
+  color: var(--ide-text-secondary);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.hmi-trace-stage button {
+  justify-content: flex-start;
+  min-height: 24px;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--ide-accent-text);
+  padding: 1px 0;
+  font: 600 11px/1.2 ui-monospace, monospace;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hmi-trace-stage.missing {
+  border-style: dashed;
+}
+
+.hmi-trace-stage small { color: var(--ide-text-muted); }
+.hmi-trace-gaps {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ide-warning);
+  font-size: 11px;
 }
 
 .hmi-empty-state {
@@ -5984,6 +6661,24 @@ button:disabled {
   padding: 3px 0;
 }
 
+.runtime-input-buffer {
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+  padding: 7px 8px;
+  border: 1px solid #3b82f6;
+  border-radius: 5px;
+  background: rgba(37, 99, 235, 0.14);
+}
+.runtime-input-buffer small { color: #bfdbfe; font-size: 0.72rem; }
+.runtime-input-buffer output {
+  min-height: 1.15rem;
+  color: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
 .badge-dot {
   width: 6px;
   height: 6px;
@@ -5996,6 +6691,40 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
   gap: 5px;
+}
+
+.runtime-button-item {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+}
+
+.runtime-button-item small {
+  color: var(--ide-text-muted);
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.runtime-button-item[data-availability="guard-rejected"] small,
+.runtime-button-item[data-availability="missing-transition"] small,
+.runtime-button-item[data-availability="missing-event"] small {
+  color: var(--ide-warning);
+}
+
+.runtime-timer-status {
+  border: 1px solid var(--ide-border);
+  border-radius: 999px;
+  background: var(--ide-surface);
+  color: var(--ide-text-secondary);
+  padding: 4px 8px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.runtime-timer-status[data-mode="express"] {
+  border-color: var(--ide-warning);
+  color: var(--ide-warning);
 }
 
 .runtime-hw-btn {
@@ -6169,6 +6898,91 @@ button:disabled {
 }
 .spin { animation: spin 1s linear infinite; }
 
+.font-import-preview {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--ide-border);
+  border-radius: 8px;
+  background: var(--ide-surface-raised);
+}
+
+.font-import-preview-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ide-text-secondary);
+  font-size: 11px;
+}
+
+.font-import-preview-meta strong {
+  overflow: hidden;
+  color: var(--ide-text);
+  font-family: var(--ide-font-mono);
+  text-overflow: ellipsis;
+}
+
+.font-import-preview svg {
+  width: 100%;
+  height: 54px;
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.font-import-preview-background { fill: #8aac59; }
+.font-import-preview-pixel { fill: #17230d; }
+
+.settings-status-badge.offline {
+  color: var(--ide-danger);
+  border-color: var(--ide-danger);
+}
+
+.settings-server-details {
+  opacity: 0.78;
+  font-size: 11px;
+}
+
+.workspace-host {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-host > .workspace-root,
+.workspace-host > [class$="-workspace"] {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.workspace-navigator-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--ide-border);
+  border-radius: 7px;
+  background: var(--ide-surface-raised);
+  color: var(--ide-text-secondary);
+  box-shadow: var(--ide-shadow-sm);
+}
+
+.workspace-navigator-toggle:hover {
+  border-color: var(--ide-accent);
+  color: var(--ide-text);
+}
+
+.element-export-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+}
+
 /* ─── Alarm Workspace ─────────────────────────────────────────────────────── */
 
 .alarm-workspace {
@@ -6218,6 +7032,133 @@ button:disabled {
 .hmi-toggle input { accent-color: var(--ide-accent, #2563eb); }
 .hmi-handoff-workspace {
   grid-template-columns: minmax(210px, 250px) minmax(560px, 1fr) minmax(260px, 320px);
+}
+
+.handoff-stepper {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid var(--ide-border);
+  border-radius: 8px;
+  background: var(--ide-sidebar-raised);
+}
+
+.handoff-stepper button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ide-text-secondary);
+  cursor: pointer;
+}
+
+.handoff-stepper button span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 10px;
+}
+
+.handoff-stepper button.active {
+  border-color: var(--ide-selection-border);
+  background: var(--ide-selection);
+  color: var(--ide-text-primary);
+}
+
+.handoff-validation-stage {
+  grid-column: 1 / -1;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--ide-border);
+  border-radius: 8px;
+  background: var(--ide-surface);
+}
+
+.handoff-validation-stage > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.handoff-validation-stage h2,
+.handoff-validation-stage p { margin: 4px 0; }
+
+.handoff-ready-badge,
+.handoff-blocked-badge {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 750;
+}
+.handoff-ready-badge { color: var(--ide-success); }
+.handoff-blocked-badge { color: var(--ide-danger); }
+
+.handoff-readiness-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.handoff-readiness-metric,
+.handoff-limit-card {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--ide-border);
+  border-radius: 7px;
+  background: var(--ide-sidebar-raised);
+  padding: 12px;
+}
+
+.handoff-readiness-metric strong { font-size: 22px; }
+.handoff-readiness-metric span { color: var(--ide-text-secondary); font-size: 11px; }
+.handoff-readiness-metric.blocking { border-color: var(--ide-danger); }
+.handoff-readiness-metric.blocking strong { color: var(--ide-danger); }
+.handoff-limit-card { border-left: 3px solid var(--ide-warning); }
+.handoff-limit-card small { color: var(--ide-text-secondary); }
+.handoff-stage-actions { display: flex; justify-content: flex-end; }
+
+.hmi-handoff-workspace[data-step="package"] > .handoff-validation-stage,
+.hmi-handoff-workspace[data-step="package"] .hmi-serial-card,
+.hmi-handoff-workspace[data-step="connect"] > .handoff-validation-stage,
+.hmi-handoff-workspace[data-step="connect"] > .hmi-handoff-sidebar,
+.hmi-handoff-workspace[data-step="connect"] > .hmi-handoff-main,
+.hmi-handoff-workspace[data-step="connect"] .handoff-package-editor,
+.hmi-handoff-workspace[data-step="connect"] .handoff-package-summary,
+.hmi-handoff-workspace[data-step="connect"] .handoff-package-warning,
+.hmi-handoff-workspace[data-step="connect"] > .hmi-handoff-inspector > .workspace-section-header,
+.hmi-handoff-workspace[data-step="validate"] > .hmi-handoff-sidebar,
+.hmi-handoff-workspace[data-step="validate"] > .hmi-handoff-main,
+.hmi-handoff-workspace[data-step="validate"] > .hmi-handoff-inspector {
+  display: none;
+}
+
+.hmi-handoff-workspace[data-step="connect"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hmi-handoff-workspace[data-step="connect"] > .hmi-handoff-inspector {
+  grid-column: 1 / -1;
+  display: grid;
+  align-content: start;
+}
+
+.hmi-handoff-workspace[data-step="connect"] .hmi-serial-card {
+  width: min(760px, 100%);
+  justify-self: center;
 }
 
 .hmi-handoff-sidebar,

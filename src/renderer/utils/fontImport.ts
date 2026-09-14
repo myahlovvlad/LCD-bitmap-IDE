@@ -17,6 +17,15 @@ export interface ImportFontOptions {
   now?: string;
 }
 
+export interface ImportedFontSummary {
+  glyphCount: number;
+  minWidth: number;
+  maxWidth: number;
+  minHeight: number;
+  maxHeight: number;
+  previewCharacters: string;
+}
+
 export function importFont(options: ImportFontOptions): ImportedFont {
   const format = options.format ?? detectFontFormat(options.filename);
   const glyphs = format === 'bdf' ? parseBdfFont(options.text) : parseAppFntFont(options.text);
@@ -49,6 +58,20 @@ export function applyImportedFont(
 
 export function detectFontFormat(filename: string): FontImportFormat {
   return filename.toLowerCase().endsWith('.bdf') ? 'bdf' : 'fnt';
+}
+
+export function summarizeImportedFont(glyphs: GlyphSet): ImportedFontSummary {
+  const entries = Object.entries(glyphs);
+  const widths = entries.map(([, glyph]) => glyph.width);
+  const heights = entries.map(([, glyph]) => glyph.data.length);
+  return {
+    glyphCount: entries.length,
+    minWidth: widths.length > 0 ? Math.min(...widths) : 0,
+    maxWidth: widths.length > 0 ? Math.max(...widths) : 0,
+    minHeight: heights.length > 0 ? Math.min(...heights) : 0,
+    maxHeight: heights.length > 0 ? Math.max(...heights) : 0,
+    previewCharacters: entries.slice(0, 16).map(([character]) => character).join('')
+  };
 }
 
 export function parseBdfFont(source: string): GlyphSet {
@@ -150,8 +173,14 @@ function parseBdfGlyph(block: string[]): { char: string; glyph: Glyph } | null {
   const dwidth = dwidthLine ? Number.parseInt(dwidthLine.split(/\s+/)[1], 10) : bbxWidth;
   const bitmapLines = block.slice(bitmapIndex + 1).filter((line) => /^[0-9A-Fa-f]+$/.test(line)).slice(0, height);
   const rows = bitmapLines.map((line) => {
-    const value = Number.parseInt(line, 16);
-    const bits = value.toString(2).padStart(Math.ceil(bbxWidth / 8) * 8, '0').slice(0, bbxWidth);
+    // Avoid Number/IEEE-754 here: BDF rows can be wider than 53 bits. Expanding
+    // each hexadecimal nibble keeps every source pixel deterministic.
+    const bits = line
+      .split('')
+      .map((digit) => Number.parseInt(digit, 16).toString(2).padStart(4, '0'))
+      .join('')
+      .padEnd(Math.ceil(bbxWidth / 8) * 8, '0')
+      .slice(0, bbxWidth);
     return bits.replace(/1/g, '#').replace(/0/g, '.');
   });
 

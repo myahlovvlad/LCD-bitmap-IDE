@@ -1,13 +1,10 @@
 import type { FontVariant } from './fonts';
 import type { LanguageCode, LocalizedText } from './localization';
 import type { HmiBindings } from './tag';
+import type { DisplayProfile } from './displayProfile';
 
-export interface DisplayConfig {
-  width: number;
-  height: number;
-  colorMode: 'monochrome';
-  packing: 'vertical-lsb';
-}
+/** @deprecated Use DisplayProfile. Kept as an API alias for existing integrations. */
+export type DisplayConfig = DisplayProfile;
 
 export type CanvasObjectType = 'text' | 'line' | 'rect' | 'icon' | 'bitmap' | 'special' | 'invert';
 
@@ -76,6 +73,8 @@ export interface BitmapCanvasObject extends CanvasObjectBase {
   width: number;
   height: number;
   bytes: number[];
+  /** Optional in raw legacy projects; migration converts invalid bindings to null. */
+  animationId?: string | null;
 }
 
 export interface SpecialCanvasObject extends CanvasObjectBase {

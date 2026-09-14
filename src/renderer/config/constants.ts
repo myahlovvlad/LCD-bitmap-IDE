@@ -1,4 +1,3 @@
-import type { DisplayConfig } from '../../domain';
 import {
   CANVAS_OBJECT_DEFAULTS,
   DEFAULT_DISPLAY_CONFIG,
@@ -27,6 +26,16 @@ export const PRODUCT_IDENTITY = {
     'Universal offline workbench for monochrome LCD screen states, bitmap glyphs, FSM flows and firmware exports.'
 } as const;
 
+export function normalizeAppSoftwareVersion(value: unknown): string {
+  return typeof value === 'string' && /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(value.trim())
+    ? value.trim()
+    : 'dev';
+}
+
+export const APP_SOFTWARE_VERSION = normalizeAppSoftwareVersion(
+  typeof __APP_SOFTWARE_VERSION__ === 'undefined' ? undefined : __APP_SOFTWARE_VERSION__
+);
+
 export const DOMAIN_GLOSSARY = {
   referenceSolution: {
     preferred: 'Reference Solution',
@@ -52,4 +61,4 @@ export const SOURCE_FILES = {
   primaryLatencyLog: 'runtime simulation transport'
 } as const;
 
-export type DisplayProfile = DisplayConfig & { id: string; label: string };
+export type { NamedDisplayProfile as DisplayProfile } from '../../domain/display';

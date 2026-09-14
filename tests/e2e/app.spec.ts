@@ -1,4 +1,44 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+const WORKSPACE_GROUP = {
+  fsm: 'logic',
+  lcd: 'interface',
+  'control-panel': 'interface',
+  'text-registry': 'interface',
+  'screen-dsl': 'interface',
+  tags: 'hardware',
+  procedures: 'hardware',
+  alarms: 'logic',
+  hmi: 'delivery',
+  runtime: 'delivery',
+  handoff: 'delivery'
+} as const;
+
+async function openWorkspace(page: Page, mode: keyof typeof WORKSPACE_GROUP): Promise<void> {
+  await page.getByTestId(`activity-${WORKSPACE_GROUP[mode]}`).click();
+  await page.getByTestId(`workspace-${mode}`).click();
+}
+
+async function openDemoAndFsm(page: Page): Promise<void> {
+  await openWorkspace(page, 'fsm');
+  await expect(page.getByTestId('fsm-workspace')).toBeVisible();
+}
+
+async function openDemoAndLcd(page: Page): Promise<void> {
+  await openWorkspace(page, 'lcd');
+  await expect(page.getByTestId('lcd-open-animations')).toBeVisible();
+}
+
+const TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFklEQVR4nGNgYGD4//8/lESwIAC7DABt4hfpRWPJuwAAAABJRU5ErkJggg==';
+
+async function importFixture(page: Page, fileName: string): Promise<void> {
+  await page.getByTestId('lcd-open-pixel-importer').click();
+  await page.locator('.pixel-importer-panel input[type="file"]').setInputFiles({
+    name: fileName,
+    mimeType: 'image/png',
+    buffer: Buffer.from(TINY_PNG_BASE64, 'base64')
+  });
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -8,13 +48,132 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('button', { name: /Open demo|Открыть демо/ }).click();
 });
 
+test('follows the system theme and persists an explicit theme preference', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  await page.getByRole('button', { name: /Open demo|Открыть демо/ }).click();
+  const selector = page.getByTestId('theme-selector');
+  await expect(selector).toHaveValue('system');
+  await selector.selectOption('light');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('lcd-bitmap-ide.ui.theme.v1'))).toBe('light');
+
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+});
+
+test('uses distinct semantic theme tokens while preserving the LCD device palette', async ({ page }) => {
+  const selector = page.getByTestId('theme-selector');
+  const rootTokens = () => page.locator('html').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      background: style.getPropertyValue('--ide-background').trim(),
+      text: style.getPropertyValue('--ide-text-primary').trim()
+    };
+  });
+
+  await selector.selectOption('dark');
+  const darkTokens = await rootTokens();
+  await page.getByTestId('activity-interface').focus();
+  await expect.poll(() => page.getByTestId('activity-interface').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return `${style.outlineStyle}:${style.outlineWidth}`;
+  })).not.toBe('none:0px');
+
+  await openWorkspace(page, 'lcd');
+  const lcdCanvas = page.locator('.lcd-canvas').first();
+  await expect(lcdCanvas).toBeVisible();
+  const darkLcdBackground = await lcdCanvas.evaluate((element) => getComputedStyle(element).backgroundColor);
+
+  await selector.selectOption('light');
+  const lightTokens = await rootTokens();
+  const lightLcdBackground = await lcdCanvas.evaluate((element) => getComputedStyle(element).backgroundColor);
+
+  expect(lightTokens.background).not.toBe(darkTokens.background);
+  expect(lightTokens.text).not.toBe(darkTokens.text);
+  expect(lightLcdBackground).toBe(darkLcdBackground);
+});
+
+test('applies theme changes to every structural application layer', async ({ page }) => {
+  const selectors = {
+    header: '.project-header',
+    activity: '.activity-bar',
+    navigator: '.workspace-navigator',
+    host: '.workspace-host',
+    sidebar: '.fsm-workspace > .workspace-sidebar',
+    workArea: '.fsm-workspace > .workspace-canvas-column',
+    canvas: '.fsm-canvas',
+    inspector: '.fsm-workspace > .workspace-inspector',
+    card: '.fsm-workspace .inspector-card',
+    input: '.fsm-workspace .sidebar-search'
+  } as const;
+  const readLayerColors = () => page.evaluate((layerSelectors) => Object.fromEntries(
+    Object.entries(layerSelectors).map(([name, selector]) => {
+      const element = document.querySelector(selector);
+      if (!element) throw new Error(`Missing theme layer: ${name} (${selector})`);
+      const style = getComputedStyle(element);
+      return [name, style.backgroundColor];
+    })
+  ), selectors);
+
+  const selector = page.getByTestId('theme-selector');
+  await selector.selectOption('dark');
+  const darkLayers = await readLayerColors();
+  await selector.selectOption('light');
+  const lightLayers = await readLayerColors();
+
+  const unchangedLayers = Object.keys(selectors).filter((name) => lightLayers[name] === darkLayers[name]);
+  expect(unchangedLayers).toEqual([]);
+});
+
+test('applies light and dark themes to redesigned editor, HMI, Runtime and handoff layers', async ({ page }) => {
+  const themeSelector = page.getByTestId('theme-selector');
+  const readBackground = async (selector: string): Promise<string> => {
+    const layer = page.locator(selector).first();
+    await expect(layer).toBeVisible();
+    return layer.evaluate((element) => getComputedStyle(element).backgroundColor);
+  };
+  const expectThemeAware = async (selector: string): Promise<void> => {
+    await themeSelector.selectOption('dark');
+    const dark = await readBackground(selector);
+    await themeSelector.selectOption('light');
+    const light = await readBackground(selector);
+    expect(light, `${selector} must use semantic theme tokens`).not.toBe(dark);
+  };
+
+  for (const workspace of ['lcd', 'control-panel', 'text-registry', 'screen-dsl', 'tags', 'procedures', 'alarms'] as const) {
+    await openWorkspace(page, workspace);
+    await expectThemeAware('.editor-context-bar');
+  }
+
+  await openWorkspace(page, 'hmi');
+  await expectThemeAware('.hmi-trace-stage');
+
+  await openWorkspace(page, 'runtime');
+  await expectThemeAware('.runtime-timer-status');
+
+  await openWorkspace(page, 'handoff');
+  await expectThemeAware('.handoff-validation-stage');
+});
+
 test('exposes the primary isolated workspaces', async ({ page }) => {
-  const navigation = page.getByRole('navigation', { name: /Workspaces|Рабочие области/ });
+  await expect(page.getByTestId('software-version')).toHaveText(/Software v0\.1\.18|ПО v0\.1\.18/);
+  await expect(page.getByTestId('activity-interface')).toBeVisible();
+  await expect(page.getByTestId('activity-logic')).toBeVisible();
+  await expect(page.getByTestId('activity-hardware')).toBeVisible();
+  await expect(page.getByTestId('activity-delivery')).toBeVisible();
+
+  const navigation = page.getByTestId('workspace-navigator');
   await expect(navigation.getByRole('button', { name: /FSM editor|FSM-редактор/ })).toBeVisible();
+  await page.getByTestId('activity-interface').click();
   await expect(navigation.getByRole('button', { name: /LCD editor|LCD-редактор/ })).toBeVisible();
   await expect(navigation.getByRole('button', { name: /Control panel|Панель управления/ })).toBeVisible();
+  await page.getByTestId('activity-delivery').click();
   await expect(navigation.getByRole('button', { name: /Runtime|Выполнение/ })).toBeVisible();
 
+  await page.getByTestId('activity-interface').click();
   await navigation.getByRole('button', { name: /Control panel|Панель управления/ }).click();
   await expect(page.getByLabel(/Control panel editor/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Screens' })).toHaveCount(0);
@@ -23,6 +182,16 @@ test('exposes the primary isolated workspaces', async ({ page }) => {
   await expect(page.getByLabel(/LCD editor/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Import image', exact: true })).toBeVisible();
   await expect(page.getByText(/Transition properties/)).toHaveCount(0);
+});
+
+test('opens Settings from the global header and keeps the active workspace group', async ({ page }) => {
+  await openWorkspace(page, 'lcd');
+  await expect(page.getByLabel(/LCD editor/)).toBeVisible();
+
+  await page.getByTestId('app-settings').click();
+  await expect(page.getByLabel(/Settings|Настройки/)).toBeVisible();
+  await expect(page.getByTestId('activity-interface')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('settings-theme-selector')).toHaveValue('system');
 });
 
 test('opens the linked screen from the FSM workspace', async ({ page }) => {
@@ -56,9 +225,106 @@ test('keeps the viewport zoom after moving an FSM state node', async ({ page }) 
   expect(await scaleOf()).toBeCloseTo(before, 6);
 });
 
+test('renders persisted FSM edges in read-only mode', async ({ page }) => {
+  await openDemoAndFsm(page);
+  await expect(page.getByTestId('fsm-edit-mode')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.react-flow__edge path.fsm-edge')).toHaveCount(4);
+});
+
+test('reports and resets transitions hidden by overview', async ({ page }) => {
+  await openDemoAndFsm(page);
+  await page.getByRole('button', { name: /Overview|Обзор/ }).click();
+  await expect(page.getByTestId('fsm-transition-summary')).toContainText(/of 4/);
+  await page.getByTestId('fsm-reset-graph-filters').click();
+  await expect(page.getByTestId('fsm-transition-summary')).toContainText('4 / 4');
+});
+
+test('navigator compaction leaves FSM state pane visible', async ({ page }) => {
+  await openDemoAndFsm(page);
+  await page.getByTestId('workspace-navigator-toggle').click();
+  await expect(page.getByTestId('workspace-navigator')).toHaveClass(/navigator-compact/);
+  await expect(page.locator('.fsm-state-catalog')).toBeVisible();
+  await expect(page.locator('.fsm-state-catalog')).not.toHaveClass(/collapsed/);
+});
+
+test('FSM pane collapse releases its grid column and remains restorable', async ({ page }) => {
+  await openDemoAndFsm(page);
+  await page.getByTestId('fsm-collapse-state-catalog').click();
+  await expect(page.locator('.fsm-state-catalog')).toHaveClass(/collapsed/);
+  await expect(page.getByTestId('fsm-expand-state-catalog')).toBeVisible();
+  await page.getByTestId('fsm-expand-state-catalog').click();
+  await expect(page.locator('.fsm-state-catalog')).not.toHaveClass(/collapsed/);
+});
+
+test('keeps an operator zoom after switching from FSM to LCD and back', async ({ page }) => {
+  const viewport = page.locator('.fsm-canvas .react-flow__viewport');
+  const scaleOf = async (): Promise<number> => {
+    const transform = await viewport.getAttribute('style') ?? '';
+    const match = transform.match(/scale\(([^)]+)\)/);
+    return Number(match?.[1] ?? NaN);
+  };
+
+  await expect(viewport).toBeVisible();
+  const canvas = page.locator('.fsm-canvas');
+  const canvasBox = await canvas.boundingBox();
+  if (!canvasBox) throw new Error('FSM canvas is unavailable.');
+  await page.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+  // The initial fit-to-view scale depends on canvas width, which itself
+  // depends on the active responsive breakpoint, so scroll well past any
+  // plausible starting scale rather than relying on a single fixed delta.
+  await page.mouse.wheel(0, -2400);
+  await expect.poll(scaleOf).toBeGreaterThan(1);
+  const expectedScale = await scaleOf();
+  await expect.poll(async () => page.evaluate((expected) => {
+    const raw = localStorage.getItem('lcd-bitmap-ide.workspace.fsm-viewport.v1');
+    const entries = raw ? JSON.parse(raw).entries as Record<string, { zoom: number }> : {};
+    return Object.values(entries).some((viewport) => Math.abs(viewport.zoom - expected) < 0.001);
+  }, expectedScale)).toBe(true);
+
+  await openWorkspace(page, 'lcd');
+  await expect(page.getByLabel(/LCD editor/)).toBeVisible();
+  await openWorkspace(page, 'fsm');
+  await expect(viewport).toBeVisible();
+
+  await expect.poll(scaleOf).toBeCloseTo(expectedScale, 3);
+});
+
+test('restores the FSM viewport after reload without changing project metadata', async ({ page }) => {
+  const viewport = page.locator('.fsm-canvas .react-flow__viewport');
+  const scaleOf = async (): Promise<number> => {
+    const transform = await viewport.getAttribute('style') ?? '';
+    const match = transform.match(/scale\(([^)]+)\)/);
+    return Number(match?.[1] ?? NaN);
+  };
+  const projectUpdatedAt = () => page.evaluate(() => {
+    const raw = localStorage.getItem('lcd-bitmap-ide.project.autosave.v5');
+    if (!raw) return null;
+    return (JSON.parse(raw) as { project?: { meta?: { updatedAt?: string } } }).project?.meta?.updatedAt ?? null;
+  });
+
+  await expect(viewport).toBeVisible();
+  await expect.poll(projectUpdatedAt).not.toBeNull();
+  const updatedAtBeforeViewportChange = await projectUpdatedAt();
+  const canvasBox = await page.locator('.fsm-canvas').boundingBox();
+  if (!canvasBox) throw new Error('FSM canvas is unavailable.');
+  await page.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+  // The initial fit-to-view scale depends on canvas width, which itself
+  // depends on the active responsive breakpoint, so scroll well past any
+  // plausible starting scale rather than relying on a single fixed delta.
+  await page.mouse.wheel(0, -2400);
+  await expect.poll(scaleOf).toBeGreaterThan(1);
+  const expectedScale = await scaleOf();
+
+  await page.reload();
+  await page.getByRole('button', { name: /Restore autosave|Восстановить автосохранение/ }).click();
+  await expect(viewport).toBeVisible();
+  await expect.poll(scaleOf).toBeCloseTo(expectedScale, 3);
+  await expect.poll(projectUpdatedAt).toBe(updatedAtBeforeViewportChange);
+});
+
 test('keeps the LCD preview to the right of a scrollable Canvas inspector', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();
+  await openWorkspace(page, 'lcd');
 
   const controls = page.locator('.lcd-editor > .flex-1');
   const preview = page.locator('.lcd-editor > .lcd-display-column');
@@ -72,7 +338,7 @@ test('keeps the LCD preview to the right of a scrollable Canvas inspector', asyn
 
 test('keeps the LCD canvas mounted while auxiliary tools are open', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 700 });
-  await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();
+  await openWorkspace(page, 'lcd');
 
   const canvas = page.locator('.lcd-editor-frame .lcd-canvas').first();
   await expect(canvas).toBeVisible();
@@ -88,7 +354,7 @@ test('keeps the LCD canvas mounted while auxiliary tools are open', async ({ pag
 
 test('collapses, resizes and persists LCD sidebars', async ({ page }) => {
   await page.setViewportSize({ width: 1536, height: 864 });
-  await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();
+  await openWorkspace(page, 'lcd');
 
   const leftSidebar = page.locator('.lcd-workspace > .workspace-sidebar');
   const leftSplitter = page.getByRole('separator', { name: 'Resize Left Sidebar' });
@@ -106,7 +372,7 @@ test('collapses, resizes and persists LCD sidebars', async ({ page }) => {
   await expect.poll(async () => (await leftSidebar.boundingBox())?.width ?? 0).toBeLessThan(60);
   await page.reload();
   await page.getByRole('button', { name: /Restore autosave|Восстановить автосохранение/ }).click();
-  await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();
+  await openWorkspace(page, 'lcd');
   await expect(leftSidebar).toHaveClass(/collapsed/);
   await page.getByRole('button', { name: 'Open Left Sidebar' }).click();
 
@@ -118,7 +384,7 @@ test('collapses, resizes and persists LCD sidebars', async ({ page }) => {
 });
 
 test('edits screen dimensions and copies a screen from properties', async ({ page }) => {
-  await page.locator('.workspace-navigation button[data-workspace="lcd"]').click();
+  await openWorkspace(page, 'lcd');
   const inspector = page.locator('.lcd-workspace > .workspace-inspector');
   await inspector.getByLabel('Width').fill('144');
   await inspector.getByLabel('Height').fill('72');
@@ -133,7 +399,7 @@ test('edits screen dimensions and copies a screen from properties', async ({ pag
 });
 
 test('renames and deletes the first screen without deleting its FSM state', async ({ page }) => {
-  await page.getByTestId('workspace-lcd').click();
+  await openWorkspace(page, 'lcd');
   const screens = page.locator('.lcd-workspace .entity-card');
   await expect(screens.first()).toBeVisible();
   const initialCount = await screens.count();
@@ -147,12 +413,12 @@ test('renames and deletes the first screen without deleting its FSM state', asyn
   await expect(screens).toHaveCount(initialCount - 1);
   await expect(page.locator('.lcd-workspace')).not.toContainText('Renamed first screen');
 
-  await page.getByTestId('workspace-fsm').click();
+  await openWorkspace(page, 'fsm');
   await expect(page.locator('.fsm-workspace .entity-card').filter({ hasText: 'Renamed first screen' })).toHaveCount(1);
 });
 
 test('edits localized text and pins its LCD language independently of the interface', async ({ page }) => {
-  await page.getByTestId('workspace-lcd').click();
+  await openWorkspace(page, 'lcd');
   await page.getByRole('button', { name: 'Add text' }).click();
   await page.locator('.lcd-canvas').click({ position: { x: 160, y: 80 } });
 
@@ -168,7 +434,7 @@ test('edits localized text and pins its LCD language independently of the interf
 });
 
 test('adds requested punctuation and creates an arbitrary custom glyph', async ({ page }) => {
-  await page.getByTestId('workspace-lcd').click();
+  await openWorkspace(page, 'lcd');
   await page.getByRole('button', { name: 'Add text' }).click();
   await page.locator('.lcd-canvas').click({ position: { x: 160, y: 80 } });
 
@@ -192,7 +458,7 @@ test('adds requested punctuation and creates an arbitrary custom glyph', async (
 
 test('creates a panel button and binds it to an FSM event', async ({ page }) => {
   await page.getByRole('button', { name: 'Demo' }).click();
-  await page.locator('.workspace-navigation button[data-workspace="control-panel"]').click();
+  await openWorkspace(page, 'control-panel');
   await page.getByLabel('Width').fill('1100');
   await page.getByLabel('Height').fill('520');
   await expect(page.locator('.control-panel-canvas')).toHaveAttribute('width', '1100');
@@ -209,7 +475,7 @@ test('creates a panel button and binds it to an FSM event', async ({ page }) => 
 
 test('presses a virtual button and performs a runtime transition', async ({ page }) => {
   await page.getByRole('button', { name: 'Demo' }).click();
-  await page.locator('.workspace-navigation button[data-workspace="runtime"]').click();
+  await openWorkspace(page, 'runtime');
   await expect(page.locator('.runtime-workspace')).toBeVisible();
 
   await page.locator('button.runtime-hw-btn', { hasText: /^START$/ }).click();
@@ -220,7 +486,7 @@ test('presses a virtual button and performs a runtime transition', async ({ page
 
 test('queues runtime events in step mode', async ({ page }) => {
   await page.getByRole('button', { name: 'Demo' }).click();
-  await page.locator('.workspace-navigation button[data-workspace="runtime"]').click();
+  await openWorkspace(page, 'runtime');
   await page.getByRole('button', { name: 'Step mode' }).click();
   await page.locator('button.runtime-hw-btn', { hasText: /^START$/ }).click();
   await expect(page.locator('.runtime-state-name strong')).toHaveText('Main Menu Demo');
@@ -245,7 +511,7 @@ test('warns in runtime and blocks export when validation has reference errors', 
   await page.reload();
   await page.getByRole('button', { name: /Restore autosave|Восстановить автосохранение/ }).click();
 
-  await page.locator('.workspace-navigation button[data-workspace="runtime"]').click();
+  await openWorkspace(page, 'runtime');
   await expect(page.locator('.toast-warning').getByText(/Runtime opened, but the project has \d+ validation errors/)).toBeVisible();
   await expect(page.locator('.workspace-navigation button[data-workspace="runtime"]')).toHaveClass(/active/);
 
@@ -266,7 +532,7 @@ test('keeps explicit operation feedback in the notification history', async ({ p
 
 test('requires explicit FSM edit mode for graph mutations', async ({ page }) => {
   await page.getByRole('button', { name: 'Demo' }).click();
-  await page.locator('.workspace-navigation button[data-workspace="fsm"]').click();
+  await openWorkspace(page, 'fsm');
 
   await expect(page.getByTestId('fsm-add-state')).toBeDisabled();
   await expect(page.getByTestId('fsm-workspace')).toHaveClass(/fsm-readonly-mode/);
@@ -301,4 +567,23 @@ test('loads without uncaught page errors', async ({ page }) => {
   await page.reload();
   await expect(page.getByRole('heading', { name: /LCD-bitmap IDE/i })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('insert and edit selects the imported bitmap before returning to editor', async ({ page }) => {
+  await openDemoAndLcd(page);
+  await importFixture(page, 'two-pixel.png');
+  await page.getByRole('button', { name: /Insert and edit bitmap|Вставить и редактировать bitmap/ }).click();
+  await expect(page.locator('[data-testid="selected-canvas-object"]')).toHaveText(/pixel-import/);
+});
+
+test('animation editor creates a resource and shows a live preview', async ({ page }) => {
+  await openDemoAndLcd(page);
+  await page.getByTestId('lcd-open-animations').click();
+  await page.locator('.animation-editor-panel input[type="file"]').setInputFiles({
+    name: 'frame.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(TINY_PNG_BASE64, 'base64')
+  });
+  await expect(page.getByTestId('animation-preview')).toBeVisible();
+  await expect(page.getByTestId('animation-bind-screen')).toBeVisible();
 });

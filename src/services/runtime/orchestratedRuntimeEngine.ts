@@ -2,7 +2,7 @@ import type { ControlPanelButton, FsmTransition, LcdBitmapProject, LcdScreen } f
 import type { BackendProcedure, CliCommandDefinition } from '../../domain/procedure';
 import type { ITransport } from './ITransport';
 import type { AuditEntry } from './actionExecutor';
-import { ProjectRuntimeEngine, type RuntimeEngine, type RuntimeEvent } from '../runtimeEngine';
+import { ProjectRuntimeEngine, type RuntimeEngine, type RuntimeEvent, type RuntimeInputCommit, type RuntimeInputSession } from '../runtimeEngine';
 import { executeProcedure } from './actionExecutor';
 import { MutableTagContext, defaultTagValues, type TagContext } from './TagContext';
 import { evaluateTypedGuard, parseBackendBehaviorStorage } from '../../fsm-behavior';
@@ -67,6 +67,8 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
   get eventLog(): readonly RuntimeEvent[] { return this.inner.eventLog; }
   get lastTransition(): FsmTransition | null { return this.inner.lastTransition; }
   get pendingEventIds(): readonly string[] { return this.inner.pendingEventIds; }
+  get inputSession(): RuntimeInputSession | null { return this.inner.inputSession; }
+  get lastInputCommit(): RuntimeInputCommit | null { return this.inner.lastInputCommit; }
 
   start(initialStateId?: string): void { this.inner.start(initialStateId); }
   reset(): void { this.inner.reset(); this.procedureStatus = 'idle'; this.lastProcedureRun = null; }
@@ -104,6 +106,14 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
     if (!element || element.type !== 'button') { this.inner.pressButton(buttonId); return; }
     if (!this.inner.isButtonAllowed(element)) { this.inner.pressButton(buttonId); return; }
     if (!element.fsmEventId) { this.inner.pressButton(buttonId); return; }
+    if (this.inner.isInputButtonEvent(element.fsmEventId)) { this.inner.pressButton(buttonId); return; }
+    const { transition, procedure } = this.resolveEventTarget(element.fsmEventId);
+    const automatic = transition?.trigger.mechanism === 'timer' || transition?.trigger.mechanism === 'fact';
+    // The base engine owns the active physical-button identity used to match
+    // button-triggered FSM edges.  Delegate every navigation-only (or bypassed)
+    // press to it instead of turning the press into a context-free event.
+    if (!procedure || this.bypass || automatic) { this.inner.pressButton(buttonId); return; }
+    if (element.fsmEventId === 'UI.OK' && this.inner.inputSession) this.inner.commitInput();
     this.activeButtonId = buttonId;
     this.sendEvent(element.fsmEventId);
     this.activeButtonId = null;

@@ -7,6 +7,7 @@ import type {
   LcdScreen,
   SpecialCanvasObject
 } from '../domain';
+import { createDisplayProfile } from '../domain';
 import {
   SCREEN_INTERCHANGE_KIND,
   SCREEN_INTERCHANGE_VERSION,
@@ -117,12 +118,7 @@ function screenToScreenInterchange(
     name: screen.name,
     description: screen.description,
     tags: [...screen.tags],
-    display: {
-      width: screen.width,
-      height: screen.height,
-      colorMode: context.project.display.colorMode,
-      packing: context.project.display.packing
-    },
+    display: createDisplayProfile({ ...context.project.display, width: screen.width, height: screen.height }),
     objectOrder: objects.map((object) => object.id),
     objects,
     linkedStateIds,

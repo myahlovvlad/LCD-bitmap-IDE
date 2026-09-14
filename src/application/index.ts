@@ -11,6 +11,7 @@ export * from './commandHistory';
 export * from './projectSession';
 export * from './savepoint';
 export * from './screenDsl';
+export * from './screenHtml';
 export * from './screenInterchangeFacade';
 export * from './semanticChange';
 export * from './workspace';

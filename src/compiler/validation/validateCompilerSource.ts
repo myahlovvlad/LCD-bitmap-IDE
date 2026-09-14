@@ -1,5 +1,6 @@
 import type { CompilerSourceSnapshot } from '../source/compilerSource';
 import { compilerDiagnostic, type CompilerDiagnostic } from './compilerDiagnostics';
+import { validateDisplayProfile } from '../../domain/displayProfile';
 
 const MAX_RESOURCE_BYTES = 1024 * 1024;
 
@@ -7,12 +8,12 @@ export function validateCompilerSource(source: CompilerSourceSnapshot): readonly
   const diagnostics: CompilerDiagnostic[] = [];
   const { project } = source;
 
-  if (project.display.colorMode !== 'monochrome' || project.display.packing !== 'vertical-lsb') {
+  for (const issue of validateDisplayProfile(project.display)) {
     diagnostics.push(compilerDiagnostic(
       'compiler.source.display-unsupported',
-      'error',
-      'Only monochrome vertical-LSB displays are supported by compiler IR v1.',
-      { entityType: 'display', entityId: project.meta.id, path: '/display' }
+      issue.severity,
+      issue.message,
+      { entityType: 'display', entityId: project.meta.id, path: `/display/${issue.path}` }
     ));
   }
 

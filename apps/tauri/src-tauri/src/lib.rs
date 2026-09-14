@@ -24,6 +24,7 @@ pub fn run() {
         .manage(SerialState::default())
         .invoke_handler(tauri::generate_handler![
             automation::automation_respond,
+            automation::automation_status,
             clipboard_write,
             screen_dsl::screen_dsl_open,
             screen_dsl::screen_dsl_save,

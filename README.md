@@ -95,7 +95,9 @@ Manual index: [docs/user-manuals/index.html](docs/user-manuals/index.html)
 ## Core Capabilities
 
 - **LCD authoring:** text, lines, rectangles, bitmap layers, glyph editing, special UI elements and per-object LCD language pinning under strict monochrome display bounds.
-- **FSM modeling:** draggable states, explicit global/state-local events, event-labeled transitions, validation and automatic graph layout.
+- **Raster import:** convert PNG/JPEG/BMP/SVG artwork to 1bpp (threshold + dithering) and continue editing the result pixel-by-pixel as a bitmap layer.
+- **1bpp animations:** author timed frame sequences, preview them on a deterministic clock, and bind one resource to a whole screen or to a single bitmap layer; export as `lcd_animation_t` frame tables with per-frame duration and a loop flag.
+- **FSM modeling:** draggable states, explicit global/state-local events, event-labeled transitions, validation and automatic graph layout. Transitions stay visible outside edit mode, with a shown/total counter and one-click filter reset.
 - **Backend process documentation:** multiline engineering notes are stored with legacy backend processes and edited from the transition inspector.
 - **Control-panel binding:** connect physical button events to the screen workflow.
 - **Runtime preview:** step through state flows and validate operator paths before hardware handoff.

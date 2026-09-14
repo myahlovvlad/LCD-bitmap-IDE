@@ -39,6 +39,29 @@ export const displayConfigSchema = z.object({
   packing: z.literal('vertical-lsb')
 });
 
+export const displayProfileSchema = z.object({
+  id: z.string().min(1).max(256),
+  schemaVersion: z.literal(1),
+  name: z.string().min(1).max(256),
+  controller: z.string().min(1).max(256).optional(),
+  width: z.number().int().min(16).max(4096),
+  height: z.number().int().min(16).max(4096),
+  pixelFormat: z.enum(['mono1', 'gray2', 'gray4', 'indexed8', 'rgb332', 'rgb565', 'rgb888', 'argb8888']),
+  bitsPerPixel: z.union([z.literal(1), z.literal(2), z.literal(4), z.literal(8), z.literal(16), z.literal(24), z.literal(32)]),
+  packing: z.enum(['vertical-pages', 'horizontal-row-major', 'planar', 'interleaved']),
+  bitOrder: z.enum(['lsb-first', 'msb-first']),
+  byteOrder: z.enum(['little-endian', 'big-endian']),
+  rowStride: z.number().int().positive().optional(),
+  pageHeight: z.number().int().positive().optional(),
+  alignment: z.number().int().positive().max(4096).optional(),
+  rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
+  mirrorX: z.boolean(),
+  mirrorY: z.boolean(),
+  inverted: z.boolean(),
+  palette: z.array(z.string()).max(256).optional(),
+  fingerprint: z.string().regex(/^fnv1a64:[0-9a-f]{16}$/)
+});
+
 export const projectSchema = z.object({
   id: z.string().min(1).max(128),
   name: z.string().min(1).max(160),
@@ -47,7 +70,7 @@ export const projectSchema = z.object({
   firmwareVersion: z.string().max(80).nullable(),
   author: z.string().max(160).nullable(),
   lastModified: z.string().datetime(),
-  display: displayConfigSchema,
+  display: z.union([displayConfigSchema, displayProfileSchema]),
   states: z.record(z.string(), fsmStateSchema),
   transitions: z.record(z.string(), fsmTransitionSchema),
   canvasByStateId: z.record(z.string(), canvasDataSchema),

@@ -4,8 +4,8 @@ import path from 'node:path';
 import { handleScreenDslFileOpen } from './screenDslFiles/openHandler.js';
 import { handleScreenDslFileSave } from './screenDslFiles/saveHandler.js';
 import { SCREEN_DSL_FILE_OPEN_CHANNEL, SCREEN_DSL_FILE_SAVE_CHANNEL } from '../shared/screenDslFiles/channels.js';
-import { startApiServer, stopApiServer, setMainWindow as setApiMainWindow } from './api/apiServer.js';
-import { startMcpServer, stopMcpServer, setMcpMainWindow, setMcpProjectCache, setMcpRuntimeState } from './mcp/mcpServer.js';
+import { startApiServer, stopApiServer, getApiServerStatus, setMainWindow as setApiMainWindow } from './api/apiServer.js';
+import { startMcpServer, stopMcpServer, getMcpServerStatus, setMcpMainWindow, setMcpProjectCache, setMcpRuntimeState } from './mcp/mcpServer.js';
 import { registerSpectrophotometerSerialHandlers } from './spectrophotometerSerial/registerHandlers.js';
 
 // The Electron entry point is emitted as CommonJS, where __dirname is native.
@@ -22,6 +22,12 @@ ipcMain.handle('clipboard-write', (_event, text: string) => {
   clipboard.writeText(String(text ?? ''));
   return true;
 });
+
+ipcMain.handle('automation-status', () => ({
+  rest: getApiServerStatus(),
+  mcp: getMcpServerStatus(),
+  authConfigured: Boolean(process.env.LCD_IDE_AUTOMATION_TOKEN)
+}));
 
 ipcMain.handle('manual-export-pdf', async (_event, html: string, filename: string) => {
   const pdfWindow = new BrowserWindow({

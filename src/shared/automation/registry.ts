@@ -37,6 +37,29 @@ const embeddedFormat = z.enum([
   'arduino-progmem', 'rust-embedded', 'esp-idf', 'binary'
 ]);
 
+const displayProfile = z.object({
+  id: identifier,
+  schemaVersion: z.literal(1),
+  name: z.string().trim().min(1).max(256),
+  controller: z.string().trim().min(1).max(256).optional(),
+  width: z.number().int().min(1).max(4096),
+  height: z.number().int().min(1).max(4096),
+  pixelFormat: z.enum(['mono1', 'gray2', 'gray4', 'indexed8', 'rgb332', 'rgb565', 'rgb888', 'argb8888']),
+  bitsPerPixel: z.union([z.literal(1), z.literal(2), z.literal(4), z.literal(8), z.literal(16), z.literal(24), z.literal(32)]),
+  packing: z.enum(['vertical-pages', 'horizontal-row-major', 'planar', 'interleaved']),
+  bitOrder: z.enum(['lsb-first', 'msb-first']),
+  byteOrder: z.enum(['little-endian', 'big-endian']),
+  rowStride: z.number().int().positive().optional(),
+  pageHeight: z.number().int().positive().optional(),
+  alignment: z.number().int().positive().optional(),
+  rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
+  mirrorX: z.boolean(),
+  mirrorY: z.boolean(),
+  inverted: z.boolean(),
+  palette: z.array(z.string()).max(256).optional(),
+  fingerprint: z.string().regex(/^fnv1a64:[0-9a-f]{16}$/)
+}).strict();
+
 const batchOperation = z.object({ command: identifier, input: z.unknown().optional() }).strict();
 const automationRequest = z.object({
   command: identifier,
@@ -99,6 +122,7 @@ const definitions: InternalDefinition[] = [
   read('get_project_revision', 'Returns the active project id and application revision.'),
   read('get_project_summary', 'Returns project metadata and entity counts.'),
   read('get_authoring_language', 'Returns the LCD content language, independent from the editor UI language.'),
+  read('get_display_profile', 'Returns the canonical versioned DisplayProfile and fingerprint.'),
   read('list_fsm_states', 'Returns FSM states in project order.'),
   read('list_fsm_transitions', 'Returns FSM transitions in project order.'),
   read('list_fsm_events', 'Returns FSM events in project order.'),
@@ -113,8 +137,16 @@ const definitions: InternalDefinition[] = [
   read('get_runtime_state', 'Returns the renderer runtime state.'),
   read('list_export_formats', 'Returns supported embedded export formats.'),
   read('get_automation_audit', 'Returns the bounded automation audit log.'),
+  read('render_screen', 'Renders a screen as PNG and returns layout bounds, issues, and an issue-overlay PNG.', z.object({ screenId: identifier.optional() }).strict()),
+  read('export_screen_html', 'Exports one LCD screen as deterministic, declarative HTML for Codex review and round-trip import.', z.object({ screenId: identifier }).strict()),
+  read('analyze_128x64_screens', 'Audits selected or all screens against the ECROS 128×64 pixel layout contract.', z.object({ screenId: identifier.optional() }).strict()),
+  read('preview_export', 'Renders, encodes, decodes and compares a screen without writing files.', z.object({ screenId: identifier.optional() }).strict()),
+  read('decode_artifact', 'Decodes base64 display bytes with the active or supplied DisplayProfile.', z.object({ content: z.string().min(1), profile: displayProfile.optional() }).strict()),
+  read('compare_framebuffers', 'Compares two base64 RGBA canonical framebuffers.', z.object({ width: z.number().int().positive().max(4096), height: z.number().int().positive().max(4096), expectedRgbaBase64: z.string().min(1), decodedRgbaBase64: z.string().min(1) }).strict()),
+  read('create_evidence_bundle', 'Creates a deterministic software evidence ZIP with encode/decode proof.', z.object({ screenId: identifier.optional() }).strict()),
 
   write('set_authoring_language', 'Changes the LCD content language.', z.object({ language: z.enum(['en', 'ru', 'zh']) }).strict(), ['project.setAuthoringLanguage']),
+  write('update_display_profile', 'Validates and applies a versioned DisplayProfile.', z.object({ profile: displayProfile }).strict(), ['project.updateDisplayConfig']),
   write('create_fsm_state', 'Creates one FSM state and its screen atomically.', z.object({ title: z.string().trim().min(1).max(256).optional() }).strict(), ['fsm.state.add']),
   write('update_fsm_state', 'Updates an FSM state.', z.object({ stateId: identifier, updates: partialObject.optional(), title: z.string().trim().min(1).max(256).optional() }).strict().refine((value) => value.updates !== undefined || value.title !== undefined, { message: 'updates or title is required' }), ['fsm.state.update']),
   write('delete_fsm_state', 'Deletes an FSM state and linked transitions.', z.object({ stateId: identifier }).strict(), ['fsm.state.delete'], { destructive: true }),
@@ -131,6 +163,8 @@ const definitions: InternalDefinition[] = [
   write('delete_screen', 'Deletes a screen and its matching state.', z.object({ screenId: identifier }).strict(), ['screen.delete'], { destructive: true }),
   write('reorder_screens', 'Replaces the canonical screen export order.', z.object({ screenIds: z.array(identifier).min(1) }).strict(), ['screen.reorder']),
   write('update_control_panel_element', 'Updates one control-panel element.', z.object({ elementId: identifier, updates: partialObject }).strict(), ['controlPanel.element.update']),
+  write('preview_screen_html_import', 'Validates LCD HTML and returns a non-mutating Screen DSL import preview.', z.object({ html: z.string().min(1).max(512 * 1024), importMode: z.enum(['create', 'update', 'clone']), targetScreenId: identifier.optional() }).strict(), [], { idempotent: true }),
+  write('apply_screen_html_import', 'Applies a validated LCD HTML import through one undoable Screen DSL transaction.', z.object({ html: z.string().min(1).max(512 * 1024), importMode: z.enum(['create', 'update', 'clone']), targetScreenId: identifier.optional(), confirmDestructive: z.boolean().optional() }).strict(), [], { idempotent: false }),
 
   write('upsert_tag', 'Creates or updates an HMI tag.', z.object({ tag }).strict(), ['tag.upsert']),
   write('delete_tag', 'Deletes an HMI tag.', z.object({ tagId: identifier }).strict(), ['tag.delete'], { destructive: true }),

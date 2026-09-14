@@ -17,6 +17,7 @@ import type {
 import type { HmiTag, DataSource } from '../../domain/tag';
 import type { BackendProcedure, CliCommandDefinition } from '../../domain/procedure';
 import type { AlarmDefinition } from '../../domain/alarm';
+import type { AnimationFrame, AnimationResource } from '../../domain/animation';
 import {
   rebuildProjectBindings,
   type ControlPanelElement,
@@ -127,6 +128,15 @@ interface ProjectStoreState {
   addBitmapLayer: (screenId: string, name: string, bytes: number[]) => void;
   updateCanvasObjects: (screenId: string, objects: CanvasObject[], options?: { history?: boolean }) => void;
   deleteSelectedCanvasObjects: (screenId: string) => void;
+  createAnimation: (animation: AnimationResource) => void;
+  updateAnimation: (animationId: string, updates: Partial<Pick<AnimationResource, 'name' | 'width' | 'height' | 'loop'>>) => void;
+  deleteAnimation: (animationId: string) => void;
+  addAnimationFrame: (animationId: string, frame: AnimationFrame) => void;
+  updateAnimationFrame: (animationId: string, frameId: string, updates: Partial<Pick<AnimationFrame, 'bytes' | 'durationMs'>>) => void;
+  removeAnimationFrame: (animationId: string, frameId: string) => void;
+  reorderAnimationFrames: (animationId: string, frameIds: string[]) => void;
+  bindScreenAnimation: (screenId: string, animationId: string | null) => void;
+  bindBitmapAnimation: (screenId: string, objectId: string, animationId: string | null) => void;
   updateGlyph: (variant: FontVariantKey, char: string, glyph: Glyph) => void;
   importFontGlyphs: (variant: FontVariantKey, glyphs: Record<string, Glyph>, metadata: FontMetadata, mode: FontMergeMode) => void;
   addSavedMeasurement: (stateId: string, label: string, value: string) => void;
@@ -601,6 +611,51 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       payload: { screenId, objectIds }
     }));
   },
+  createAnimation: (animation) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.create',
+    meta: createCommandMeta(state, 'animation.create'),
+    payload: { animation }
+  })),
+  updateAnimation: (animationId, updates) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.update',
+    meta: createCommandMeta(state, 'animation.update'),
+    payload: { animationId, updates }
+  })),
+  deleteAnimation: (animationId) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.delete',
+    meta: createCommandMeta(state, 'animation.delete'),
+    payload: { animationId }
+  })),
+  addAnimationFrame: (animationId, frame) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.frame.add',
+    meta: createCommandMeta(state, 'animation.frame.add'),
+    payload: { animationId, frame }
+  })),
+  updateAnimationFrame: (animationId, frameId, updates) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.frame.update',
+    meta: createCommandMeta(state, 'animation.frame.update'),
+    payload: { animationId, frameId, updates }
+  })),
+  removeAnimationFrame: (animationId, frameId) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.frame.remove',
+    meta: createCommandMeta(state, 'animation.frame.remove'),
+    payload: { animationId, frameId }
+  })),
+  reorderAnimationFrames: (animationId, frameIds) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.frame.reorder',
+    meta: createCommandMeta(state, 'animation.frame.reorder'),
+    payload: { animationId, frameIds }
+  })),
+  bindScreenAnimation: (screenId, animationId) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.binding.set',
+    meta: createCommandMeta(state, 'animation.binding.set'),
+    payload: { screenId, animationId }
+  })),
+  bindBitmapAnimation: (screenId, objectId, animationId) => commitProjectCommand(set, get, (state) => ({
+    type: 'animation.binding.set',
+    meta: createCommandMeta(state, 'animation.binding.set'),
+    payload: { screenId, objectId, animationId }
+  })),
   updateGlyph: (variant, char, glyph) => commitProjectCommand(set, get, (state) => ({
     type: 'font.glyph.update',
     meta: createCommandMeta(state, 'font.glyph.update'),

@@ -11,7 +11,7 @@ import { normalizeProject } from '../../compiler/normalization/normalizeProject'
 import { LEGACY_LCD_TARGET_PROFILE } from '../../compiler/profiles/legacyTargetProfile';
 import { createCompilerSourceSnapshot } from '../../compiler/source/createCompilerSource';
 import { getEncodedDisplayByteLength } from '../../compiler/encoding/displayEncoder';
-import type { FontGlyphs, Glyph, LanguageCode, LcdBitmapProject, TextCanvasObject } from '../../domain';
+import { createDisplayProfile, type FontGlyphs, type Glyph, type LanguageCode, type LcdBitmapProject, type TextCanvasObject } from '../../domain';
 import { glyphs as bundledGlyphs } from '../../domain/fonts';
 import { emitPortableFormulaC } from '../../domain/portableFormula';
 import {
@@ -175,12 +175,7 @@ function createScreenMap(project: LcdBitmapProject): unknown {
         const screen = project.screens[screenId];
         const w = screen?.width ?? project.display.width;
         const h = screen?.height ?? project.display.height;
-        const byteLength = getEncodedDisplayByteLength({
-          width: w,
-          height: h,
-          colorMode: project.display.colorMode,
-          packing: project.display.packing
-        });
+        const byteLength = getEncodedDisplayByteLength(createDisplayProfile({ ...project.display, width: w, height: h }));
         acc.entries.push({
           index,
           id: screenId,

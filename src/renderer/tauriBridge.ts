@@ -29,6 +29,7 @@ if (invoke && !window.spectroDesigner) {
   window.spectroDesigner = {
     platform,
     clipboardWrite: (text) => invoke<boolean>('clipboard_write', { text }),
+    automationStatus: () => invoke('automation_status'),
     ipcSend: (channel, payload) => {
       if (channel !== 'api:mutate-res' || !payload || typeof payload !== 'object') return;
       const response = payload as { requestId?: string; result?: unknown; error?: string };

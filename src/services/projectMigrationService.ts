@@ -1,4 +1,7 @@
 import { createMutableFontGlyphs, type FontGlyphs } from '../domain/fonts';
+import { normalizeDisplayProfile } from '../domain/displayProfile';
+import { DEFAULT_DISPLAY_CONFIG } from '../domain/display';
+import { normalizeAnimationCatalog } from '../domain/animation';
 import { readProjectPayload } from './projectInterop';
 import type {
   CanvasData,
@@ -8,6 +11,7 @@ import type {
 } from '../domain';
 import {
   PROJECT_SCHEMA_VERSION,
+  PROJECT_SCHEMA_VERSION_PREVIOUS,
   PROJECT_SCHEMA_VERSION_LEGACY,
   rebuildProjectBindings,
   type BackendProcess,
@@ -140,11 +144,12 @@ function migrateLegacyProject(
       createdAt: legacy.auditTrail[0]?.timestamp ?? now,
       updatedAt: now
     },
-    display: legacy.display,
+    display: normalizeDisplayProfile(legacy.display, DEFAULT_DISPLAY_CONFIG),
     screens,
     screenOrder: Object.keys(screens),
     fonts: Object.fromEntries((loadedFonts ?? []).map((font) => [font.id, { ...font, glyphIds: [] }])),
     glyphs: {},
+    animations: { resources: {}, order: [] },
     fsm: {
       states: Object.fromEntries(
         stateOrder
@@ -233,6 +238,14 @@ export function createDefaultControlPanel(width: number, height: number, events:
 }
 
 function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
+  const animations = normalizeAnimationCatalog(project.animations);
+  const screens = Object.fromEntries(Object.entries(project.screens).map(([id, screen]) => [id, {
+    ...screen,
+    animationId: screen.animationId && animations.resources[screen.animationId] ? screen.animationId : null,
+    objects: screen.objects.map((object) => object.type === 'bitmap'
+      ? { ...object, animationId: object.animationId && animations.resources[object.animationId] ? object.animationId : null }
+      : object)
+  }]));
   const states = Object.fromEntries(Object.entries(project.fsm.states).map(([id, state]) => [
     id,
     {
@@ -263,6 +276,9 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
   const normalized: LcdBitmapProject = {
     ...project,
     meta: { ...project.meta, schemaVersion: PROJECT_SCHEMA_VERSION },
+    screens,
+    animations,
+    display: normalizeDisplayProfile(project.display, DEFAULT_DISPLAY_CONFIG),
     screenOrder: project.screenOrder.filter((id) => Boolean(project.screens[id])),
     fsm: {
       ...project.fsm,
@@ -336,8 +352,9 @@ function readV5Payload(input: unknown): ProjectSnapshotV5 | null {
   if (!isRecord(input)) {
     return null;
   }
-  const isKnownVersion =
-    input.version === PROJECT_SCHEMA_VERSION || input.version === PROJECT_SCHEMA_VERSION_LEGACY;
+  const isKnownVersion = input.version === PROJECT_SCHEMA_VERSION
+    || input.version === PROJECT_SCHEMA_VERSION_PREVIOUS
+    || input.version === PROJECT_SCHEMA_VERSION_LEGACY;
   if (input.kind === 'lcd-bitmap-project' && isKnownVersion && isV5OrV6Project(input.project)) {
     return {
       project: input.project,
@@ -357,6 +374,7 @@ function isV5OrV6Project(value: unknown): value is LcdBitmapProject {
   return isRecord(value)
     && isRecord(value.meta)
     && (value.meta.schemaVersion === PROJECT_SCHEMA_VERSION
+      || value.meta.schemaVersion === PROJECT_SCHEMA_VERSION_PREVIOUS
       || value.meta.schemaVersion === PROJECT_SCHEMA_VERSION_LEGACY)
     && isRecord(value.screens)
     && isRecord(value.fsm)

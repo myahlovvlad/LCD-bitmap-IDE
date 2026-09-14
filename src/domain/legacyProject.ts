@@ -1,4 +1,6 @@
-import type { CanvasData, DisplayConfig, GraphPosition } from './canvas';
+import type { CanvasData, GraphPosition } from './canvas';
+import type { LegacyDisplayConfig } from './displayProfile';
+import type { DisplayProfile } from './displayProfile';
 import type { SupportedModelId } from './localization';
 
 export interface LegacyFsmState {
@@ -62,7 +64,7 @@ export interface LegacyProject {
   firmwareVersion: string | null;
   author: string | null;
   lastModified: string;
-  display: DisplayConfig;
+  display: LegacyDisplayConfig | DisplayProfile;
   states: Record<string, LegacyFsmState>;
   transitions: Record<string, LegacyFsmTransition>;
   canvasByStateId: Record<string, CanvasData>;

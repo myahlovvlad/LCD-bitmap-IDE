@@ -16,7 +16,7 @@ const uiOnly = (uiCommand: string, uiOnlyReason: string): UiAutomationParityEntr
 /** Every public application command must be mapped or carry a reviewable UI-only reason. */
 export const UI_AUTOMATION_PARITY: readonly UiAutomationParityEntry[] = [
   uiOnly('project.updateMetadata', 'Project identity editing remains a user-confirmed settings workflow.'),
-  uiOnly('project.updateDisplayConfig', 'Display configuration is withheld until the versioned DisplayProfile contract lands.'),
+  mapped('project.updateDisplayConfig', 'update_display_profile'),
   mapped('project.setAuthoringLanguage', 'set_authoring_language'),
   mapped('fsm.state.add', 'create_fsm_state'),
   mapped('fsm.state.update', 'update_fsm_state'),
@@ -57,6 +57,14 @@ export const UI_AUTOMATION_PARITY: readonly UiAutomationParityEntry[] = [
   uiOnly('canvas.bitmapLayer.add', 'Binary layer import uses the guarded import pipeline.'),
   uiOnly('canvas.objects.update', 'Bulk canvas gesture updates are intentionally UI-only.'),
   uiOnly('canvas.objects.delete', 'Canvas deletion needs the future canonical raster preview contract.'),
+  uiOnly('animation.create', 'Animation resources require interactive frame and dimension validation.'),
+  uiOnly('animation.update', 'Animation resource dimensions are validated against visible bindings in the editor.'),
+  uiOnly('animation.delete', 'Animation deletion requires user-visible binding cleanup review.'),
+  uiOnly('animation.frame.add', 'Animation frame edits are an interactive raster workflow.'),
+  uiOnly('animation.frame.update', 'Animation frame edits are an interactive raster workflow.'),
+  uiOnly('animation.frame.remove', 'Animation frame removal requires interactive playback review.'),
+  uiOnly('animation.frame.reorder', 'Animation frame ordering requires interactive playback review.'),
+  uiOnly('animation.binding.set', 'Animation binding requires the editor to present compatible target dimensions.'),
   uiOnly('font.glyph.update', 'Glyph pixel editing is an interactive UI workflow.'),
   uiOnly('font.glyphs.import', 'Font import is file-backed and requires explicit user file selection.'),
   uiOnly('measurement.add', 'Saved measurements remain local operator records.'),

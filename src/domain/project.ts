@@ -1,12 +1,15 @@
-import type { CanvasObject, DisplayConfig, GraphPosition } from './canvas';
+import type { CanvasObject, GraphPosition } from './canvas';
+import type { DisplayProfile } from './displayProfile';
 import type { FontMetadata } from './fonts';
 import type { LanguageCode, LocalizedText } from './localization';
 import type { HmiBindings, HmiTag, DataSource } from './tag';
 import type { BackendProcedure, CliCommandDefinition } from './procedure';
 import type { AlarmDefinition } from './alarm';
 import type { TrendDefinition } from './trend';
+import type { AnimationCatalog } from './animation';
 
-export const PROJECT_SCHEMA_VERSION = 6 as const;
+export const PROJECT_SCHEMA_VERSION = 7 as const;
+export const PROJECT_SCHEMA_VERSION_PREVIOUS = 6 as const;
 export const PROJECT_SCHEMA_VERSION_LEGACY = 5 as const;
 
 export type WorkspaceMode =
@@ -62,6 +65,8 @@ export interface LcdScreen {
   selectedObjectIds: string[];
   createdAt: string;
   updatedAt: string;
+  /** Optional in raw legacy projects; migration converts missing and invalid bindings to null. */
+  animationId?: string | null;
 }
 
 export interface BitmapFont extends FontMetadata {
@@ -88,6 +93,14 @@ export interface FsmEvent {
   sourceStateId?: string | null;
 }
 
+/** Declares that a state accepts a value from the physical keypad. */
+export interface FsmInputConfig {
+  mode: 'numeric' | 'text';
+  maxLength?: number;
+  allowDecimal?: boolean;
+  allowNegative?: boolean;
+}
+
 export interface FsmState {
   id: string;
   runtimeId: string | null;
@@ -97,6 +110,7 @@ export interface FsmState {
   stateType: 'initial' | 'process' | 'success' | 'failure' | string;
   origin: string;
   screenId: string | null;
+  input?: FsmInputConfig;
   initial: boolean;
   terminal: boolean;
 }
@@ -286,11 +300,12 @@ export interface ValidationState {
 
 export interface LcdBitmapProject {
   meta: ProjectMeta;
-  display: DisplayConfig;
+  display: DisplayProfile;
   screens: Record<string, LcdScreen>;
   screenOrder: string[];
   fonts: Record<string, BitmapFont>;
   glyphs: Record<string, ProjectGlyph>;
+  animations: AnimationCatalog;
   fsm: FsmModel;
   controlPanel: ControlPanelModel;
   backendProcesses: Record<string, BackendProcess>;
@@ -311,7 +326,7 @@ export interface LcdBitmapProject {
 
 export interface ProjectFileV5 {
   kind: 'lcd-bitmap-project';
-  version: typeof PROJECT_SCHEMA_VERSION | typeof PROJECT_SCHEMA_VERSION_LEGACY;
+  version: typeof PROJECT_SCHEMA_VERSION | typeof PROJECT_SCHEMA_VERSION_PREVIOUS | typeof PROJECT_SCHEMA_VERSION_LEGACY;
   savedAt: string;
   language: 'en' | 'ru' | 'zh';
   project: LcdBitmapProject;

@@ -9,7 +9,7 @@ import {
   generateSelectedScreenCHeader
 } from '../../application';
 import { DOMAIN_GLOSSARY } from '../config/constants';
-import { FontRenderer, resolveLocalizedBitmapText, type FontVariantKey, type Glyph } from '../core/fonts';
+import { FontRenderer, resolveLocalizedBitmapText, type FontVariantKey, type Glyph, type GlyphSet } from '../core/fonts';
 import {
   getScreenByteLength,
   parseCHeaderScreenArrays,
@@ -19,7 +19,13 @@ import {
   type EmbeddedExportFormat
 } from '../utils/codegen';
 import { packFrameBuffer, unpackBytesToFrameBuffer, type FrameBuffer } from '../utils/render';
-import { importFont, type FontMergeMode } from '../utils/fontImport';
+import { importFont, summarizeImportedFont, type FontMergeMode } from '../utils/fontImport';
+import {
+  createElementExport,
+  serializeElementHeader,
+  serializeElementManifest,
+  type ElementExportFormat
+} from '../utils/elementExport';
 import { copyToClipboard } from '../utils/clipboard';
 import type {
   CanvasData,
@@ -140,6 +146,7 @@ export function LCDCanvasEditor({
   const [fontStatus, setFontStatus] = useState('');
   const [importStatus, setImportStatus] = useState('');
   const [embeddedFormat, setEmbeddedFormat] = useState<EmbeddedExportFormat>('c-vertical-lsb');
+  const [elementExportFormat, setElementExportFormat] = useState<ElementExportFormat>('json');
 
   const selectedObjects = canvasData.objects.filter((object) =>
     canvasData.selectedObjectIds.includes(object.id)
@@ -510,6 +517,27 @@ export function LCDCanvasEditor({
     link.click();
   };
 
+  const downloadSelectedElements = (): void => {
+    for (const object of selectedObjects) {
+      const bundle = createElementExport(object, {
+        language: authoringLanguage,
+        screenWidth: canvasData.width,
+        screenHeight: canvasData.height,
+        fontRenderer
+      });
+      const basename = `${sanitizeFilename(canvasData.stateId)}_${sanitizeFilename(object.id)}`;
+      if (elementExportFormat === 'json') {
+        downloadBlob(`${basename}.lcd-element.json`, serializeElementManifest(bundle), 'application/json');
+      } else if (elementExportFormat === 'c-header') {
+        downloadBlob(`${basename}.h`, serializeElementHeader(bundle), 'text/x-c');
+      } else if (elementExportFormat === 'binary') {
+        downloadBlob(`${basename}.bin`, bundle.bytes, 'application/octet-stream');
+      } else {
+        downloadFrameBufferPng(`${basename}.png`, bundle.frameBuffer);
+      }
+    }
+  };
+
   const copyCCode = async (): Promise<void> => {
     if (!codegenWorkspace) {
       return;
@@ -662,6 +690,11 @@ export function LCDCanvasEditor({
           <div className="block text-sm text-gray-400 mb-3 font-bold uppercase tracking-wider">
             {labels.canvasTools}
           </div>
+          {firstSelected ? (
+            <div className="selected-canvas-object-status text-xs text-gray-400 mb-3" data-testid="selected-canvas-object">
+              {('name' in firstSelected && firstSelected.name) || firstSelected.id}
+            </div>
+          ) : null}
           <div className="editor-toolbar grid grid-cols-2 gap-2" aria-label={labels.canvasTools}>
             <ToolButton mode="select" activeMode={mode} onSelect={setMode} label={labels.select} />
             <ToolButton mode="text" activeMode={mode} onSelect={setMode} label={labels.addText} />
@@ -744,11 +777,16 @@ export function LCDCanvasEditor({
           onEmbeddedFormatChange={setEmbeddedFormat}
           onDownloadEmbedded={downloadSelectedEmbedded}
           onDownloadAllEmbedded={downloadAllEmbedded}
+          selectedElementCount={selectedObjects.length}
+          elementExportFormat={elementExportFormat}
+          onElementExportFormatChange={setElementExportFormat}
+          onDownloadSelectedElements={downloadSelectedElements}
         />
 
         <FontLoaderPanel
           labels={labels}
           loadedFonts={loadedFonts}
+          glyphs={fontGlyphs[fontTargetVariant]}
           targetVariant={fontTargetVariant}
           mergeMode={fontMergeMode}
           status={fontStatus}
@@ -883,7 +921,11 @@ function ExportImportPanel({
   embeddedFormat,
   onEmbeddedFormatChange,
   onDownloadEmbedded,
-  onDownloadAllEmbedded
+  onDownloadAllEmbedded,
+  selectedElementCount,
+  elementExportFormat,
+  onElementExportFormatChange,
+  onDownloadSelectedElements
 }: {
   labels: UiText;
   importStatus: string;
@@ -898,6 +940,10 @@ function ExportImportPanel({
   onEmbeddedFormatChange: (format: EmbeddedExportFormat) => void;
   onDownloadEmbedded: () => void;
   onDownloadAllEmbedded: () => void;
+  selectedElementCount: number;
+  elementExportFormat: ElementExportFormat;
+  onElementExportFormatChange: (format: ElementExportFormat) => void;
+  onDownloadSelectedElements: () => void;
 }): React.ReactElement {
   return (
     <section className="editor-tools-card export-import-panel">
@@ -923,6 +969,18 @@ function ExportImportPanel({
         <button type="button" onClick={onDownloadEmbedded}>{labels.downloadEmbeddedSelected}</button>
         <button type="button" onClick={onDownloadAllEmbedded}>{labels.downloadEmbeddedAll}</button>
       </div>
+      <h3>{labels.elementExportFormat}</h3>
+      <div className="element-export-row">
+        <select value={elementExportFormat} onChange={(event) => onElementExportFormatChange(event.target.value as ElementExportFormat)}>
+          <option value="json">{labels.elementExportFormatJson}</option>
+          <option value="c-header">{labels.elementExportFormatCHeader}</option>
+          <option value="binary">{labels.elementExportFormatBinary}</option>
+          <option value="png">{labels.elementExportFormatPng}</option>
+        </select>
+        <button type="button" disabled={selectedElementCount === 0} onClick={onDownloadSelectedElements}>
+          {labels.downloadSelectedElements} ({selectedElementCount})
+        </button>
+      </div>
       <small>{labels.screenCount}: {screenCount}</small>
       {importStatus ? <small>{importStatus}</small> : null}
     </section>
@@ -932,6 +990,7 @@ function ExportImportPanel({
 function FontLoaderPanel({
   labels,
   loadedFonts,
+  glyphs,
   targetVariant,
   mergeMode,
   status,
@@ -941,6 +1000,7 @@ function FontLoaderPanel({
 }: {
   labels: UiText;
   loadedFonts: FontMetadata[];
+  glyphs: GlyphSet;
   targetVariant: FontVariantKey;
   mergeMode: FontMergeMode;
   status: string;
@@ -948,6 +1008,8 @@ function FontLoaderPanel({
   onMergeModeChange: (mode: FontMergeMode) => void;
   onChooseFile: () => void;
 }): React.ReactElement {
+  const summary = useMemo(() => summarizeImportedFont(glyphs), [glyphs]);
+  const preview = useMemo(() => buildFontPreview(glyphs), [glyphs]);
   return (
     <section className="editor-tools-card font-loader-panel">
       <h3>{labels.fontLoader}</h3>
@@ -963,6 +1025,21 @@ function FontLoaderPanel({
         <button type="button" onClick={onChooseFile}>{labels.loadFont}</button>
       </div>
       {status ? <small>{status}</small> : null}
+      <div className="font-import-preview" data-testid="font-import-preview">
+        <div className="font-import-preview-meta">
+          <strong>{summary.previewCharacters || '—'}</strong>
+          <span>{summary.glyphCount} {labels.glyphsUnit} · {summary.minWidth}–{summary.maxWidth}{labels.pixelsUnit} · {summary.minHeight}–{summary.maxHeight}{labels.pixelsUnit}</span>
+        </div>
+        <svg
+          role="img"
+          aria-label={`Font ${targetVariant} bitmap preview`}
+          viewBox={`0 0 ${preview.width} ${preview.height}`}
+          preserveAspectRatio="xMinYMid meet"
+        >
+          <rect width={preview.width} height={preview.height} className="font-import-preview-background" />
+          {preview.pixels.map(([x, y]) => <rect key={`${x}:${y}`} x={x} y={y} width={1} height={1} className="font-import-preview-pixel" />)}
+        </svg>
+      </div>
       <div className="loaded-font-list">
         {loadedFonts.slice(0, 6).map((font) => (
           <div key={font.id} className="loaded-font-row">
@@ -973,6 +1050,24 @@ function FontLoaderPanel({
       </div>
     </section>
   );
+}
+
+function buildFontPreview(glyphs: GlyphSet): { width: number; height: number; pixels: Array<[number, number]> } {
+  const maxWidth = 96;
+  const entries = Object.values(glyphs);
+  const height = Math.max(1, ...entries.slice(0, 16).map((glyph) => glyph.data.length));
+  const pixels: Array<[number, number]> = [];
+  let offsetX = 0;
+  for (const glyph of entries.slice(0, 16)) {
+    if (offsetX + glyph.width > maxWidth) break;
+    glyph.data.forEach((row, y) => {
+      Array.from(row).forEach((pixel, x) => {
+        if (pixel === '#') pixels.push([offsetX + x, y]);
+      });
+    });
+    offsetX += glyph.width + 1;
+  }
+  return { width: Math.max(1, offsetX - 1), height, pixels };
 }
 
 function SpecialGlyphPanel({
@@ -1767,6 +1862,28 @@ function downloadBlob(filename: string, data: string | Uint8Array, type: string)
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadFrameBufferPng(filename: string, frameBuffer: FrameBuffer): void {
+  const scale = 8;
+  const height = Math.max(1, frameBuffer.length);
+  const width = Math.max(1, frameBuffer[0]?.length ?? 1);
+  const canvas = document.createElement('canvas');
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const context = canvas.getContext('2d');
+  if (!context) return;
+  context.imageSmoothingEnabled = false;
+  context.fillStyle = '#8aac59';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#17230d';
+  frameBuffer.forEach((row, y) => row.forEach((active, x) => {
+    if (active) context.fillRect(x * scale, y * scale, scale, scale);
+  }));
+  const link = document.createElement('a');
+  link.href = canvas.toDataURL('image/png');
+  link.download = filename;
+  link.click();
 }
 
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {

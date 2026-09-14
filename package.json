@@ -10,7 +10,7 @@
     "dev": "vite --host 127.0.0.1",
     "build:renderer": "tsc -p tsconfig.renderer.json --noEmit && vite build",
     "tauri:dev": "cross-env CARGO_BUILD_JOBS=1 npm --prefix apps/tauri run dev",
-    "tauri:build": "cross-env CARGO_BUILD_JOBS=1 npm --prefix apps/tauri exec tauri build --",
+    "tauri:build": "npm run icons:generate && cross-env CARGO_BUILD_JOBS=1 npm --prefix apps/tauri exec tauri build --",
     "tauri:check": "cross-env CARGO_BUILD_JOBS=1 npm --prefix apps/tauri run check",
     "preview:test": "node scripts/serve-static.mjs dist/renderer 4173",
     "electron:build": "tsc -p tsconfig.electron.json --noEmit && node scripts/build-electron-main.mjs",
@@ -19,6 +19,7 @@
     "check": "npm run typecheck && npm run test:coverage && npm run test:renderer && npm run test:importer && npm run build && npm run test:e2e:prepared",
     "check:full": "npm run check && npm run test:dev && npm run test:electron && npm run test:performance && npm run docs:manual",
     "build": "npm run typecheck && vite build && npm run electron:build",
+    "icons:generate": "npm --prefix apps/tauri run icon",
     "build:windows": "npm run build && electron-builder --win",
     "build:macos": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
@@ -100,12 +101,14 @@
       "node_modules/@serialport/**"
     ],
     "win": {
+      "icon": "apps/tauri/src-tauri/icons/icon.ico",
       "target": [
         "nsis",
         "portable"
       ]
     },
     "mac": {
+      "icon": "apps/tauri/src-tauri/icons/icon.icns",
       "target": [
         "dmg",
         "zip"
@@ -123,6 +126,7 @@
       "artifactName": "${productName}-${version}-Portable-${arch}.${ext}"
     },
     "linux": {
+      "icon": "apps/tauri/src-tauri/icons/128x128@2x.png",
       "target": [
         "deb",
         "AppImage",

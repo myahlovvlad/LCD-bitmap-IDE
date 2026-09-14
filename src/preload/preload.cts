@@ -15,6 +15,7 @@ const ALLOWED_SEND_CHANNELS = new Set(['api:project-state', 'api:runtime-state',
 contextBridge.exposeInMainWorld('spectroDesigner', {
   platform: process.platform,
   clipboardWrite: (text: string) => ipcRenderer.invoke('clipboard-write', text),
+  automationStatus: () => ipcRenderer.invoke('automation-status'),
   manualExportPdf: (html: string, filename: string) => ipcRenderer.invoke('manual-export-pdf', html, filename),
 
   // Narrow one-way send (state push, mutation responses)

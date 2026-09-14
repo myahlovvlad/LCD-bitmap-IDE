@@ -18,6 +18,10 @@ import type {
   SpectroSerialPortInfo,
   SpectroSerialStatus
 } from '../../shared/spectrophotometerSerial/contracts';
+import { APP_SOFTWARE_VERSION } from '../../renderer/config/constants';
+import { assessHandoffReadiness } from './handoffReadiness';
+
+type HandoffStep = 'validate' | 'package' | 'connect';
 
 const SAMPLE_VALUES: Record<string, number> = {
   'measurement.concentration': 12.345,
@@ -57,6 +61,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
   const [serialLog, setSerialLog] = useState<string[]>([]);
   const [identifiedProfile, setIdentifiedProfile] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [step, setStep] = useState<HandoffStep>('validate');
   const labels = HANDOFF_TEXT[language];
 
   const screenId = selectedScreenId && project?.screens[selectedScreenId]
@@ -79,6 +84,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
     }));
   const fontRenderer = useMemo(() => new FontRenderer(fontGlyphs), [fontGlyphs]);
   const serialApi = window.spectroDesigner?.spectrophotometerSerial;
+  const readiness = project ? assessHandoffReadiness(project) : null;
 
   useEffect(() => {
     if (!serialApi) return;
@@ -137,6 +143,12 @@ export function HmiHandoffWorkspace(): React.ReactElement {
   };
 
   const exportPackage = async (): Promise<void> => {
+    if (!readiness?.ready) {
+      setExportState('error');
+      setExportMessage(labels.validationBlocked);
+      setStep('validate');
+      return;
+    }
     setExportState('building');
     setExportMessage(labels.building);
     try {
@@ -213,7 +225,45 @@ export function HmiHandoffWorkspace(): React.ReactElement {
   };
 
   return (
-    <section className="workspace-root hmi-handoff-workspace" aria-label={labels.title} data-testid="hmi-handoff-workspace">
+    <section className="workspace-root hmi-handoff-workspace" aria-label={labels.title} data-testid="hmi-handoff-workspace" data-step={step}>
+      <header className="handoff-stepper" aria-label={labels.wizardLabel}>
+        {(['validate', 'package', 'connect'] as const).map((item, index) => (
+          <button key={item} type="button" className={step === item ? 'active' : ''} aria-current={step === item ? 'step' : undefined} onClick={() => setStep(item)} data-testid={`handoff-step-${item}`}>
+            <span>{index + 1}</span>{item === 'validate' ? labels.stepValidate : item === 'package' ? labels.stepPackage : labels.stepConnect}
+          </button>
+        ))}
+      </header>
+
+      <main className="handoff-validation-stage" data-testid="handoff-validation-stage">
+        <header>
+          <div>
+            <span>{labels.stepValidate}</span>
+            <h2>{readiness?.ready ? labels.validationReady : labels.validationNeedsWork}</h2>
+            <p>{labels.validationHint}</p>
+          </div>
+          <span className={readiness?.ready ? 'handoff-ready-badge' : 'handoff-blocked-badge'}>
+            {readiness?.ready ? labels.readyBadge : labels.blockedBadge}
+          </span>
+        </header>
+        <div className="handoff-readiness-grid">
+          <ReadinessMetric label={labels.validationErrors} value={readiness?.validationErrors ?? 0} blocking />
+          <ReadinessMetric label={labels.statesWithoutScreens} value={readiness?.statesWithoutScreens ?? 0} blocking />
+          <ReadinessMetric label={labels.unboundButtons} value={readiness?.unboundButtons ?? 0} blocking />
+          <ReadinessMetric label={labels.unroutedButtons} value={readiness?.unroutedButtons ?? 0} blocking />
+          <ReadinessMetric label={labels.untranslatedTexts} value={readiness?.untranslatedTexts ?? 0} blocking />
+          <ReadinessMetric label={labels.validationWarnings} value={readiness?.validationWarnings ?? 0} />
+        </div>
+        <section className="handoff-limit-card">
+          <strong>{labels.notFirmwareTitle}</strong>
+          <p>{labels.notFirmwareBody}</p>
+          <p>{labels.embeddedInputsRequired}</p>
+          <small>{`${labels.softwareIdentity}: v${APP_SOFTWARE_VERSION} · ${labels.projectIdentity}: v${project.meta.version} · ${labels.schemaIdentity}: ${project.meta.schemaVersion}`}</small>
+        </section>
+        <div className="handoff-stage-actions">
+          <button type="button" className="hmi-btn-primary" disabled={!readiness?.ready} onClick={() => setStep('package')}>{labels.continueToPackage}</button>
+        </div>
+      </main>
+
       <aside className="workspace-sidebar hmi-handoff-sidebar">
         <header className="workspace-section-header">
           <h2>{labels.screens}</h2>
@@ -244,7 +294,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
       <main className="workspace-canvas-column hmi-handoff-main">
         <header className="workspace-toolbar hmi-handoff-toolbar">
           <button type="button" onClick={installPreset} data-testid="handoff-install-preset"><Tags size={15} />{labels.installPreset}</button>
-          <button type="button" className="hmi-btn-primary" onClick={() => void exportPackage()} disabled={exportState === 'building'} data-testid="handoff-export-package">
+          <button type="button" className="hmi-btn-primary" onClick={() => void exportPackage()} disabled={exportState === 'building' || !readiness?.ready} data-testid="handoff-export-package" title={!readiness?.ready ? labels.validationBlocked : labels.exportPackage}>
             <Download size={15} />{labels.exportPackage}
           </button>
           <button type="button" className="hmi-help-button" onClick={() => setShowTutorial(true)} title={labels.training}><HelpCircle size={15} /></button>
@@ -304,7 +354,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
 
       <aside className="workspace-inspector hmi-handoff-inspector">
         <header className="workspace-section-header"><h2>{labels.handoff}</h2></header>
-        <section className="inspector-card">
+        <section className="inspector-card handoff-package-editor">
           <h3>{labels.selectedText}</h3>
           <select
             value={selectedObject?.id ?? ''}
@@ -344,7 +394,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
             </>
           ) : null}
         </section>
-        <section className="inspector-card hmi-handoff-checklist">
+        <section className="inspector-card hmi-handoff-checklist handoff-package-summary">
           <h3>{labels.packageContents}</h3>
           <p><PackageCheck size={14} />C/H · BIN · XBM · Arduino · Rust</p>
           <p><Tags size={14} />CSV · JSON · RU/EN/ZH · {labels.glyphClosure}</p>
@@ -391,7 +441,7 @@ export function HmiHandoffWorkspace(): React.ReactElement {
             </>
           )}
         </section>
-        <section className="inspector-card hmi-handoff-warning">
+        <section className="inspector-card hmi-handoff-warning handoff-package-warning">
           <strong>{labels.assumption}</strong>
           <p>{labels.concentrationAssumption}</p>
         </section>
@@ -401,9 +451,22 @@ export function HmiHandoffWorkspace(): React.ReactElement {
   );
 }
 
+function ReadinessMetric({ label, value, blocking = false }: { label: string; value: number; blocking?: boolean }): React.ReactElement {
+  return (
+    <article className={value && blocking ? 'handoff-readiness-metric blocking' : 'handoff-readiness-metric'}>
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </article>
+  );
+}
+
 const HANDOFF_TEXT = {
   en: {
     title: 'HMI Editor & Handoff',
+    wizardLabel: 'HMI handoff workflow', stepValidate: 'Validate', stepPackage: 'Supplier package', stepConnect: 'Device connection',
+    validationReady: 'The HMI model is ready for packaging', validationNeedsWork: 'Resolve blocking model gaps before delivery', validationHint: 'The checks combine project validation with screen, key-route and translation coverage.', readyBadge: 'Ready', blockedBadge: 'Blocked',
+    validationErrors: 'Validation errors', validationWarnings: 'Warnings', statesWithoutScreens: 'FSM states without LCD screens', unboundButtons: 'Visible keys without events', unroutedButtons: 'Bound keys without routes', untranslatedTexts: 'Texts missing RU/EN/ZH', validationBlocked: 'Supplier export is blocked until validation issues are resolved.',
+    notFirmwareTitle: 'This package is an HMI/FSM specification, not an embedded firmware binary.', notFirmwareBody: 'It gives the supplier screens, bindings, state transitions, text resources, display bytes and traceability evidence.', embeddedInputsRequired: 'The embedded team still needs C/C++ sources, MCU and toolchain details, drivers/protocols and the device update procedure.', softwareIdentity: 'IDE software', projectIdentity: 'Project', schemaIdentity: 'schema', continueToPackage: 'Continue to supplier package',
     screens: 'Screens',
     noProject: 'No project or screen loaded.',
     cloneLayout: 'Clone layout only',
@@ -434,6 +497,10 @@ const HANDOFF_TEXT = {
   },
   ru: {
     title: 'Редактор HMI и передача',
+    wizardLabel: 'Процесс передачи HMI', stepValidate: 'Проверка', stepPackage: 'Пакет поставщику', stepConnect: 'Подключение прибора',
+    validationReady: 'Модель HMI готова к формированию пакета', validationNeedsWork: 'Перед поставкой устраните блокирующие пробелы модели', validationHint: 'Проверка объединяет ошибки проекта, связи экранов, маршруты клавиш и полноту переводов.', readyBadge: 'Готово', blockedBadge: 'Заблокировано',
+    validationErrors: 'Ошибки валидации', validationWarnings: 'Предупреждения', statesWithoutScreens: 'Состояния FSM без LCD-экранов', unboundButtons: 'Видимые клавиши без событий', unroutedButtons: 'Клавиши без маршрутов', untranslatedTexts: 'Строки без RU/EN/ZH', validationBlocked: 'Экспорт поставщику заблокирован до устранения ошибок проверки.',
+    notFirmwareTitle: 'Этот пакет — спецификация HMI/FSM, а не бинарная embedded-прошивка.', notFirmwareBody: 'Он передаёт поставщику экраны, привязки, переходы состояний, тексты, байты дисплея и подтверждение трассируемости.', embeddedInputsRequired: 'Embedded-команде по-прежнему нужны исходники C/C++, данные МК и toolchain, драйверы/протоколы и процедура обновления прибора.', softwareIdentity: 'Версия IDE', projectIdentity: 'Проект', schemaIdentity: 'схема', continueToPackage: 'Перейти к пакету поставщику',
     screens: 'Экраны',
     noProject: 'Проект или экран не загружен.',
     cloneLayout: 'Клон только макета',
@@ -464,6 +531,10 @@ const HANDOFF_TEXT = {
   },
   zh: {
     title: 'HMI 编辑与交付',
+    wizardLabel: 'HMI 交付流程', stepValidate: '验证', stepPackage: '供应商包', stepConnect: '设备连接',
+    validationReady: 'HMI 模型已准备好打包', validationNeedsWork: '交付前请解决模型中的阻塞缺口', validationHint: '检查包括项目验证、屏幕链接、按键路径和翻译覆盖率。', readyBadge: '就绪', blockedBadge: '已阻塞',
+    validationErrors: '验证错误', validationWarnings: '警告', statesWithoutScreens: '没有 LCD 屏幕的 FSM 状态', unboundButtons: '没有事件的可见按键', unroutedButtons: '没有路径的已绑定按键', untranslatedTexts: '缺少俄文/英文/中文的文本', validationBlocked: '解决验证问题之前无法导出供应商包。',
+    notFirmwareTitle: '此包是 HMI/FSM 规范，不是嵌入式固件二进制文件。', notFirmwareBody: '它向供应商提供屏幕、绑定、状态转换、文本资源、显示字节和可追溯性证据。', embeddedInputsRequired: '嵌入式团队仍需要 C/C++ 源码、MCU 与工具链信息、驱动/协议以及设备升级流程。', softwareIdentity: 'IDE 软件', projectIdentity: '项目', schemaIdentity: '模式', continueToPackage: '继续生成供应商包',
     screens: '屏幕',
     noProject: '未加载项目或屏幕。',
     cloneLayout: '仅克隆布局',

@@ -24,6 +24,8 @@ struct AutomationRuntime {
     pending: Mutex<HashMap<String, SyncSender<Value>>>,
     sequence: AtomicU64,
     shutdown: AtomicBool,
+    rest_running: AtomicBool,
+    mcp_running: AtomicBool,
 }
 
 #[derive(Clone, Default)]
@@ -38,6 +40,7 @@ struct RendererAutomationEvent {
 }
 
 pub fn start_servers(app: AppHandle, state: AutomationState) {
+    state.0.shutdown.store(false, Ordering::SeqCst);
     spawn_server(app.clone(), state.clone(), REST_PORT, TransportKind::Rest);
     spawn_server(app, state, MCP_PORT, TransportKind::Mcp);
 }
@@ -70,6 +73,23 @@ pub fn automation_respond(
         .map_err(|_| "automation response receiver closed".to_string())
 }
 
+#[tauri::command]
+pub fn automation_status(state: State<'_, AutomationState>) -> Value {
+    json!({
+        "rest": {
+            "running": state.0.rest_running.load(Ordering::SeqCst),
+            "endpoint": format!("http://127.0.0.1:{REST_PORT}/api/v1")
+        },
+        "mcp": {
+            "running": state.0.mcp_running.load(Ordering::SeqCst),
+            "endpoint": format!("http://127.0.0.1:{MCP_PORT}/mcp"),
+            "healthEndpoint": format!("http://127.0.0.1:{MCP_PORT}/health"),
+            "protocolVersion": "2024-11-05"
+        },
+        "authConfigured": std::env::var("LCD_IDE_AUTOMATION_TOKEN").is_ok()
+    })
+}
+
 #[derive(Clone, Copy)]
 enum TransportKind {
     Rest,
@@ -82,10 +102,12 @@ fn spawn_server(app: AppHandle, state: AutomationState, port: u16, kind: Transpo
         let server = match Server::http(&address) {
             Ok(server) => server,
             Err(error) => {
+                set_transport_running(&state, kind, false);
                 eprintln!("[automation] {address} unavailable: {error}");
                 return;
             }
         };
+        set_transport_running(&state, kind, true);
         while !state.0.shutdown.load(Ordering::SeqCst) {
             match server.recv_timeout(Duration::from_millis(250)) {
                 Ok(Some(request)) => handle_request(request, &app, &state, port, kind),
@@ -96,7 +118,15 @@ fn spawn_server(app: AppHandle, state: AutomationState, port: u16, kind: Transpo
                 }
             }
         }
+        set_transport_running(&state, kind, false);
     });
+}
+
+fn set_transport_running(state: &AutomationState, kind: TransportKind, running: bool) {
+    match kind {
+        TransportKind::Rest => state.0.rest_running.store(running, Ordering::SeqCst),
+        TransportKind::Mcp => state.0.mcp_running.store(running, Ordering::SeqCst),
+    }
 }
 
 fn handle_request(
@@ -155,18 +185,32 @@ fn handle_mcp(
     app: &AppHandle,
     state: &AutomationState,
 ) -> Result<(u16, Value), (u16, String)> {
-    if request.method().as_str() != "POST" || request.url().split('?').next() != Some("/mcp") {
+    let method_name = request.method().as_str();
+    let url = request.url().split('?').next().unwrap_or(request.url());
+    if method_name == "GET" && url == "/health" {
+        return Ok((200, json!({
+            "ok": true,
+            "transport": "tauri-mcp",
+            "endpoint": format!("http://127.0.0.1:{MCP_PORT}/mcp"),
+            "protocolVersion": "2024-11-05"
+        })));
+    }
+    if method_name != "POST" || url != "/mcp" {
         return Err((404, "Not found".to_string()));
     }
     let message = read_json_body(request)?;
     let id = message.get("id").cloned().unwrap_or(Value::Null);
     let method = message.get("method").and_then(Value::as_str).unwrap_or("");
+    if method == "notifications/initialized" {
+        return Ok((204, Value::Null));
+    }
     let result = match method {
         "initialize" => json!({
             "protocolVersion": "2024-11-05",
             "capabilities": { "tools": {} },
             "serverInfo": { "name": "lcd-bitmap-ide-tauri", "version": "1.0.0" }
         }),
+        "ping" => json!({}),
         "tools/list" => {
             let payload =
                 automation_payload("get_capabilities", Map::new(), request, "tauri-mcp", state)?;
@@ -501,5 +545,12 @@ mod tests {
         assert!(!is_local_origin("https://localhost:8766"));
         assert!(constant_time_equal(b"secret", b"secret"));
         assert!(!constant_time_equal(b"secret", b"secret2"));
+    }
+
+    #[test]
+    fn automation_state_reports_stopped_transports_by_default() {
+        let state = AutomationState::default();
+        assert!(!state.0.rest_running.load(Ordering::SeqCst));
+        assert!(!state.0.mcp_running.load(Ordering::SeqCst));
     }
 }

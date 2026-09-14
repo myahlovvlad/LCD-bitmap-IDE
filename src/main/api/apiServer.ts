@@ -131,6 +131,10 @@ export function stopApiServer(): void {
   pendingMutations.clear();
 }
 
+export function getApiServerStatus(): { running: boolean; endpoint: string } {
+  return { running: httpServer !== null, endpoint: `http://127.0.0.1:${API_PORT}/api/v1` };
+}
+
 /** Send a mutation request to the renderer and await the response (5s timeout). */
 async function mutate(action: string, payload: unknown): Promise<unknown> {
   if (!mainWindow) throw new Error('No renderer window available');

@@ -1,5 +1,6 @@
 node_modules/
 **/target/
+**/target-*/
 dist/
 .vite-dev.log
 .vite-dev.err.log
@@ -18,8 +19,10 @@ playwright-report/
 test-results/
 out/
 release/
+release-*/
 build-diagnostics/
 graphify-out/
+.worktrees/
 
 # OS/editor noise
 .DS_Store
@@ -46,3 +49,10 @@ LCD-*.html
 
 # Generated outputs
 docs/generated/
+
+# Local assistant tooling and client project files (not part of this repo)
+.claude/
+.superpowers/
+.github/copilot-instructions.md
+.github/instructions/
+ECROS-5400UV/

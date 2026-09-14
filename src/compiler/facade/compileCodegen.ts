@@ -4,7 +4,7 @@ import { legacyCBackend } from '../backends/legacyCBackend';
 import type { CodegenRequest } from '../backends/codegenBackend';
 import { lowerToTargetIr } from '../lowering/lowerToTargetIr';
 import { normalizeProject } from '../normalization/normalizeProject';
-import { LEGACY_LCD_TARGET_PROFILE } from '../profiles/legacyTargetProfile';
+import { createCompilerTargetProfile } from '../profiles/legacyTargetProfile';
 import type { CompilerSourceSnapshot } from '../source/compilerSource';
 import { createCompilerSourceSnapshot } from '../source/createCompilerSource';
 import type { CompilerDiagnostic } from '../validation/compilerDiagnostics';
@@ -40,7 +40,7 @@ export function compileLegacyCodegenFromSource(
   const normalized = normalizeProject(source);
   const targetIr = lowerToTargetIr(normalized.ir, {
     language,
-    targetProfile: LEGACY_LCD_TARGET_PROFILE,
+    targetProfile: createCompilerTargetProfile(source.project.display),
     fontGlyphs: source.fontGlyphs
   });
   const artifacts = legacyCBackend.generate(targetIr, { ...request, language });

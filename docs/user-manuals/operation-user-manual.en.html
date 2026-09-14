@@ -1,98 +1,198 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LCD-bitmap IDE Operation User Manual</title>
-  <style>
-  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #15211d; background: #f7f8f4; line-height: 1.62; letter-spacing: 0; }
-  header { padding: 48px 56px 34px; background: #10201a; color: #fff; }
-  .eyebrow { margin: 0 0 10px; color: #9ed8bf; font-weight: 700; }
-  h1 { max-width: 920px; margin: 0; font-size: 38px; line-height: 1.12; letter-spacing: 0; }
-  .subtitle { max-width: 860px; margin: 16px 0 0; color: #d9e8df; font-size: 18px; }
-  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 22px 56px; background: #e6eee8; border-bottom: 1px solid #cdd8d0; }
-  .toc a { color: #195d48; text-decoration: none; font-weight: 650; }
-  main { max-width: 980px; margin: 0 auto; padding: 28px 32px 56px; }
-  section { margin: 0 0 34px; padding: 26px; background: #fff; border: 1px solid #d7ded8; border-radius: 8px; break-inside: avoid; }
-  h2 { margin: 0 0 14px; font-size: 24px; line-height: 1.25; letter-spacing: 0; }
-  p { margin: 0 0 12px; }
-  ol, ul { margin: 8px 0 0; padding-left: 24px; }
-  li { margin: 6px 0; }
-  .checklist li::marker { content: "□ "; color: #20765a; }
-  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-  th, td { border: 1px solid #cfd9d2; padding: 9px 10px; text-align: left; vertical-align: top; }
-  th { background: #eef4ef; }
-  pre { margin: 14px 0 0; padding: 14px; overflow-x: auto; border-radius: 6px; background: #101816; color: #d7f5e7; font-size: 13px; }
-  footer { padding: 24px 56px; color: #5c6761; }
-  @page { size: A4; margin: 14mm; }
-  @media print { header, .toc, footer { padding-left: 0; padding-right: 0; } body { background: #fff; } section { border: 1px solid #cfd9d2; } }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LCD-bitmap IDE Operation Manual</title>
+<style>
+  :root {
+    --paper: #f6f5ef; --panel: #eeece1; --line: #d9d7c8; --ink: #1c2118; --ink-soft: #565a4c;
+    --phosphor: #4f6b1a; --phosphor-deep: #3c5313; --blueprint: #3a5a78; --code-bg: #e8e6d8;
+    --shadow: 0 1px 2px rgba(28,33,24,0.06), 0 8px 24px rgba(28,33,24,0.06); --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Charter","Iowan Old Style","Palatino Linotype",Georgia,"Noto Serif","Noto Serif SC",serif; font-size: 16.5px; line-height: 1.62; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: "JetBrains Mono","Cascadia Code",ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace; }
+  a { color: var(--blueprint); }
+  h1, h2, h3 { font-weight: 700; color: var(--ink); }
+  .masthead { border-bottom: 1px solid var(--line); padding: 48px 24px 34px; }
+  .masthead-inner { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; }
+  .badge-lcd { width: 88px; height: 88px; border-radius: 6px; background: var(--phosphor-deep); display: grid; place-items: center; box-shadow: var(--shadow); flex: 0 0 auto; }
+  .badge-lcd svg { width: 60px; height: 36px; }
+  .mast-label { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--phosphor); margin: 0 0 8px; }
+  .langbar { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11.5px; margin: 0 0 8px; color: var(--ink-soft); }
+  .langbar a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px dotted var(--ink-soft); }
+  h1.title { margin: 0 0 8px; font-size: 38px; line-height: 1.08; letter-spacing: -0.01em; }
+  .subtitle { margin: 0; max-width: 64ch; color: var(--ink-soft); font-size: 17px; }
+  .mast-meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 12px; color: var(--ink-soft); }
+  .mast-meta b { color: var(--ink); font-weight: 600; }
+  .shell { max-width: 980px; margin: 0 auto; padding: 36px 24px 90px; display: grid; grid-template-columns: 210px minmax(0,1fr); gap: 44px; align-items: start; }
+  nav.toc { border-right: 1px solid var(--line); padding-right: 18px; }
+  nav.toc h2 { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 12px; font-weight: 600; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: toc; }
+  nav.toc a { counter-increment: toc; display: flex; gap: 8px; padding: 5px 4px; color: var(--ink-soft); text-decoration: none; font-size: 13px; line-height: 1.35; }
+  nav.toc a::before { content: counter(toc, decimal-leading-zero); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 10.5px; color: var(--phosphor); padding-top: 1px; }
+  main { min-width: 0; }
+  section.chapter { padding-top: 6px; margin-bottom: 54px; }
+  .chap-eyebrow { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--phosphor); margin: 0 0 6px; }
+  h2.chap-title { font-size: 25px; margin: 0 0 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .chapter p, .lede { max-width: 68ch; }
+  .lede { font-size: 17.5px; color: var(--ink-soft); }
+  h3.sub { font-size: 16px; margin: 24px 0 8px; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; }
+  ol.steps, ul.points { margin: 10px 0 18px; padding-left: 0; max-width: 68ch; display: grid; gap: 9px; list-style: none; counter-reset: step; }
+  ol.steps li { counter-increment: step; display: grid; grid-template-columns: 24px 1fr; gap: 9px; }
+  ol.steps li::before { content: counter(step); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; font-weight: 700; color: var(--phosphor-deep); background: var(--panel); border: 1px solid var(--line); border-radius: 50%; width: 20px; height: 20px; display: grid; place-items: center; }
+  ul.points li { display: grid; grid-template-columns: 13px 1fr; gap: 9px; }
+  ul.points li::before { content: ""; width: 7px; height: 7px; margin-top: 7px; background: var(--phosphor); border-radius: 1px; }
+  figure.shot { margin: 18px 0 22px; max-width: 100%; }
+  figure.shot img { display: block; width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  figure.shot figcaption { margin-top: 8px; font-size: 12.5px; color: var(--ink-soft); font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; line-height: 1.5; }
+  .callout { max-width: 68ch; margin: 16px 0; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--phosphor); border-radius: 8px; font-size: 15px; }
+  .callout.warn { border-left-color: var(--blueprint); }
+  code, kbd { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 0.86em; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; max-width: 100%; font-size: 13.5px; }
+  table th, table td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+  table th { font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); background: var(--panel); }
+  .chip { display: inline-block; font-family: "JetBrains Mono",ui-monospace,Consolas,monospace; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); background: var(--panel); }
+  .end { max-width: 68ch; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 13.5px; }
+  @page { size: A4; margin: 16mm 14mm; }
+  @media print {
+    .shell { grid-template-columns: 1fr; }
+    nav.toc { display: none; }
+    section.chapter { break-inside: avoid-page; page-break-inside: avoid; }
+    figure.shot { break-inside: avoid-page; }
+  }
+</style>
 </head>
 <body>
-  <header>
-    <p class="eyebrow">LCD-bitmap IDE</p>
-    <h1>LCD-bitmap IDE Operation User Manual</h1>
-    <p class="subtitle">Beginner-friendly workflow for designing, checking and exporting embedded LCD measurement interfaces.</p>
-  </header>
-  <nav class="toc" aria-label="Table of contents"><a href="#chapter-1">1. What This Application Does</a>
-<a href="#chapter-2">2. Install And Start</a>
-<a href="#chapter-3">3. Open The Demo Project</a>
-<a href="#chapter-4">4. Understand The Workspace</a>
-<a href="#chapter-5">5. Build A Measurement Workflow</a>
-<a href="#chapter-6">6. Design LCD Screens</a>
-<a href="#chapter-7">7. Bind Buttons, Tags And Procedures</a>
-<a href="#chapter-8">8. Preview The Workflow</a>
-<a href="#chapter-9">9. Export For Firmware</a>
-<a href="#chapter-10">10. Save, Version And Share</a>
-<a href="#chapter-11">11. Troubleshooting</a></nav>
-  <main><section id="chapter-1"><h2>1. What This Application Does</h2>
-<p>LCD-bitmap IDE is an offline desktop workbench for monochrome LCD screens, finite-state-machine navigation, control-panel bindings and firmware-ready exports.</p>
-<p>Use it to design the operator interface around a measurement workflow: setup, start, progress, result review, warnings and service states.</p>
-<p>The application does not perform physical measurements by itself. Real measurement acquisition requires your instrument firmware, backend service or hardware connector. In LCD-bitmap IDE you design and validate the user interface and its runtime behavior before integrating it with target firmware.</p>
-<ul class="checklist"><li>Create or open a project.</li><li>Design screens and FSM transitions.</li><li>Preview the workflow.</li><li>Export firmware assets.</li></ul>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="badge-lcd" aria-hidden="true"><svg viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="62" height="38" rx="2" stroke="#c8e06a" stroke-width="2"/><rect x="9" y="9" width="4" height="4" fill="#c8e06a"/><rect x="17" y="9" width="4" height="4" fill="#c8e06a"/><rect x="25" y="9" width="4" height="4" fill="#c8e06a"/><rect x="9" y="17" width="4" height="4" fill="#c8e06a"/><rect x="25" y="17" width="4" height="4" fill="#c8e06a"/><rect x="9" y="25" width="4" height="4" fill="#c8e06a"/><rect x="17" y="25" width="4" height="4" fill="#c8e06a"/><rect x="25" y="25" width="4" height="4" fill="#c8e06a"/><circle cx="47" cy="20" r="9" stroke="#c8e06a" stroke-width="2"/><circle cx="47" cy="20" r="2.4" fill="#c8e06a"/><line x1="47" y1="11" x2="47" y2="14.6" stroke="#c8e06a" stroke-width="2"/><line x1="47" y1="25.4" x2="47" y2="29" stroke="#c8e06a" stroke-width="2"/><line x1="38" y1="20" x2="41.6" y2="20" stroke="#c8e06a" stroke-width="2"/><line x1="52.4" y1="20" x2="56" y2="20" stroke="#c8e06a" stroke-width="2"/></svg></div>
+    <div>
+      <p class="langbar"><a href="operation-user-manual.ru.html">RU</a> · <a href="operation-user-manual.zh.html">ZH</a></p>
+      <p class="mast-label">Operation manual</p>
+      <h1 class="title">LCD-bitmap IDE</h1>
+      <p class="subtitle">A desktop workbench for monochrome embedded LCD interfaces: screens, the navigation state machine, the physical control panel, runtime tags and firmware-ready export — kept in a single project file.</p>
+      <div class="mast-meta"><span><b>Software version</b> 0.1.18</span><span><b>Project format</b> .lcdproj, schema 6</span><span><b>Platforms</b> Windows · Linux · macOS</span><span><b>Builds</b> Electron · Tauri</span></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+  <nav class="toc" aria-label="Contents"><h2>Contents</h2><ol><li><a href="#start">First Launch</a></li>
+<li><a href="#interface">Interface Overview</a></li>
+<li><a href="#fsm">FSM Editor</a></li>
+<li><a href="#lcd">LCD Screen Editor</a></li>
+<li><a href="#raster">Raster Import</a></li>
+<li><a href="#animation">Animations</a></li>
+<li><a href="#panel">Control Panel</a></li>
+<li><a href="#hmi">HMI Designer</a></li>
+<li><a href="#hardware">Tags, Procedures, Alarms</a></li>
+<li><a href="#runtime">Runtime Preview</a></li>
+<li><a href="#handoff">Firmware Handoff</a></li>
+<li><a href="#mcp">API and MCP Servers</a></li>
+<li><a href="#trouble">Troubleshooting</a></li></ol></nav>
+  <main>
+    <section class="chapter" id="start">
+  <p class="chap-eyebrow">Chapter 1</p>
+  <h2 class="chap-title">First Launch</h2>
+  <p class="lede">The application needs no external services and makes no network calls: an entire project is one <code>.lcdproj</code> file.</p>
+<ol class="steps"><li><span>Install the build for your OS from <a href="https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest">GitHub Releases</a>, or run the source with <code>npm run electron:dev</code>.</span></li><li><span>On the start screen, pick an interface language, then one of four entry points: open an existing <code>.lcdproj</code>, create a new project, restore an autosave, or open the bundled demo project.</span></li><li><span>For a first look, choose <b>Demo</b> — it already contains linked states, screens and transitions you can learn from safely.</span></li></ol>
+<figure class="shot"><img src="assets/operation-manual/01-startup.png" alt="Start screen of LCD-bitmap IDE with a language picker and four entry points" /><figcaption><b>Start screen.</b> Interface language (EN / RU / ZH) and entry points: open a project, create a new one, restore an autosave, or open the demo.</figcaption></figure>
+<div class="callout"><p>The project autosaves to <code>localStorage</code> every few seconds. That is a crash safety net, not a substitute for an explicit <b>Save project</b> — save the file to disk yourself before closing the session.</p></div>
 </section>
-<section id="chapter-2"><h2>2. Install And Start</h2>
-<ol><li>Install Node.js 22 or newer and Git.</li><li>Clone the repository and run npm ci.</li><li>Start the browser build with npm run dev, or start the desktop build with npm run electron:dev.</li><li>Use the desktop build when you need REST API, MCP automation, PDF export or local app packaging.</li></ol>
-<pre><code>git clone https://github.com/myahlovvlad/LCD-bitmap-IDE.git
-cd LCD-bitmap-IDE
-npm ci
-npm run electron:dev</code></pre>
+<section class="chapter" id="interface">
+  <p class="chap-eyebrow">Chapter 2</p>
+  <h2 class="chap-title">Interface Overview</h2>
+  <p>On the left is a compact navigator of workspaces grouped by purpose: <b>Interface</b> (screens and the panel), <b>Logic</b> (FSM and alarms), <b>Hardware</b> (tags and procedures), <b>Verify &amp; deliver</b> (simulation and firmware handoff). Every workspace has its own independently collapsible side panes.</p>
+<ul class="points"><li><span>The <span class="chip">Collapse navigator</span> control (or <kbd>Ctrl+B</kbd>) collapses only the global navigator into a narrow icon rail — the current workspace’s own side panels stay put.</span></li><li><span>The status bar at the bottom always shows display size, FSM state/transition counts, screen and panel-element counts, plus validation status and unsaved-change state.</span></li><li><span>The theme switch (Settings → Theme) supports light, dark and system-follow modes.</span></li></ul>
 </section>
-<section id="chapter-3"><h2>3. Open The Demo Project</h2>
-<p>On the start screen, choose the bundled demo or open examples/universal-lcd-demo.lcdproj.</p>
-<p>The demo is intentionally generic. It shows how a measurement-oriented interface can be represented without vendor implementation files, private device identifiers or proprietary screen catalogs.</p>
-<ol><li>Open the demo.</li><li>Visit FSM, LCD, Tags and Runtime workspaces.</li><li>Do not edit everything at once. Change one screen or transition, then preview it.</li></ol>
+<section class="chapter" id="fsm">
+  <p class="chap-eyebrow">Chapter 3</p>
+  <h2 class="chap-title">FSM Editor</h2>
+  <p class="lede">The finite-state machine is the device’s navigation map: a state corresponds to one LCD screen, a transition to a reaction to a button, timer or condition.</p>
+<figure class="shot"><img src="assets/operation-manual/02-demo-loaded-fsm.png" alt="FSM state graph of the demo project with five linked states" /><figcaption><b>FSM graph in read-only mode.</b> Left: the state catalog. Center: the transition graph. Right: the inspector for the selected item. Connections stay visible regardless of edit mode.</figcaption></figure>
+<h3 class="sub">Edit mode</h3>
+<p>The graph opens <i>read-only</i> by default — a deliberate guard against accidentally changing live logic. Graph-mutating controls (adding a state, deleting, dragging) only become active once you explicitly turn on <span class="chip">Edit graph</span>.</p>
+<figure class="shot"><img src="assets/operation-manual/04-fsm-edit-mode.png" alt="FSM editor with edit mode on, showing the blue canvas outline" /><figcaption><b>Edit mode on</b> — the canvas outline turns blue; creating states and dragging nodes becomes available.</figcaption></figure>
+<h3 class="sub">Creating a state and a transition</h3>
+<ol class="steps"><li><span>Turn on <span class="chip">Edit graph</span>, then click the <b>+</b> above the state list, or right-click empty canvas → <b>Add state</b>.</span></li><li><span>Name the state and, if needed, mark it <b>Initial</b> (entry point) or <b>Terminal</b> (end point).</span></li><li><span>To connect states, either drag between the connection handles on the nodes, or use the <b>Transition routes</b> section in the right-hand inspector — pick the target state and event without touching the canvas directly.</span></li><li><span>Link the state to an LCD screen via <b>Linked LCD screen → Edit layout</b> to jump straight into its pixel design.</span></li></ol>
+<h3 class="sub">Overview and filters</h3>
+<p>For a large graph, turn on <span class="chip">Overview</span> — it shows one entry point per subsystem instead of the full graph. Whenever Overview, a subsystem focus or a layer filter hides part of the transitions, the toolbar shows a <b>“shown / total”</b> counter and the reason — a one-click filter reset sits right next to it.</p>
+<figure class="shot"><img src="assets/operation-manual/05-fsm-overview.png" alt="FSM editor in overview mode with enlarged state cards grouped by subsystem" /><figcaption><b>Overview mode</b> groups states by subsystem and entry point — useful for navigating large projects.</figcaption></figure>
 </section>
-<section id="chapter-4"><h2>4. Understand The Workspace</h2>
-<table><thead><tr><th>Workspace</th><th>Purpose</th><th>Beginner result</th></tr></thead><tbody><tr><td>FSM</td><td>States and transitions</td><td>A clear operator flow</td></tr><tr><td>LCD</td><td>Pixel-accurate 128x64 screens</td><td>Readable screen layouts</td></tr><tr><td>Control panel</td><td>Button and event bindings</td><td>Predictable operator input</td></tr><tr><td>Tags</td><td>Named values used by screens and procedures</td><td>Traceable measurement values</td></tr><tr><td>Runtime</td><td>Interactive flow preview</td><td>A checked workflow before firmware export</td></tr></tbody></table>
+<section class="chapter" id="lcd">
+  <p class="chap-eyebrow">Chapter 4</p>
+  <h2 class="chap-title">LCD Screen Editor</h2>
+  <p class="lede">Every screen is a pixel-accurate monochrome framebuffer of a fixed size (typically 128×64), edited as a canvas of typed objects: text, lines, rectangles, bitmap images, special elements.</p>
+<figure class="shot"><img src="assets/operation-manual/06-lcd-editor.png" alt="LCD editor with canvas tools on the left, a centered display preview and screen properties on the right" /><figcaption><b>LCD editor.</b> Left: canvas tools and object types. Center: an exact 128×64 preview. Right: linking the screen to FSM states and layers.</figcaption></figure>
+<ul class="points"><li><span><b>Select / Add text / Line / Rectangle / Invert row / Special element / Glyph editor</b> — the core drawing tools; every object stays editable (never rasterized) until export.</span></li><li><span><b>Pixel editor</b> becomes available for a selected bitmap object — point-precise pixel editing.</span></li><li><span>Each screen can be linked to several FSM states at once and to a layer (such as “Demo” or a custom one) through the <b>Linked FSM states</b> panel on the right.</span></li></ul>
 </section>
-<section id="chapter-5"><h2>5. Build A Measurement Workflow</h2>
-<p>Start with the states an operator expects, not with pixels. A simple workflow usually has Idle, Setup, Ready, Running, Result, Error and Service states.</p>
-<p>Each state should answer one user question: what is happening, what value matters now, and what action is available.</p>
-<ol><li>Add the workflow states in FSM.</li><li>Name each transition with an event such as START, NEXT, CANCEL or RETRY.</li><li>Keep error transitions explicit.</li><li>Run the workflow in Runtime Preview before editing detailed graphics.</li></ol>
+<section class="chapter" id="raster">
+  <p class="chap-eyebrow">Chapter 5</p>
+  <h2 class="chap-title">Raster Import</h2>
+  <p>Turn finished artwork (a logo, an icon, a scan) into a 1bpp image and keep editing it pixel-by-pixel as a regular bitmap layer.</p>
+<figure class="shot"><img src="assets/operation-manual/18-pixel-importer.png" alt="Image import panel with a binarization threshold slider" /><figcaption><b>Image import.</b> The <span class="chip">Import image</span> tab in the LCD editor: PNG/JPEG/BMP/SVG → threshold + dithering → 1bpp.</figcaption></figure>
+<ol class="steps"><li><span>Open the screen you want the image placed on, then switch to the <b>Import image</b> tab.</span></li><li><span>Choose a file and adjust <b>Threshold</b> and <b>Dithering</b> until the 128×64 preview reads clearly.</span></li><li><span>Click <b>Insert and edit bitmap</b> — the image is inserted on the screen, selected, and the pixel editor opens for fine-tuning right away.</span></li></ol>
 </section>
-<section id="chapter-6"><h2>6. Design LCD Screens</h2>
-<p>Design for quick reading. Put the current state at the top, the key value in the center and the available action near the bottom.</p>
-<p>Use text, lines, rectangles, bitmap layers and special elements such as progress bars or indicators. Avoid filling the screen with decorative content.</p>
-<ul class="checklist"><li>Text is readable on 128x64.</li><li>Important values have units.</li><li>The active action is visible.</li><li>Warning screens are visually distinct.</li></ul>
+<section class="chapter" id="animation">
+  <p class="chap-eyebrow">Chapter 6</p>
+  <h2 class="chap-title">Animations</h2>
+  <p class="lede">An animation resource is an ordered set of 1bpp frames, each with its own duration and a shared loop flag. One resource can be bound either to an entire screen or to a single bitmap layer, leaving the rest of the screen static.</p>
+<figure class="shot"><img src="assets/operation-manual/08-lcd-animations-panel.png" alt="Animations tab in the LCD editor with the new-animation button" /><figcaption><b>Animations panel.</b> The <span class="chip">Animations</span> tab sits next to <span class="chip">Import image</span> — the same conversion pipeline creates animation frames.</figcaption></figure>
+<ol class="steps"><li><span>Click <b>New animation</b> and pick an image for the first frame — sized to the selected bitmap object, or to the screen if nothing is selected.</span></li><li><span>Add more frames from other images, tune each frame’s duration in milliseconds, and duplicate, remove or reorder them.</span></li><li><span>Turn on <b>Loop</b> for a repeating animation (a busy indicator, say) or leave it off for a one-shot sequence.</span></li><li><span>Preview the result with play / replay / the scrubber on a deterministic clock, then bind the resource with <b>Bind to screen</b> (whole screen) or <b>Bind to selected layer</b> (only the selected bitmap object).</span></li></ol>
+<div class="callout warn"><p>For changing numeric values (a countdown timer, say) use a text field bound to a runtime tag rather than an animation: animation is meant for graphics, not for hundreds of near-identical numeral frames.</p></div>
+<p>On firmware export, every resource becomes a <code>lcd_animation_frame_t</code> frame array (bytes, byte count, duration) wrapped in an <code>lcd_animation_t</code> (frame table, frame count, <code>loop</code> flag) — screen and layer binding metadata is exported alongside it.</p>
 </section>
-<section id="chapter-7"><h2>7. Bind Buttons, Tags And Procedures</h2>
-<p>Buttons should fire events that match FSM transitions. Tags should describe measurement values, configuration values or status flags. Procedures describe backend actions such as starting a reading, clearing a result or opening a service routine.</p>
-<p>Use stable names. A clear tag such as sample_absorbance is easier to maintain than value1.</p>
+<section class="chapter" id="panel">
+  <p class="chap-eyebrow">Chapter 7</p>
+  <h2 class="chap-title">Control Panel</h2>
+  <p>The physical layout of buttons and indicators is designed separately from the logic and linked to FSM events.</p>
+<figure class="shot"><img src="assets/operation-manual/09-control-panel.png" alt="Control panel editor with a positioned LCD screen and four physical buttons" /><figcaption><b>Control panel editor.</b> The <span class="chip">LCD</span>, <span class="chip">Button</span>, <span class="chip">Label</span>, <span class="chip">Rectangle</span>, <span class="chip">Image</span> tools let you assemble an exact enclosure layout; every button is linked to an FSM event.</figcaption></figure>
+<ul class="points"><li><span><b>Group / Ungroup</b> and the alignment tools help lay out many elements neatly.</span></li><li><span><b>Grid</b> and <b>Snap</b> give precise positioning against the enclosure’s pixel grid.</span></li><li><span>The <b>Panel validation</b> panel at the bottom right immediately flags any button with no linked event.</span></li></ul>
 </section>
-<section id="chapter-8"><h2>8. Preview The Workflow</h2>
-<ol><li>Open Runtime.</li><li>Start from the initial state.</li><li>Press each expected button in the same order as a real operator.</li><li>Check that every measurement status screen appears in the right order.</li><li>Test error and cancel paths, not only the successful path.</li></ol>
+<section class="chapter" id="hmi">
+  <p class="chap-eyebrow">Chapter 8</p>
+  <h2 class="chap-title">HMI Designer</h2>
+  <p>Combines the screen and the physical panel into one scene to check the whole interaction scenario at once: which button does what on which screen, and which tags and procedures are involved.</p>
+<figure class="shot"><img src="assets/operation-manual/10-hmi-designer.png" alt="HMI Designer with the instrument panel on the left and the scenario, tags and procedures on the right" /><figcaption><b>HMI Designer.</b> Modes <span class="chip">Design</span> / <span class="chip">Simulate</span> / <span class="chip">Runtime</span> / <span class="chip">Coverage</span>; the right column traces which state, screen, button, tag, procedure and alarm are involved in the current scenario.</figcaption></figure>
+<p><b>Coverage</b> mode helps find states or panel elements never used in any scenario — useful before handing the project off to firmware.</p>
 </section>
-<section id="chapter-9"><h2>9. Export For Firmware</h2>
-<p>After the workflow is stable, export screens as C headers, binary frame buffers, XBM, Arduino PROGMEM, Rust embedded-graphics or ESP-IDF assets.</p>
-<p>Confirm that your target display uses the same resolution, page order, bit order and monochrome format before flashing hardware.</p>
+<section class="chapter" id="hardware">
+  <p class="chap-eyebrow">Chapter 9</p>
+  <h2 class="chap-title">Tags, Procedures, Alarms</h2>
+  <p>Three linked registries describe what physically happens on the device without being drawn on a screen directly.</p>
+<table><thead><tr><th>Section</th><th>Purpose</th><th>Where</th></tr></thead><tbody><tr><td><b>Tag registry</b></td><td>Typed firmware data (float / int / bool / string) exchanged between screens and procedures</td><td>Hardware → Tag registry</td></tr><tr><td><b>Procedures</b></td><td>Named backend processes (calibration, say), documented with engineering notes</td><td>Hardware → Procedures</td></tr><tr><td><b>Alarms</b></td><td>Named abnormal-condition events, checkable from any FSM transition regardless of the current screen</td><td>Logic → Alarms</td></tr></tbody></table>
+<figure class="shot"><img src="assets/operation-manual/13-alarms.png" alt="Empty alarms section with a built-in three-step hint: tag, alarm, transition" /><figcaption><b>Creating an alarm.</b> The built-in hint spells out the exact sequence: a tag in the registry → an alarm with condition <code>@tag_id</code> → a reference to it in an FSM transition guard.</figcaption></figure>
+<figure class="shot"><img src="assets/operation-manual/11-tags.png" alt="Empty tag registry showing the available data types float, int, bool, string" /><figcaption><b>Tag registry.</b> The right column lists the supported data types for new tags.</figcaption></figure>
 </section>
-<section id="chapter-10"><h2>10. Save, Version And Share</h2>
-<ul class="checklist"><li>Save the .lcdproj file after meaningful changes.</li><li>Commit project files and exported assets separately.</li><li>Include screenshots in reviews.</li><li>Keep generated firmware artifacts traceable to a project version.</li></ul>
+<section class="chapter" id="runtime">
+  <p class="chap-eyebrow">Chapter 10</p>
+  <h2 class="chap-title">Runtime Preview</h2>
+  <p class="lede">Run the FSM logic without firmware: press virtual buttons, watch a live render of the LCD screen and the event log — before handing the project to the embedded team.</p>
+<figure class="shot"><img src="assets/operation-manual/14-runtime.png" alt="Runtime preview with the current state on the left, a live LCD screen in the center and the event log on the right" /><figcaption><b>Runtime preview.</b> Left: the current state and the buttons available from it (unavailable ones are dimmed with a reason). Center: an exact screen render. Right: the event, tag and procedure log.</figcaption></figure>
+<ul class="points"><li><span><span class="chip">Step mode</span> advances one event at a time — useful for tracing complex logic.</span></li><li><span><span class="chip">Express timer</span> speeds up simulated timers without changing transition logic.</span></li><li><span><span class="chip">Bypass procedures</span> lets you skip external backend procedures while running the scenario end to end.</span></li><li><span>The <b>Validation</b> panel on the left shows the same warnings the project validator does — an unreachable state, for instance.</span></li></ul>
 </section>
-<section id="chapter-11"><h2>11. Troubleshooting</h2>
-<table><thead><tr><th>Symptom</th><th>Likely cause</th><th>Action</th></tr></thead><tbody><tr><td>Runtime button does nothing</td><td>No transition for that event</td><td>Check FSM transition event names</td></tr><tr><td>Export looks inverted</td><td>Target display bit order differs</td><td>Verify driver byte order</td></tr><tr><td>Text is clipped</td><td>Text object or font is too large</td><td>Use shorter copy or reposition the text</td></tr><tr><td>API connection refused</td><td>Desktop app is not running</td><td>Start npm run electron:dev or packaged app</td></tr></tbody></table>
-</section></main>
-  <footer>Generated from scripts/generate-user-docs.mjs. For automation details see docs/API_MCP_CONNECTORS.md.</footer>
+<section class="chapter" id="handoff">
+  <p class="chap-eyebrow">Chapter 11</p>
+  <h2 class="chap-title">Firmware Handoff</h2>
+  <p>The final step before release: assembling a package for the embedded team — validation, a supplier package, a device-connection check.</p>
+<figure class="shot"><img src="assets/operation-manual/15-handoff.png" alt="HMI Handoff screen showing validation results: 0 errors, 0 uncovered states, 3 warnings" /><figcaption><b>HMI Handoff → Validate.</b> The summary combines the overall project validation with coverage checks for screens, button routes and interface-language translations.</figcaption></figure>
+<div class="callout warn"><p><b>Important:</b> this package is an HMI/FSM specification, not a firmware binary. It hands the supplier screens, bindings, state transitions, text resources and display bytes with traceability. C/C++ sources, MCU and toolchain details, drivers and protocols, and the device update procedure remain the embedded team’s responsibility.</p></div>
+</section>
+<section class="chapter" id="mcp">
+  <p class="chap-eyebrow">Chapter 12</p>
+  <h2 class="chap-title">API and MCP Servers</h2>
+  <p class="lede">The Electron and Tauri builds run the identical local automation contract: REST on <code class="mono">127.0.0.1:8766</code> and MCP (JSON-RPC over HTTP) on <code class="mono">127.0.0.1:8767/mcp</code> — letting external scripts, SCADA systems and LLM agents read and edit the open project directly.</p>
+<figure class="shot"><img src="assets/operation-manual/17-settings-api-mcp.png" alt="API and MCP servers settings section describing the capability" /><figcaption><b>Settings → API &amp; MCP servers.</b> Desktop builds show live status for both servers, their addresses and whether token verification is enabled; unavailable in the web build.</figcaption></figure>
+<ul class="points"><li><span>Both servers bind only to <code>127.0.0.1</code> and never listen on an external interface.</span></li><li><span><code class="mono">GET /health</code> on the MCP port is an availability check with no token and no project access.</span></li><li><span>The <code class="mono">LCD_IDE_AUTOMATION_TOKEN</code> environment variable turns on mandatory Bearer authorization for write operations.</span></li><li><span>The full tool list, schemas and integration examples live in <a href="https://github.com/myahlovvlad/LCD-bitmap-IDE/blob/main/docs/API_MCP_CONNECTORS.md">docs/API_MCP_CONNECTORS.md</a>.</span></li></ul>
+</section>
+<section class="chapter" id="trouble">
+  <p class="chap-eyebrow">Chapter 13</p>
+  <h2 class="chap-title">Troubleshooting</h2>
+  <table><thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead><tbody><tr><td>“Add state” is disabled</td><td>The FSM graph is open read-only</td><td>Turn on <span class="chip">Edit graph</span> in the FSM toolbar</td></tr><tr><td>Transitions disappeared from the canvas</td><td>Overview, a subsystem focus or a layer filter is active</td><td>Check the “shown / total” counter next to the filters and click <b>Reset filters</b></td></tr><tr><td><code class="mono">connection refused</code> on 8766/8767</td><td>The desktop app is not running, or another process holds the port</td><td>Start the Electron/Tauri build and check its automation console</td></tr><tr><td>The API returns <code class="mono">project: null</code></td><td>No project is open</td><td>Open a <code>.lcdproj</code> file or the demo project in the app</td></tr><tr><td>An MCP/REST request does not respond</td><td>The renderer did not answer within 5 seconds</td><td>Make sure the app window is open and not blocked by a modal dialog</td></tr></tbody></table>
+</section>
+    <p class="end">LCD-bitmap IDE · version 0.1.18 · Electron and Tauri builds share one automation contract and one project model. Detailed technical documents live in the repository’s docs/ directory.</p>
+  </main>
+</div>
 </body>
 </html>

@@ -1,9 +1,11 @@
 import { FontRenderer, type FontGlyphs, type LanguageCode } from '../../domain';
+import { createDisplayProfile } from '../../domain/displayProfile';
 import type { NormalizedCompilerIrV1 } from '../ir/compilerIr';
 import type { CompilerTargetProfile } from '../profiles/targetProfile';
 import type { LoweredScreenIr, LoweredTargetIrV1 } from '../target-ir/targetIr';
 import { TARGET_IR_VERSION } from '../target-ir/targetIr';
 import { encodeDisplayRaster } from '../encoding/displayEncoder';
+import { canonicalRasterFromMonochromeRows } from '../raster/canonicalRaster';
 import { renderLoweredScreenObjects } from './rendering';
 
 export interface LowerToTargetIrOptions {
@@ -21,12 +23,11 @@ export function lowerToTargetIr(ir: NormalizedCompilerIrV1, options: LowerToTarg
       height: screen.height,
       fontRenderer
     });
-    const framebufferBytes = encodeDisplayRaster(frameBuffer, {
-      width: screen.width,
-      height: screen.height,
-      colorMode: options.targetProfile.display.colorMode,
-      packing: options.targetProfile.display.packing
-    });
+    const canonicalRaster = canonicalRasterFromMonochromeRows(frameBuffer);
+    const displayProfile = screen.width === options.targetProfile.display.width && screen.height === options.targetProfile.display.height
+      ? options.targetProfile.display
+      : createDisplayProfile({ ...options.targetProfile.display, width: screen.width, height: screen.height });
+    const framebufferBytes = encodeDisplayRaster(canonicalRaster, displayProfile);
     return {
       id: screen.id,
       order: screen.order,
@@ -36,6 +37,7 @@ export function lowerToTargetIr(ir: NormalizedCompilerIrV1, options: LowerToTarg
       sourcePath: screen.sourcePath,
       objects: screen.objects,
       byteLength: framebufferBytes.length,
+      canonicalRaster,
       framebufferBytes
     };
   });
@@ -59,6 +61,13 @@ export function lowerToTargetIr(ir: NormalizedCompilerIrV1, options: LowerToTarg
     },
     resources: {
       fontGlyphCount: ir.resources.fontGlyphs.length
+    },
+    animations: {
+      resources: ir.animations.resources.map((resource) => ({
+        ...resource,
+        frames: resource.frames.map((frame) => ({ ...frame, bytes: [...frame.bytes] }))
+      })),
+      bindings: ir.animations.bindings.map((binding) => ({ ...binding }))
     },
     memory: {
       screenCount: screens.length,

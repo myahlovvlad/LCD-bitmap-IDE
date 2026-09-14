@@ -6,7 +6,8 @@ import {
   type ScreenInterchangeValidationIssue,
   type ScreenInterchangeValidationResult
 } from './model';
-import { PROJECT_SCHEMA_VERSION, PROJECT_SCHEMA_VERSION_LEGACY } from '../domain/project';
+import { validateDisplayProfile, type DisplayProfile } from '../domain';
+import { PROJECT_SCHEMA_VERSION, PROJECT_SCHEMA_VERSION_LEGACY, PROJECT_SCHEMA_VERSION_PREVIOUS } from '../domain/project';
 
 export function validateScreenInterchange(packageV1: ScreenInterchangeProjectV1): ScreenInterchangeValidationResult {
   const issues: ScreenInterchangeValidationIssue[] = [];
@@ -17,7 +18,7 @@ export function validateScreenInterchange(packageV1: ScreenInterchangeProjectV1)
   if (packageV1.version !== SCREEN_INTERCHANGE_VERSION) {
     addIssue(issues, 'error', 'version', `Expected version ${SCREEN_INTERCHANGE_VERSION}.`);
   }
-  const knownSchemaVersions: number[] = [PROJECT_SCHEMA_VERSION, PROJECT_SCHEMA_VERSION_LEGACY];
+  const knownSchemaVersions: number[] = [PROJECT_SCHEMA_VERSION, PROJECT_SCHEMA_VERSION_PREVIOUS, PROJECT_SCHEMA_VERSION_LEGACY];
   if (!knownSchemaVersions.includes(packageV1.project.schemaVersion)) {
     addIssue(issues, 'error', 'project.schemaVersion', `Screen Interchange V1 requires project schema v${PROJECT_SCHEMA_VERSION_LEGACY} or v${PROJECT_SCHEMA_VERSION}.`);
   }
@@ -139,21 +140,12 @@ function hasResource(packageV1: ScreenInterchangeProjectV1, ref: string): boolea
 }
 
 function validateDisplay(
-  display: { width: number; height: number; colorMode: string; packing: string },
+  display: DisplayProfile,
   path: string,
   issues: ScreenInterchangeValidationIssue[]
 ): void {
-  if (!Number.isInteger(display.width) || display.width <= 0) {
-    addIssue(issues, 'error', `${path}.width`, 'Display width must be a positive integer.');
-  }
-  if (!Number.isInteger(display.height) || display.height <= 0) {
-    addIssue(issues, 'error', `${path}.height`, 'Display height must be a positive integer.');
-  }
-  if (display.colorMode !== 'monochrome') {
-    addIssue(issues, 'error', `${path}.colorMode`, 'Only monochrome displays are supported in V1.');
-  }
-  if (display.packing !== 'vertical-lsb') {
-    addIssue(issues, 'error', `${path}.packing`, 'Only vertical-lsb packing is supported in V1.');
+  for (const diagnostic of validateDisplayProfile(display)) {
+    addIssue(issues, diagnostic.severity, `${path}.${diagnostic.path}`, diagnostic.message);
   }
 }
 
