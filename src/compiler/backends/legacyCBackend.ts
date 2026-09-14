@@ -94,7 +94,8 @@ export function generateAllScreensCHeader(targetIr: LoweredTargetIrV1, projectSy
       targetIr.animations.resources,
       baseName,
       targetIr.targetProfile.codegen.cArrayBytesPerRow,
-      targetIr.animations.bindings
+      targetIr.animations.bindings,
+      targetIr.screens.map((screen) => screenSymbolName(baseName, screen.id))
     )
     : '';
 

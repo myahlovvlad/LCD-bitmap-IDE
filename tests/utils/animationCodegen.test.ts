@@ -39,6 +39,17 @@ describe('animation C code generation', () => {
     expect(header).not.toContain('project_animation_bindings[0]');
     expect(header).toContain('#define PROJECT_ANIMATION_BINDING_COUNT 0');
   });
+
+  it('allocates unique C identifiers for colliding sanitized resource IDs and legacy names', () => {
+    const header = headerFor(collisionProject());
+    const animationNames = [...header.matchAll(/static const lcd_animation_t (project_[A-Za-z0-9_]+) =/g)]
+      .map((match) => match[1]);
+
+    expect(animationNames).toHaveLength(4);
+    expect(new Set(animationNames).size).toBe(animationNames.length);
+    expect(animationNames).toEqual(['project_a_b', 'project_a_b_2', 'project_a_b_2_2', 'project_screens_2']);
+    expect(header).not.toContain('static const lcd_animation_t project_screens =');
+  });
 });
 
 function headerFor(project: ReturnType<typeof staticProject>): string {
@@ -82,6 +93,21 @@ function animationProject() {
           zIndex: 0, visible: true, locked: false, source: 'user' as const
         }]
       }
+    }
+  };
+}
+
+function collisionProject() {
+  const project = staticProject();
+  const ids = ['a-b', 'a b', 'a_b_2', 'screens'];
+  return {
+    ...project,
+    animations: {
+      order: ids,
+      resources: Object.fromEntries(ids.map((id) => [id, {
+        id, name: id, width: 8, height: 8, loop: false,
+        frames: [{ id: 'frame', bytes: [0], durationMs: 1 }]
+      }]))
     }
   };
 }
