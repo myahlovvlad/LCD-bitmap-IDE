@@ -17,6 +17,8 @@ import type {
   LcdBitmapProject,
   LcdScreen
 } from '../domain/project';
+import type { HardwareNotificationConfig } from '../domain/hardwareNotification';
+import { normalizeHardwareNotificationConfig } from '../domain/hardwareNotification';
 import type { AnimationFrame, AnimationResource } from '../domain/animation';
 import { applyFsmInterchangeToProject } from '../fsm-interchange';
 import { screenInterchangeToLcdScreens } from '../screen-interchange';
@@ -42,6 +44,8 @@ export function applyProjectCommandMutation(
       return updateDisplayConfig(workspace, command.payload.display, context);
     case 'project.setAuthoringLanguage':
       return setAuthoringLanguage(workspace, command.payload.language, context);
+    case 'project.setHardwareNotifications':
+      return setHardwareNotifications(workspace, command.payload.hardwareNotifications, context);
     case 'fsm.state.add':
       return addFsmState(workspace, context, command.payload.title);
     case 'fsm.state.update':
@@ -247,6 +251,27 @@ function setAuthoringLanguage(
     path: '/authoringLanguage',
     before: current,
     after: language
+  }]);
+}
+
+function setHardwareNotifications(
+  workspace: ApplicationWorkspace,
+  hardwareNotifications: HardwareNotificationConfig,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const normalized = normalizeHardwareNotificationConfig(hardwareNotifications, project.screens);
+  return changedProject(workspace, {
+    ...project,
+    hardwareNotifications: normalized,
+    meta: { ...project.meta, updatedAt: context.now() }
+  }, [{
+    kind: 'updated',
+    entityType: 'project',
+    entityId: project.meta.id,
+    path: '/hardwareNotifications',
+    before: project.hardwareNotifications ?? null,
+    after: normalized
   }]);
 }
 

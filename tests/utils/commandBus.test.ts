@@ -54,6 +54,47 @@ describe('application command bus', () => {
     ]);
   });
 
+  it('sets hardware notifications through a revisioned semantic command', () => {
+    const session = createProjectSession(createProject(), 0);
+    const screenId = session.project.screenOrder[0]!;
+    const result = executeProjectCommand(
+      session,
+      commandFor(session.project, 0, 'project.setHardwareNotifications', {
+        hardwareNotifications: {
+          usb: { tagId: 'io.usb_present', presentScreenId: screenId, absentScreenId: null }
+        }
+      }),
+      createFixedApplicationCommandContext(timestamp)
+    );
+
+    expect(result.status).toBe('applied');
+    expect(result.session.project.hardwareNotifications?.usb).toEqual({
+      tagId: 'io.usb_present',
+      presentScreenId: screenId,
+      absentScreenId: null
+    });
+    expect(result.session.revision).toBe(1);
+    expect(result.changes).toEqual([
+      expect.objectContaining({ entityType: 'project', path: '/hardwareNotifications' })
+    ]);
+  });
+
+  it('clears a hardware notification screen reference that does not exist in the project', () => {
+    const session = createProjectSession(createProject(), 0);
+    const result = executeProjectCommand(
+      session,
+      commandFor(session.project, 0, 'project.setHardwareNotifications', {
+        hardwareNotifications: {
+          usb: { tagId: 'io.usb_present', presentScreenId: 'does-not-exist', absentScreenId: null }
+        }
+      }),
+      createFixedApplicationCommandContext(timestamp)
+    );
+
+    expect(result.status).toBe('applied');
+    expect(result.session.project.hardwareNotifications?.usb?.presentScreenId).toBeNull();
+  });
+
   it('stores multiline backend process documentation through the command bus', () => {
     const project = migrateLegacySnapshot(createDemoProject()).project;
     const processId = 'measure-process';

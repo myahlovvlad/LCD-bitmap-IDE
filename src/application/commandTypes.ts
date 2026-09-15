@@ -27,6 +27,7 @@ import type { ScreenInterchangeProjectV1 } from '../screen-interchange';
 import type { HmiTag } from '../domain/tag';
 import type { BackendProcedure } from '../domain/procedure';
 import type { AlarmDefinition } from '../domain/alarm';
+import type { HardwareNotificationConfig } from '../domain/hardwareNotification';
 
 export interface ActorIdentity {
   id: string;
@@ -60,6 +61,10 @@ export type ProjectUpdateDisplayConfigCommand = BaseProjectCommand<
 export type ProjectSetAuthoringLanguageCommand = BaseProjectCommand<
   'project.setAuthoringLanguage',
   { language: LanguageCode }
+>;
+export type ProjectSetHardwareNotificationsCommand = BaseProjectCommand<
+  'project.setHardwareNotifications',
+  { hardwareNotifications: HardwareNotificationConfig }
 >;
 
 export type FsmStateAddCommand = BaseProjectCommand<'fsm.state.add', { title?: string }>;
@@ -241,6 +246,7 @@ export type ProjectCommand =
   | ProjectUpdateMetadataCommand
   | ProjectUpdateDisplayConfigCommand
   | ProjectSetAuthoringLanguageCommand
+  | ProjectSetHardwareNotificationsCommand
   | FsmStateAddCommand
   | FsmStateUpdateCommand
   | FsmStatesUpdateCommand
@@ -302,7 +308,7 @@ export type ProjectCommand =
 
 /** Runtime list used by automation parity tests; the type assertion below keeps it exhaustive. */
 export const PROJECT_COMMAND_TYPES = [
-  'project.updateMetadata', 'project.updateDisplayConfig', 'project.setAuthoringLanguage',
+  'project.updateMetadata', 'project.updateDisplayConfig', 'project.setAuthoringLanguage', 'project.setHardwareNotifications',
   'fsm.state.add', 'fsm.state.update', 'fsm.states.update', 'fsm.layers.update', 'fsm.state.delete', 'fsm.state.ensureScreen',
   'fsm.transition.add', 'fsm.transition.update', 'fsm.transition.delete',
   'fsm.event.add', 'fsm.event.update', 'fsm.event.delete', 'backendProcess.update',

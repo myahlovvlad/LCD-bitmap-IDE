@@ -20,7 +20,7 @@ import { applyScreenDslPreview, createScreenHtmlPreview, exportSessionScreenInte
 import type { AlarmDefinition, ControlPanelElement, FsmEvent, FsmState, FsmTransition } from '../../domain/project';
 import type { HmiTag } from '../../domain/tag';
 import type { BackendProcedure } from '../../domain/procedure';
-import { FontRenderer, normalizeDisplayProfile, type DisplayProfile } from '../../domain';
+import { FontRenderer, normalizeDisplayProfile, type DisplayProfile, type HardwareNotificationConfig } from '../../domain';
 import {
   canonicalRasterToRgbaBytes,
   compareFramebuffers,
@@ -198,6 +198,7 @@ async function dispatchValidatedRequest(
       } : { projectId: null, revision: store.revision });
     case 'get_authoring_language': return successful({ language: project?.authoringLanguage ?? 'en' });
     case 'get_display_profile': return project ? successful({ profile: project.display }) : blocked('automation.no-project', 'No project loaded');
+    case 'get_hardware_notifications': return project ? successful({ hardwareNotifications: project.hardwareNotifications ?? {} }) : blocked('automation.no-project', 'No project loaded');
     case 'list_fsm_states': return successful({ states: ordered(project?.fsm.stateOrder, project?.fsm.states) });
     case 'list_fsm_transitions': return successful({ transitions: ordered(project?.fsm.transitionOrder, project?.fsm.transitions) });
     case 'list_fsm_events': return successful({ events: ordered(project?.fsm.eventOrder, project?.fsm.events) });
@@ -437,6 +438,7 @@ function buildProjectCommands(command: string, input: Record<string, unknown>, m
   switch (command) {
     case 'set_authoring_language': return [commandOf('project.setAuthoringLanguage', { language: input.language })];
     case 'update_display_profile': return [commandOf('project.updateDisplayConfig', { display: input.profile as DisplayProfile })];
+    case 'update_hardware_notifications': return [commandOf('project.setHardwareNotifications', { hardwareNotifications: input.hardwareNotifications as HardwareNotificationConfig })];
     case 'create_fsm_state': return [commandOf('fsm.state.add', { title: input.title })];
     case 'update_fsm_state': return [commandOf('fsm.state.update', {
       stateId: input.stateId,
