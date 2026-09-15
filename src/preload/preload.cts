@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { SaveScreenDslFileRequest } from '../shared/screenDslFiles/contracts.js';
 import { SCREEN_DSL_FILE_OPEN_CHANNEL, SCREEN_DSL_FILE_SAVE_CHANNEL } from '../shared/screenDslFiles/channels.js';
+import type { SaveProjectFileRequest } from '../shared/projectFile/contracts.js';
+import { PROJECT_FILE_OPEN_CHANNEL, PROJECT_FILE_SAVE_CHANNEL, PROJECT_FILE_RESET_PATH_CHANNEL } from '../shared/projectFile/channels.js';
 import {
   SPECTRO_SERIAL_CLOSE_CHANNEL,
   SPECTRO_SERIAL_COMMAND_CHANNEL,
@@ -44,6 +46,14 @@ contextBridge.exposeInMainWorld('spectroDesigner', {
   screenDslFiles: {
     open: () => ipcRenderer.invoke(SCREEN_DSL_FILE_OPEN_CHANNEL),
     save: (request: SaveScreenDslFileRequest) => ipcRenderer.invoke(SCREEN_DSL_FILE_SAVE_CHANNEL, request)
+  },
+
+  // Narrow project (.lcdproj) file API — same pattern as screenDslFiles.
+  // "Save" writes back to the last opened/saved path without a dialog.
+  projectFile: {
+    open: () => ipcRenderer.invoke(PROJECT_FILE_OPEN_CHANNEL),
+    save: (request: SaveProjectFileRequest) => ipcRenderer.invoke(PROJECT_FILE_SAVE_CHANNEL, request),
+    resetPath: () => ipcRenderer.invoke(PROJECT_FILE_RESET_PATH_CHANNEL)
   },
   spectrophotometerSerial: {
     list: () => ipcRenderer.invoke(SPECTRO_SERIAL_LIST_CHANNEL),

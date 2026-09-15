@@ -1,7 +1,9 @@
 mod automation;
+mod project_file;
 mod screen_dsl;
 mod serial;
 
+use project_file::ProjectFileState;
 use serial::SerialState;
 use tauri::Manager;
 
@@ -22,10 +24,14 @@ pub fn run() {
             Ok(())
         })
         .manage(SerialState::default())
+        .manage(ProjectFileState::default())
         .invoke_handler(tauri::generate_handler![
             automation::automation_respond,
             automation::automation_status,
             clipboard_write,
+            project_file::project_open,
+            project_file::project_save,
+            project_file::project_reset_path,
             screen_dsl::screen_dsl_open,
             screen_dsl::screen_dsl_save,
             serial::serial_list,

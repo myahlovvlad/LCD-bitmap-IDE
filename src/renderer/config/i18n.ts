@@ -56,6 +56,7 @@ const RAW_UI_TEXT = {
     cancel: 'Cancel',
     save: 'Save',
     saveProject: 'Save project',
+    saveProjectAs: 'Save project as…',
     openProject: 'Open project',
     exportUniversal: 'Export universal',
     manual: 'Manual',
@@ -168,7 +169,8 @@ const RAW_UI_TEXT = {
     defaultText: 'Text',
     autosaved: 'Autosaved',
     autosaveFailed: 'Local autosave failed. Save the project to a file now.',
-    invalidProjectFile: 'Invalid or unsupported project file'
+    invalidProjectFile: 'Invalid or unsupported project file',
+    saveProjectFailed: 'Save failed'
     ,
     importImageGlyphEditor: 'Import image + glyph editor',
     editBitmapGlyph: 'Edit bitmap glyph',
@@ -881,6 +883,7 @@ const RAW_UI_TEXT = {
     cancel: 'Отмена',
     save: 'Сохранить',
     saveProject: 'Сохранить проект',
+    saveProjectAs: 'Сохранить проект как…',
     openProject: 'Открыть проект',
     exportUniversal: 'Универсальный экспорт',
     manual: 'Руководство',
@@ -993,7 +996,8 @@ const RAW_UI_TEXT = {
     defaultText: 'Текст',
     autosaved: 'Автосохранение',
     autosaveFailed: 'Локальное автосохранение не выполнено. Сохраните проект в файл.',
-    invalidProjectFile: 'Некорректный или неподдерживаемый файл проекта'
+    invalidProjectFile: 'Некорректный или неподдерживаемый файл проекта',
+    saveProjectFailed: 'Не удалось сохранить'
     ,
     importImageGlyphEditor: 'Импорт изображения + редактор глифов',
     editBitmapGlyph: 'Редактировать bitmap-глиф',
@@ -1706,6 +1710,7 @@ const RAW_UI_TEXT = {
     cancel: '取消',
     save: '保存',
     saveProject: '保存项目',
+    saveProjectAs: '项目另存为…',
     openProject: '打开项目',
     exportUniversal: '导出通用',
     manual: '手册',
@@ -1818,7 +1823,8 @@ const RAW_UI_TEXT = {
     defaultText: '文本',
     autosaved: '已自动保存',
     autosaveFailed: '本地自动保存失败。请立即将项目保存到文件。',
-    invalidProjectFile: '项目文件无效或不受支持'
+    invalidProjectFile: '项目文件无效或不受支持',
+    saveProjectFailed: '保存失败'
     ,
     importImageGlyphEditor: '导入图像 + 字形编辑器',
     editBitmapGlyph: '编辑位图字形',

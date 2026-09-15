@@ -236,10 +236,10 @@ function AppShell(): React.ReactElement {
         navigate({ mode: 'fsm' });
       } else if (key === 's') {
         event.preventDefault();
-        saveProject();
+        void saveProject(event.shiftKey);
       } else if (key === 'o') {
         event.preventDefault();
-        fileInputRef.current?.click();
+        void openProjectNative();
       } else if (key === 'n') {
         event.preventDefault();
         createNewProject();
@@ -271,18 +271,39 @@ function AppShell(): React.ReactElement {
     ? createProjectFileV5({ project, language, fontGlyphs, loadedFonts, savedMeasurements }, language)
     : null;
 
-  const saveProject = (): void => {
+  const recordSavedHistory = (payload: NonNullable<ReturnType<typeof snapshot>>): void => {
+    if (!project) return;
+    setLastSavedAt(project.meta.updatedAt);
+    const entry = { id: `history-${Date.now()}`, name: `${project.meta.name} ${new Date().toLocaleString()}`, payload };
+    const nextHistory = [entry, ...history].slice(0, 20);
+    setHistory(persistHistoryWithinQuota(nextHistory));
+  };
+
+  const saveProject = async (forceDialog = false): Promise<void> => {
     validate();
     const payload = snapshot();
     if (!payload || !project) {
       return;
     }
     const filename = `${sanitizeFilename(project.meta.name || project.meta.id)}.lcdproj`;
+    const nativeSave = window.spectroDesigner?.projectFile?.save;
+    if (nativeSave) {
+      const content = JSON.stringify(payload);
+      const result = await nativeSave({ suggestedFilename: filename, content, forceDialog });
+      if (result.cancelled) {
+        return;
+      }
+      if (result.diagnostics?.length) {
+        pushToast(labels.saveProjectFailed, 'danger', result.diagnostics.map((d) => d.message).join(' '));
+        return;
+      }
+      recordSavedHistory(payload);
+      pushToast(`${labels.saveProject}: ${result.filename ?? filename}`, 'success');
+      return;
+    }
+    // Fallback for a plain web/dev build without a desktop shell bridge.
     downloadJson(filename, payload);
-    setLastSavedAt(project.meta.updatedAt);
-    const entry = { id: `history-${Date.now()}`, name: `${project.meta.name} ${new Date().toLocaleString()}`, payload };
-    const nextHistory = [entry, ...history].slice(0, 20);
-    setHistory(persistHistoryWithinQuota(nextHistory));
+    recordSavedHistory(payload);
     pushToast(`${labels.saveProject}: ${filename}`, 'success');
   };
 
@@ -320,23 +341,56 @@ function AppShell(): React.ReactElement {
     }
   };
 
+  // Prefer the native dialog (tracks the real path so "Save" writes back to
+  // it directly); fall back to the hidden file input on a plain web build.
+  const openProjectNative = async (): Promise<void> => {
+    const nativeOpen = window.spectroDesigner?.projectFile?.open;
+    if (!nativeOpen) {
+      fileInputRef.current?.click();
+      return;
+    }
+    const result = await nativeOpen();
+    if (result.cancelled) {
+      return;
+    }
+    const operation = beginOperation(labels.openProject, { message: result.filename, source: 'project-file', dedupeKey: 'project-open' });
+    try {
+      if (result.diagnostics?.length) {
+        throw new Error(result.diagnostics.map((d) => d.message).join(' '));
+      }
+      if (!result.content) {
+        throw new Error(labels.invalidProjectFile);
+      }
+      const migrated = migrateProject(JSON.parse(result.content));
+      loadProjectSnapshot(migrated);
+      setLastSavedAt(migrated.project.meta.updatedAt);
+      navigate({ mode: 'fsm', stateId: migrated.project.fsm.stateOrder[0] });
+      operation.succeed(`${labels.openProject}: ${result.filename ?? ''}`);
+    } catch (error) {
+      operation.fail(labels.invalidProjectFile, error instanceof Error ? error.message : undefined);
+    }
+  };
+
   const createNewProject = (): void => {
     const name = window.prompt(labels.projectNamePrompt, labels.defaultProjectName);
     if (!name) {
       return;
     }
+    void window.spectroDesigner?.projectFile?.resetPath?.();
     loadProjectSnapshot(migrateLegacySnapshot({ ...createBlankProject({ name }), language }));
     setLastSavedAt(null);
     navigate({ mode: 'fsm' });
   };
 
   const loadDemo = (): void => {
+    void window.spectroDesigner?.projectFile?.resetPath?.();
     loadProjectSnapshot(migrateLegacySnapshot({ ...createDemoProject(), language }));
     setLastSavedAt(null);
     navigate({ mode: 'fsm' });
   };
 
   const restoreAutosave = (): void => {
+    void window.spectroDesigner?.projectFile?.resetPath?.();
     const restored = readAutosave();
     if (restored) {
       loadProjectSnapshot(restored);
@@ -377,7 +431,7 @@ function AppShell(): React.ReactElement {
             </select>
           </label>
           <div className="startup-actions">
-            <button type="button" onClick={() => fileInputRef.current?.click()}>
+            <button type="button" onClick={() => void openProjectNative()}>
               <FolderOpen size={17} />{labels.openProject}
             </button>
             <button type="button" onClick={createNewProject} data-testid="startup-create-project">
@@ -418,8 +472,9 @@ function AppShell(): React.ReactElement {
           <span className="software-version" data-testid="software-version">{language === 'ru' ? 'ПО' : 'Software'} v{APP_SOFTWARE_VERSION}</span>
         </div>
         <div className="project-actions">
-          <button type="button" onClick={() => fileInputRef.current?.click()}><FolderOpen size={16} />{labels.openProject}</button>
-          <button type="button" onClick={saveProject} data-testid="project-save"><Save size={16} />{labels.saveProject}</button>
+          <button type="button" onClick={() => void openProjectNative()}><FolderOpen size={16} />{labels.openProject}</button>
+          <button type="button" onClick={() => void saveProject(false)} data-testid="project-save"><Save size={16} />{labels.saveProject}</button>
+          <button type="button" onClick={() => void saveProject(true)} data-testid="project-save-as"><Save size={16} />{labels.saveProjectAs}</button>
           <button type="button" onClick={exportProject}><Download size={16} />{labels.exportUniversal}</button>
           <button type="button" onClick={undo} disabled={!canUndo} data-testid="app-undo"><RotateCcw size={16} />{labels.undo}</button>
           <button type="button" onClick={redo} disabled={!canRedo} data-testid="app-redo"><RotateCw size={16} />{labels.redo}</button>

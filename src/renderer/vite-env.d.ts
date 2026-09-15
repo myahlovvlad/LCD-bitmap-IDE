@@ -46,6 +46,27 @@ declare global {
           diagnostics?: ReadonlyArray<{ code: string; severity: 'error' | 'warning' | 'info'; message: string; filename?: string }>;
         }>;
       };
+      projectFile?: {
+        open(): Promise<{
+          cancelled: boolean;
+          filename?: string;
+          content?: string;
+          byteLength?: number;
+          diagnostics?: ReadonlyArray<{ code: string; severity: 'error' | 'warning'; message: string }>;
+        }>;
+        save(request: {
+          suggestedFilename: string;
+          content: string;
+          forceDialog?: boolean;
+        }): Promise<{
+          cancelled: boolean;
+          filename?: string;
+          byteLength?: number;
+          savedToKnownPath?: boolean;
+          diagnostics?: ReadonlyArray<{ code: string; severity: 'error' | 'warning'; message: string }>;
+        }>;
+        resetPath(): Promise<boolean>;
+      };
       spectrophotometerSerial?: {
         list(): Promise<SpectroSerialPortInfo[]>;
         open(path: string): Promise<SpectroSerialStatus>;
