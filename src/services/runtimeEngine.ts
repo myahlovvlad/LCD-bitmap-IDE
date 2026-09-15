@@ -6,6 +6,7 @@ import type {
   LcdScreen
 } from '../domain/project';
 import { evaluateTypedGuard, parseBackendBehaviorStorage } from '../fsm-behavior';
+import { hardwareNotificationKey, resolveHardwareNotification, type HardwareNotification } from './runtimeHardwareNotifications';
 
 export type RuntimeLogLevel = 'info' | 'warning' | 'error';
 
@@ -39,6 +40,8 @@ export interface RuntimeEngine {
   readonly pendingEventIds: readonly string[];
   readonly inputSession: RuntimeInputSession | null;
   readonly lastInputCommit: RuntimeInputCommit | null;
+  /** Active USB/printer/PC overlay, if any. Never reflected in `currentStateId`. */
+  readonly hardwareNotification: HardwareNotification | null;
   start(initialStateId?: string): void;
   reset(): void;
   sendEvent(eventId: string): void;
@@ -49,6 +52,10 @@ export interface RuntimeEngine {
   getAvailableButtons(): ControlPanelButton[];
   isButtonAllowed(button: ControlPanelButton): boolean;
   getButtonBlockReason(button: ControlPanelButton): string | null;
+  /** Re-evaluates the hardware notification from the current tag snapshot; call after a monitored tag changes. */
+  refreshHardwareNotification(): void;
+  /** Dismisses the active notification and resumes the interrupted state without an FSM transition. */
+  acknowledgeHardwareNotification(): void;
 }
 
 export interface ProjectRuntimeEngineOptions {
@@ -147,6 +154,8 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
   lastInputCommit: RuntimeInputCommit | null = null;
   private lastInputEventId: string | null = null;
   private lastInputAt = 0;
+  hardwareNotification: HardwareNotification | null = null;
+  private lastHardwareNotificationKey: string | null = null;
 
   constructor(
     private readonly project: LcdBitmapProject,
@@ -164,7 +173,32 @@ export class ProjectRuntimeEngine implements RuntimeEngine {
     this.lastInputCommit = null;
     this.openInputSession();
     this.eventLog = [];
+    this.hardwareNotification = null;
+    this.lastHardwareNotificationKey = null;
     this.log('info', 'start', this.currentStateId ? `Runtime started at "${this.currentStateId}".` : 'Runtime cannot start: no FSM state.');
+  }
+
+  /**
+   * Re-derives the hardware overlay from the current tag snapshot. A no-op
+   * unless the resolved equipment/present pair genuinely changed since the
+   * last check, so acknowledging a notification does not immediately reopen
+   * it from a tag value that has not moved (see runtimeHardwareNotifications.ts).
+   */
+  refreshHardwareNotification(): void {
+    const resolved = resolveHardwareNotification(this.project, this.options.getGuardValues?.() ?? {}, this.currentStateId);
+    const key = hardwareNotificationKey(resolved);
+    if (key === this.lastHardwareNotificationKey) return;
+    this.lastHardwareNotificationKey = key;
+    this.hardwareNotification = resolved;
+    if (resolved) {
+      this.log('info', 'event', `Hardware notification opened: ${resolved.equipment} ${resolved.present ? 'present' : 'absent'}.`);
+    }
+  }
+
+  acknowledgeHardwareNotification(): void {
+    if (!this.hardwareNotification) return;
+    this.log('info', 'event', `Hardware notification acknowledged: ${this.hardwareNotification.equipment}.`);
+    this.hardwareNotification = null;
   }
 
   reset(): void {

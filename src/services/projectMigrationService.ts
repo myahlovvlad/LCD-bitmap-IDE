@@ -2,6 +2,7 @@ import { createMutableFontGlyphs, type FontGlyphs } from '../domain/fonts';
 import { normalizeDisplayProfile } from '../domain/displayProfile';
 import { DEFAULT_DISPLAY_CONFIG } from '../domain/display';
 import { normalizeAnimationCatalog } from '../domain/animation';
+import { normalizeHardwareNotificationConfig } from '../domain/hardwareNotification';
 import { readProjectPayload } from './projectInterop';
 import type {
   CanvasData,
@@ -300,7 +301,8 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
     procedures: project.procedures ?? {},
     cliCatalog: project.cliCatalog ?? {},
     alarms: project.alarms ?? {},
-    trends: project.trends ?? {}
+    trends: project.trends ?? {},
+    hardwareNotifications: normalizeHardwareNotificationConfig(project.hardwareNotifications, screens)
   };
   normalized.bindings = rebuildProjectBindings(normalized);
   normalized.validation = {

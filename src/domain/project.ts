@@ -7,6 +7,7 @@ import type { BackendProcedure, CliCommandDefinition } from './procedure';
 import type { AlarmDefinition } from './alarm';
 import type { TrendDefinition } from './trend';
 import type { AnimationCatalog } from './animation';
+import type { HardwareNotificationConfig } from './hardwareNotification';
 
 export const PROJECT_SCHEMA_VERSION = 7 as const;
 export const PROJECT_SCHEMA_VERSION_PREVIOUS = 6 as const;
@@ -322,6 +323,8 @@ export interface LcdBitmapProject {
   cliCatalog?: Record<string, CliCommandDefinition>;
   alarms?: Record<string, AlarmDefinition>;
   trends?: Record<string, TrendDefinition>;
+  /** Runtime-only transient overlays for USB/printer/PC presence; never emits FSM transitions. */
+  hardwareNotifications?: HardwareNotificationConfig;
 }
 
 export interface ProjectFileV5 {
