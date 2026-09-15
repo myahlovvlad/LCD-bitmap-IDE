@@ -3,6 +3,7 @@ import type { BackendProcedure, CliCommandDefinition } from '../../domain/proced
 import type { ITransport } from './ITransport';
 import type { AuditEntry } from './actionExecutor';
 import { ProjectRuntimeEngine, type RuntimeEngine, type RuntimeEvent, type RuntimeInputCommit, type RuntimeInputSession } from '../runtimeEngine';
+import type { HardwareNotification } from '../runtimeHardwareNotifications';
 import { executeProcedure } from './actionExecutor';
 import { MutableTagContext, defaultTagValues, type TagContext } from './TagContext';
 import { evaluateTypedGuard, parseBackendBehaviorStorage } from '../../fsm-behavior';
@@ -69,9 +70,12 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
   get pendingEventIds(): readonly string[] { return this.inner.pendingEventIds; }
   get inputSession(): RuntimeInputSession | null { return this.inner.inputSession; }
   get lastInputCommit(): RuntimeInputCommit | null { return this.inner.lastInputCommit; }
+  get hardwareNotification(): HardwareNotification | null { return this.inner.hardwareNotification; }
 
   start(initialStateId?: string): void { this.inner.start(initialStateId); }
   reset(): void { this.inner.reset(); this.procedureStatus = 'idle'; this.lastProcedureRun = null; }
+  refreshHardwareNotification(): void { this.inner.refreshHardwareNotification(); }
+  acknowledgeHardwareNotification(): void { this.inner.acknowledgeHardwareNotification(); }
   step(): void { this.inner.step(); }
   setStepMode(enabled: boolean): void { this.inner.setStepMode(enabled); }
   getCurrentScreen(): LcdScreen | null {

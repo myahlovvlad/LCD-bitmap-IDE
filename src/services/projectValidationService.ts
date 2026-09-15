@@ -8,6 +8,7 @@ import type {
 import { describeTransitionBehavior, parseBackendBehaviorStorage } from '../fsm-behavior';
 import { validateDisplayProfile } from '../domain/displayProfile';
 import { validateAnimationResource } from '../domain/animation';
+import { HARDWARE_EQUIPMENT_KINDS } from '../domain/hardwareNotification';
 
 export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -63,6 +64,39 @@ export function validateProject(project: LcdBitmapProject): ValidationIssue[] {
       add('error', 'fsm', 'state-screen-invalid', `State "${state.id}" references missing screen "${state.screenId}".`, 'state', state.id);
     } else {
       linkedScreens.add(state.screenId);
+    }
+  }
+
+  for (const equipment of HARDWARE_EQUIPMENT_KINDS) {
+    const mapping = project.hardwareNotifications?.[equipment];
+    if (!mapping) continue;
+    if (!project.tags?.[mapping.tagId]) {
+      add(
+        'warning',
+        'runtime',
+        'hardware-notification-tag-missing',
+        `Hardware notification for "${equipment}" references missing tag "${mapping.tagId}".`,
+        'hardware-notification',
+        equipment
+      );
+    }
+    for (const [direction, screenId] of [['present', mapping.presentScreenId], ['absent', mapping.absentScreenId]] as const) {
+      if (!screenId) continue;
+      if (!project.screens[screenId]) {
+        add(
+          'error',
+          'runtime',
+          'hardware-notification-screen-invalid',
+          `Hardware notification for "${equipment}" (${direction}) references missing screen "${screenId}".`,
+          'hardware-notification',
+          equipment
+        );
+      } else {
+        // Reachable only through the runtime hardware-notification overlay,
+        // not through a normal FSM transition — exempt it from the
+        // screen-unbound orphan warning below.
+        linkedScreens.add(screenId);
+      }
     }
   }
 

@@ -77,6 +77,12 @@ export {
 } from './animation';
 export type { AnimationCatalog, AnimationFrame, AnimationResource } from './animation';
 export {
+  DEFAULT_HARDWARE_TAG_IDS,
+  HARDWARE_EQUIPMENT_KINDS,
+  normalizeHardwareNotificationConfig
+} from './hardwareNotification';
+export type { HardwareEquipmentKind, HardwareNotificationConfig, HardwareNotificationMapping } from './hardwareNotification';
+export {
   CANVAS_OBJECT_DEFAULTS,
   DEFAULT_DISPLAY_CONFIG,
   DEFAULT_LANGUAGE,

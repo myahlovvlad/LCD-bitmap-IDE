@@ -44,7 +44,8 @@ import {
   useProjectStore
 } from '../store/projectStore';
 import { compileAssetsForAutomation } from './compileAssets';
-import { fireAutomationRuntimeEvent, getAutomationRuntimeState } from './runtimeAutomation';
+import { fireAutomationRuntimeEvent, getAutomationRuntimeState, setAutomationRuntimeTag } from './runtimeAutomation';
+import type { TagValue } from '../../services/runtime/TagContext';
 
 const MAX_AUDIT_EVENTS = 500;
 const MAX_IDEMPOTENCY_ENTRIES = 256;
@@ -332,6 +333,9 @@ async function dispatchValidatedRequest(
     case 'fire_runtime_event':
       await fireAutomationRuntimeEvent(input.eventId as string);
       return successful({ eventId: input.eventId });
+    case 'set_runtime_tag':
+      await setAutomationRuntimeTag(input.tagId as string, input.value as TagValue);
+      return successful({ tagId: input.tagId, value: input.value });
     case 'automation_changeset_preview':
       return executeBatch(request, input.operations as AutomationBatchOperation[], true);
     case 'automation_changeset_apply':

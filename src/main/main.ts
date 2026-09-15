@@ -4,6 +4,10 @@ import path from 'node:path';
 import { handleScreenDslFileOpen } from './screenDslFiles/openHandler.js';
 import { handleScreenDslFileSave } from './screenDslFiles/saveHandler.js';
 import { SCREEN_DSL_FILE_OPEN_CHANNEL, SCREEN_DSL_FILE_SAVE_CHANNEL } from '../shared/screenDslFiles/channels.js';
+import { handleProjectFileOpen } from './projectFile/openHandler.js';
+import { handleProjectFileSave } from './projectFile/saveHandler.js';
+import { setCurrentProjectPath } from './projectFile/currentPath.js';
+import { PROJECT_FILE_OPEN_CHANNEL, PROJECT_FILE_SAVE_CHANNEL, PROJECT_FILE_RESET_PATH_CHANNEL } from '../shared/projectFile/channels.js';
 import { startApiServer, stopApiServer, getApiServerStatus, setMainWindow as setApiMainWindow } from './api/apiServer.js';
 import { startMcpServer, stopMcpServer, getMcpServerStatus, setMcpMainWindow, setMcpProjectCache, setMcpRuntimeState } from './mcp/mcpServer.js';
 import { registerSpectrophotometerSerialHandlers } from './spectrophotometerSerial/registerHandlers.js';
@@ -16,6 +20,15 @@ const STARTUP_PROJECT_MAX_BYTES = 25 * 1024 * 1024;
 // Screen DSL file handlers — narrow, feature-specific (no generic filesystem bridge)
 ipcMain.handle(SCREEN_DSL_FILE_OPEN_CHANNEL, () => handleScreenDslFileOpen(dialog));
 ipcMain.handle(SCREEN_DSL_FILE_SAVE_CHANNEL, (_event, request: unknown) => handleScreenDslFileSave(dialog, request));
+
+// Project file handlers — same narrow pattern; "Save" writes back to the
+// tracked open/save path directly, only prompting a dialog when unbound.
+ipcMain.handle(PROJECT_FILE_OPEN_CHANNEL, () => handleProjectFileOpen(dialog));
+ipcMain.handle(PROJECT_FILE_SAVE_CHANNEL, (_event, request: unknown) => handleProjectFileSave(dialog, request));
+ipcMain.handle(PROJECT_FILE_RESET_PATH_CHANNEL, () => {
+  setCurrentProjectPath(null);
+  return true;
+});
 const spectrophotometerSerial = registerSpectrophotometerSerialHandlers(ipcMain);
 
 ipcMain.handle('clipboard-write', (_event, text: string) => {
@@ -149,6 +162,7 @@ async function sendStartupProject(mainWindow: BrowserWindow, projectPath: string
       throw new Error('Project file is missing or exceeds the 25 MB startup limit.');
     }
     const content = await readFile(projectPath, 'utf8');
+    setCurrentProjectPath(projectPath);
     mainWindow.webContents.send('project:startup-open', {
       filename: path.basename(projectPath),
       content

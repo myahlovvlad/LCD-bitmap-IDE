@@ -7,12 +7,15 @@ import {
   ChevronRight,
   CircleDot,
   HelpCircle,
+  Monitor,
   PanelLeftClose,
   PanelLeftOpen,
   Play,
+  Printer,
   RotateCcw,
   Square,
   StepForward,
+  Usb,
   Wifi,
   WifiOff,
   Zap
@@ -33,6 +36,25 @@ import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 import { registerRuntimeAutomationHandler } from '../../renderer/automation/runtimeAutomation';
 import { resolveRuntimeTimerDelay, type RuntimeTimerMode } from './runtimeTimer';
 import { resolveRuntimeButtonAvailability, type RuntimeButtonAvailabilityCode } from '../../services/runtimeEngine';
+import { hardwareNotificationKey, type HardwareNotification } from '../../services/runtimeHardwareNotifications';
+import type { HardwareEquipmentKind } from '../../domain/hardwareNotification';
+
+const HARDWARE_NOTIFICATION_POLL_MS = 200;
+
+function hardwareEquipmentLabel(equipment: HardwareEquipmentKind, labels: UiText): string {
+  const labelKey = {
+    usb: 'hardwareNotificationUsb',
+    printer: 'hardwareNotificationPrinter',
+    pc: 'hardwareNotificationPc'
+  } as const satisfies Record<HardwareEquipmentKind, keyof UiText>;
+  return labels[labelKey[equipment]];
+}
+
+function hardwareEquipmentIcon(equipment: HardwareEquipmentKind): React.ReactElement {
+  if (equipment === 'usb') return <Usb size={16} />;
+  if (equipment === 'printer') return <Printer size={16} />;
+  return <Monitor size={16} />;
+}
 
 type TransportKind = 'simulation';
 
@@ -58,6 +80,7 @@ export function RuntimeWorkspace(): React.ReactElement {
   const [showTutorial, setShowTutorial] = useState(false);
   const engineRef = useRef<OrchestratedRuntimeEngine | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const notifiedKeyRef = useRef<string | null>(null);
 
   const fontRenderer = useMemo(() => project ? new FontRenderer(fontGlyphs) : null, [project, fontGlyphs]);
 
@@ -85,11 +108,40 @@ export function RuntimeWorkspace(): React.ReactElement {
       engine.sendEvent(eventId);
       setRevision((value) => value + 1);
     },
+    setTag: (tagId, value) => {
+      const engine = engineRef.current;
+      if (!engine) throw new Error('Runtime engine is not initialized');
+      engine.tags.set(tagId, value);
+      engine.refreshHardwareNotification();
+      notifiedKeyRef.current = hardwareNotificationKey(engine.hardwareNotification);
+      setRevision((r) => r + 1);
+    },
     getState: () => ({
       currentStateId: engineRef.current?.currentStateId ?? null,
-      isRunning: Boolean(engineRef.current)
+      isRunning: Boolean(engineRef.current),
+      hardwareNotification: engineRef.current?.hardwareNotification ?? null
     })
   }), []);
+
+  // Poll for hardware notifications (io.*_present tag changes) independent of
+  // FSM-driven revisions, since the underlying tags can change outside of any
+  // user action (procedures, transport updates). Only re-renders when the
+  // resolved notification actually changes identity.
+  useEffect(() => {
+    const tick = () => {
+      const engine = engineRef.current;
+      if (!engine) return;
+      engine.refreshHardwareNotification();
+      const key = hardwareNotificationKey(engine.hardwareNotification);
+      if (key !== notifiedKeyRef.current) {
+        notifiedKeyRef.current = key;
+        setRevision((r) => r + 1);
+      }
+    };
+    tick();
+    const interval = window.setInterval(tick, HARDWARE_NOTIFICATION_POLL_MS);
+    return () => window.clearInterval(interval);
+  }, [project]);
 
   // Auto-fire timer transitions
   useEffect(() => {
@@ -133,6 +185,9 @@ export function RuntimeWorkspace(): React.ReactElement {
   const inputSession = engine?.inputSession ?? null;
   const lastProc: OrchestratedTransitionState | null = engine?.lastProcedureRun ?? null;
   const tagValues = Object.entries(engine?.tags?.snapshot() ?? {});
+  const hardwareNotification: HardwareNotification | null = engine?.hardwareNotification ?? null;
+  const notificationScreen = hardwareNotification ? project.screens[hardwareNotification.screenId] ?? null : null;
+  const notificationReturnState = hardwareNotification ? project.fsm.states[hardwareNotification.returnStateId] ?? null : null;
 
   const refresh = (action: () => void) => { action(); setRevision((r) => r + 1); };
 
@@ -200,8 +255,12 @@ export function RuntimeWorkspace(): React.ReactElement {
               <div className="runtime-button-grid">
                 {buttons.map((btn) => {
                   const availability = resolveRuntimeButtonAvailability(project, currentStateId, btn, engine?.tags.snapshot());
-                  const reasonCode = engine?.isExecutingProcedure ? 'procedure-running' : availability.code;
-                  const allowed = availability.allowed && !engine?.isExecutingProcedure;
+                  const reasonCode = engine?.isExecutingProcedure
+                    ? 'procedure-running'
+                    : hardwareNotification
+                      ? 'hardware-notification'
+                      : availability.code;
+                  const allowed = availability.allowed && !engine?.isExecutingProcedure && !hardwareNotification;
                   const reason = allowed ? null : runtimeButtonReason(reasonCode, labels);
                   return (
                     <div key={btn.id} className="runtime-button-item" data-availability={reasonCode}>
@@ -312,6 +371,46 @@ export function RuntimeWorkspace(): React.ReactElement {
               <small>{labels.noScreenLinked}</small>
             </div>
           )}
+
+          {hardwareNotification && (
+            <div className="runtime-hardware-overlay" role="alertdialog" aria-label={labels.hardwareNotificationAria}>
+              {notificationScreen && fontRenderer ? (
+                <div className="runtime-hardware-overlay-lcd">
+                  <LCDCanvas
+                    canvasData={{
+                      stateId: notificationScreen.id,
+                      width: notificationScreen.width,
+                      height: notificationScreen.height,
+                      objects: notificationScreen.objects,
+                      selectedObjectIds: [],
+                      updatedAt: notificationScreen.updatedAt
+                    }}
+                    language={project.authoringLanguage ?? 'en'}
+                    fontRenderer={fontRenderer}
+                  />
+                </div>
+              ) : null}
+              <div className="runtime-hardware-overlay-meta">
+                <div className="runtime-hardware-overlay-title">
+                  {hardwareEquipmentIcon(hardwareNotification.equipment)}
+                  <strong>{hardwareEquipmentLabel(hardwareNotification.equipment, labels)}</strong>
+                  <span className={`runtime-hardware-overlay-status${hardwareNotification.present ? ' present' : ' absent'}`}>
+                    {hardwareNotification.present ? labels.hardwareNotificationPresent : labels.hardwareNotificationAbsent}
+                  </span>
+                </div>
+                <small>
+                  {labels.hardwareNotificationReturnTo}: {notificationReturnState?.title ?? hardwareNotification.returnStateId}
+                </small>
+                <button
+                  type="button"
+                  className="runtime-hardware-overlay-ack"
+                  onClick={() => refresh(() => engine?.acknowledgeHardwareNotification())}
+                >
+                  {labels.hardwareNotificationAcknowledge}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Available FSM events (for keyboard testing) */}
@@ -324,7 +423,7 @@ export function RuntimeWorkspace(): React.ReactElement {
                 key={t.id}
                 type="button"
                 className="runtime-event-chip"
-                disabled={!!engine?.isExecutingProcedure}
+                disabled={!!engine?.isExecutingProcedure || !!hardwareNotification}
                 onClick={() => refresh(() => engine?.sendEvent(t.trigger.eventId))}
                 title={`${labels.fsmEvent}: ${t.trigger.eventId} → ${t.to}`}
               >
@@ -432,10 +531,10 @@ export function RuntimeWorkspace(): React.ReactElement {
 }
 
 function runtimeButtonReason(
-  code: RuntimeButtonAvailabilityCode | 'procedure-running',
+  code: RuntimeButtonAvailabilityCode | 'procedure-running' | 'hardware-notification',
   labels: UiText
 ): string {
-  const reasons: Record<RuntimeButtonAvailabilityCode | 'procedure-running', string> = {
+  const reasons: Record<RuntimeButtonAvailabilityCode | 'procedure-running' | 'hardware-notification', string> = {
     available: labels.runtimeButtonAvailable,
     'no-active-state': labels.runtimeButtonNoState,
     'explicitly-disabled': labels.runtimeButtonExplicitlyDisabled,
@@ -443,7 +542,8 @@ function runtimeButtonReason(
     'missing-transition': labels.runtimeButtonMissingTransition,
     'state-not-allowed': labels.runtimeButtonStateNotAllowed,
     'guard-rejected': labels.runtimeButtonGuardRejected,
-    'procedure-running': labels.runtimeButtonProcedureRunning
+    'procedure-running': labels.runtimeButtonProcedureRunning,
+    'hardware-notification': labels.runtimeButtonHardwareNotification
   };
   return reasons[code];
 }

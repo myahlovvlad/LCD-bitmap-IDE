@@ -1,5 +1,6 @@
 import type { SaveScreenDslFileRequest } from '../shared/screenDslFiles/contracts';
 import type { SpectroSerialCommandRequest } from '../shared/spectrophotometerSerial/contracts';
+import type { SaveProjectFileRequest } from '../shared/projectFile/contracts';
 
 type TauriInvoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>;
 
@@ -51,6 +52,11 @@ if (invoke && !window.spectroDesigner) {
     screenDslFiles: {
       open: () => invoke('screen_dsl_open'),
       save: (request: SaveScreenDslFileRequest) => invoke('screen_dsl_save', { request })
+    },
+    projectFile: {
+      open: () => invoke('project_open'),
+      save: (request: SaveProjectFileRequest) => invoke('project_save', { request }),
+      resetPath: () => invoke('project_reset_path')
     },
     spectrophotometerSerial: {
       list: () => invoke('serial_list'),
