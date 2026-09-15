@@ -63,4 +63,42 @@ describe('project validation service', () => {
     expect(issue?.severity).toBe('warning');
     expect(hasBlockingValidationIssues(issues)).toBe(false);
   });
+
+  it('flags a hardware notification tag that has no matching HMI tag definition', () => {
+    const project = migrateLegacySnapshot(createDemoProject()).project;
+    project.hardwareNotifications = {
+      usb: { tagId: 'io.usb_present', presentScreenId: 'measure', absentScreenId: null }
+    };
+
+    const issues = validateProject(project);
+    const issue = issues.find((candidate) => candidate.id.includes('hardware-notification-tag-missing'));
+    expect(issue?.severity).toBe('warning');
+  });
+
+  it('flags a hardware notification screen mapping that references a missing screen', () => {
+    const project = migrateLegacySnapshot(createDemoProject()).project;
+    project.hardwareNotifications = {
+      printer: { tagId: 'io.printer_present', presentScreenId: 'does-not-exist', absentScreenId: null }
+    };
+
+    const issues = validateProject(project);
+    const issue = issues.find((candidate) => candidate.id.includes('hardware-notification-screen-invalid'));
+    expect(issue?.severity).toBe('error');
+    expect(hasBlockingValidationIssues(issues)).toBe(true);
+  });
+
+  it('does not report a screen as unbound when it is only reachable via a hardware notification', () => {
+    const project = migrateLegacySnapshot(createDemoProject()).project;
+    const orphanScreenId = 'hw-usb-connected';
+    project.screens[orphanScreenId] = { ...project.screens.measure, id: orphanScreenId };
+
+    const withoutMapping = validateProject(project);
+    expect(withoutMapping.some((issue) => issue.id.includes(`screen-unbound:${orphanScreenId}`))).toBe(true);
+
+    project.hardwareNotifications = {
+      pc: { tagId: 'io.pc_present', presentScreenId: orphanScreenId, absentScreenId: null }
+    };
+    const withMapping = validateProject(project);
+    expect(withMapping.some((issue) => issue.id.includes(`screen-unbound:${orphanScreenId}`))).toBe(false);
+  });
 });

@@ -139,6 +139,7 @@ Write tools:
 - `delete_alarm`
 - `compile_screen`
 - `fire_runtime_event`
+- `set_runtime_tag`
 
 ## Agent Workflows
 

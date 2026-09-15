@@ -188,6 +188,12 @@ const definitions: InternalDefinition[] = [
     access: 'write', idempotent: false, supportsDryRun: false,
     permission: 'runtime:write', handler: 'fire_runtime_event', applicationCommands: []
   }),
+  definition({
+    name: 'set_runtime_tag', description: 'Writes a live tag value on the active runtime engine, e.g. to simulate io.usb_present/io.printer_present/io.pc_present hardware notifications.',
+    inputValidator: z.object({ tagId: identifier, value: z.union([z.string(), z.number(), z.boolean(), z.null()]) }).strict(), outputValidator: objectOutput,
+    access: 'write', idempotent: false, supportsDryRun: false,
+    permission: 'runtime:write', handler: 'set_runtime_tag', applicationCommands: []
+  }),
   write('preview_changes', 'Validates and dry-runs an atomic automation ChangeSet.', z.object({ operations: z.array(batchOperation).min(1).max(100) }).strict(), [], { handler: 'automation_changeset_preview' }),
   write('apply_changes', 'Applies a previously previewable atomic automation ChangeSet.', z.object({ operations: z.array(batchOperation).min(1).max(100) }).strict(), [], { handler: 'automation_changeset_apply' }),
   write('undo_last_agent_change', 'Undoes the latest automation-authored history entry only.', emptyInput, [], { dryRun: false, handler: 'undo_last_agent_change', idempotent: false })

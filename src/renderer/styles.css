@@ -6579,6 +6579,7 @@ button:disabled {
 }
 
 .runtime-lcd-stage {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
@@ -6599,6 +6600,74 @@ button:disabled {
   border: 1px dashed var(--ide-border, #4b5563);
   border-radius: 8px;
   padding: 32px 48px;
+}
+
+.runtime-hardware-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: rgba(10, 15, 26, 0.92);
+  backdrop-filter: blur(2px);
+}
+
+.runtime-hardware-overlay-lcd {
+  border: 2px solid var(--ide-accent, #f59e0b);
+  border-radius: 8px;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+}
+
+.runtime-hardware-overlay-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #e5e7eb;
+  text-align: center;
+}
+
+.runtime-hardware-overlay-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+.runtime-hardware-overlay-status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.runtime-hardware-overlay-status.present {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+}
+
+.runtime-hardware-overlay-status.absent {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.runtime-hardware-overlay-meta small {
+  color: var(--ide-text-secondary, #9ca3af);
+}
+
+.runtime-hardware-overlay-ack {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: 1px solid var(--ide-accent, #f59e0b);
+  background: var(--ide-accent, #f59e0b);
+  color: #111827;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .runtime-event-chips {
