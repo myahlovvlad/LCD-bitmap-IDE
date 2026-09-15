@@ -29,7 +29,7 @@
  *   upsert_tag, delete_tag,
  *   upsert_procedure, delete_procedure,
  *   upsert_alarm, delete_alarm,
- *   compile_screen, fire_runtime_event, set_runtime_tag
+ *   compile_screen, fire_runtime_event, set_runtime_tag, update_hardware_notifications
  */
 
 import { createServer, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse, type Server } from 'node:http';

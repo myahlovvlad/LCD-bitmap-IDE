@@ -60,6 +60,12 @@ const displayProfile = z.object({
   fingerprint: z.string().regex(/^fnv1a64:[0-9a-f]{16}$/)
 }).strict();
 
+const hardwareNotificationMapping = z.object({
+  tagId: identifier,
+  presentScreenId: identifier.nullable().optional(),
+  absentScreenId: identifier.nullable().optional()
+}).strict();
+
 const batchOperation = z.object({ command: identifier, input: z.unknown().optional() }).strict();
 const automationRequest = z.object({
   command: identifier,
@@ -123,6 +129,7 @@ const definitions: InternalDefinition[] = [
   read('get_project_summary', 'Returns project metadata and entity counts.'),
   read('get_authoring_language', 'Returns the LCD content language, independent from the editor UI language.'),
   read('get_display_profile', 'Returns the canonical versioned DisplayProfile and fingerprint.'),
+  read('get_hardware_notifications', 'Returns the runtime hardware-notification mapping (usb/printer/pc to tag and present/absent screens).'),
   read('list_fsm_states', 'Returns FSM states in project order.'),
   read('list_fsm_transitions', 'Returns FSM transitions in project order.'),
   read('list_fsm_events', 'Returns FSM events in project order.'),
@@ -147,6 +154,13 @@ const definitions: InternalDefinition[] = [
 
   write('set_authoring_language', 'Changes the LCD content language.', z.object({ language: z.enum(['en', 'ru', 'zh']) }).strict(), ['project.setAuthoringLanguage']),
   write('update_display_profile', 'Validates and applies a versioned DisplayProfile.', z.object({ profile: displayProfile }).strict(), ['project.updateDisplayConfig']),
+  write('update_hardware_notifications', 'Sets the runtime hardware-notification mapping (usb/printer/pc). Screen references that no longer exist are cleared automatically.', z.object({
+    hardwareNotifications: z.object({
+      usb: hardwareNotificationMapping.optional(),
+      printer: hardwareNotificationMapping.optional(),
+      pc: hardwareNotificationMapping.optional()
+    }).strict()
+  }).strict(), ['project.setHardwareNotifications']),
   write('create_fsm_state', 'Creates one FSM state and its screen atomically.', z.object({ title: z.string().trim().min(1).max(256).optional() }).strict(), ['fsm.state.add']),
   write('update_fsm_state', 'Updates an FSM state.', z.object({ stateId: identifier, updates: partialObject.optional(), title: z.string().trim().min(1).max(256).optional() }).strict().refine((value) => value.updates !== undefined || value.title !== undefined, { message: 'updates or title is required' }), ['fsm.state.update']),
   write('delete_fsm_state', 'Deletes an FSM state and linked transitions.', z.object({ stateId: identifier }).strict(), ['fsm.state.delete'], { destructive: true }),

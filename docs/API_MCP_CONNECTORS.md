@@ -140,6 +140,7 @@ Write tools:
 - `compile_screen`
 - `fire_runtime_event`
 - `set_runtime_tag`
+- `update_hardware_notifications`
 
 ## Agent Workflows
 

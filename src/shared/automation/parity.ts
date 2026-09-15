@@ -18,6 +18,7 @@ export const UI_AUTOMATION_PARITY: readonly UiAutomationParityEntry[] = [
   uiOnly('project.updateMetadata', 'Project identity editing remains a user-confirmed settings workflow.'),
   mapped('project.updateDisplayConfig', 'update_display_profile'),
   mapped('project.setAuthoringLanguage', 'set_authoring_language'),
+  mapped('project.setHardwareNotifications', 'update_hardware_notifications'),
   mapped('fsm.state.add', 'create_fsm_state'),
   mapped('fsm.state.update', 'update_fsm_state'),
   uiOnly('fsm.states.update', 'Bulk layer membership editing requires the planned semantic batch schema.'),
