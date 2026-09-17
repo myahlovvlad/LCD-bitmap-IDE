@@ -5986,6 +5986,22 @@ button:disabled {
 .hmi-btn-primary:hover { background: #1d4ed8; }
 .hmi-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.hmi-btn-danger {
+  background: transparent;
+  border: 1px solid var(--ide-danger, #dc2626);
+  border-radius: 4px;
+  color: var(--ide-danger, #dc2626);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 5px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hmi-btn-danger:hover:not(:disabled) { background: rgba(220, 38, 38, 0.12); }
+.hmi-btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .hmi-btn-secondary {
   background: var(--ide-surface-elevated, #374151);
   border: 1px solid var(--ide-border, #4b5563);

@@ -128,6 +128,7 @@ interface ProjectStoreState {
   addBitmapLayer: (screenId: string, name: string, bytes: number[]) => void;
   updateCanvasObjects: (screenId: string, objects: CanvasObject[], options?: { history?: boolean }) => void;
   deleteSelectedCanvasObjects: (screenId: string) => void;
+  deleteCanvasObjects: (screenId: string, objectIds: string[]) => void;
   createAnimation: (animation: AnimationResource) => void;
   updateAnimation: (animationId: string, updates: Partial<Pick<AnimationResource, 'name' | 'width' | 'height' | 'loop'>>) => void;
   deleteAnimation: (animationId: string) => void;
@@ -605,6 +606,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
   deleteSelectedCanvasObjects: (screenId) => {
     const objectIds = get().project?.screens[screenId]?.selectedObjectIds ?? [];
+    commitProjectCommand(set, get, (state) => ({
+      type: 'canvas.objects.delete',
+      meta: createCommandMeta(state, 'canvas.objects.delete'),
+      payload: { screenId, objectIds }
+    }));
+  },
+  deleteCanvasObjects: (screenId, objectIds) => {
     commitProjectCommand(set, get, (state) => ({
       type: 'canvas.objects.delete',
       meta: createCommandMeta(state, 'canvas.objects.delete'),

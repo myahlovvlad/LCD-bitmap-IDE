@@ -826,7 +826,10 @@ const RAW_UI_TEXT = {
     importCsvJsonXlsx: 'Import CSV, JSON or XLSX',
     importButtonLabel: 'Import',
     promoteRepeatedText: 'Promote repeated Russian strings to global',
-    syncRepeatsButton: 'Sync repeats'
+    syncRepeatsButton: 'Sync repeats',
+    deleteEmptyRows: 'Delete empty rows',
+    deleteEmptyRowsConfirm: 'Delete {count} empty row(s) (no RU/EN/ZH text)? This can be undone via Undo.',
+    noEmptyRows: 'No empty rows'
   },
   ru: {
     appSubtitle: 'Рабочая среда LCD, глифов и FSM-интерфейсов',
@@ -1653,7 +1656,10 @@ const RAW_UI_TEXT = {
     importCsvJsonXlsx: 'Импорт CSV, JSON или XLSX',
     importButtonLabel: 'Импорт',
     promoteRepeatedText: 'Сделать повторяющиеся русские строки глобальными',
-    syncRepeatsButton: 'Синхронизировать повторы'
+    syncRepeatsButton: 'Синхронизировать повторы',
+    deleteEmptyRows: 'Удалить пустые строки',
+    deleteEmptyRowsConfirm: 'Удалить {count} пуст. строк (без RU/EN/ZH)? Действие можно отменить через Undo.',
+    noEmptyRows: 'Нет пустых строк'
   },
   zh: {
     appSubtitle: 'LCD、字模和 FSM 界面工作台',
@@ -2480,7 +2486,10 @@ const RAW_UI_TEXT = {
     importCsvJsonXlsx: '导入 CSV、JSON 或 XLSX',
     importButtonLabel: '导入',
     promoteRepeatedText: '将重复的俄文字符串提升为全局',
-    syncRepeatsButton: '同步重复'
+    syncRepeatsButton: '同步重复',
+    deleteEmptyRows: '删除空行',
+    deleteEmptyRowsConfirm: '删除 {count} 个空行（无 RU/EN/ZH 文本）？可通过撤销恢复。',
+    noEmptyRows: '没有空行'
   }
 } as const satisfies Record<LanguageCode, Record<string, string>>;
 

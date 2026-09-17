@@ -215,7 +215,7 @@ async function dispatchValidatedRequest(
     case 'list_procedures': return successful({ procedures: Object.values(project?.procedures ?? {}) });
     case 'list_alarms': return successful({ alarms: Object.values(project?.alarms ?? {}) });
     case 'get_runtime_state': return successful({ runtimeState: getAutomationRuntimeState() });
-    case 'list_export_formats': return successful({ formats: ['c-vertical-lsb', 'c-horizontal-msb', 'c-horizontal-lsb', 'xbm', 'arduino-progmem', 'rust-embedded', 'esp-idf', 'binary'] });
+    case 'list_export_formats': return successful({ formats: ['c-vertical-lsb', 'c-horizontal-msb', 'c-horizontal-lsb', 'xbm', 'arduino-progmem', 'rust-embedded', 'esp-idf', 'stm8', 'binary'] });
     case 'get_automation_audit': return successful({ events: [...auditLog] });
     case 'render_screen': {
       if (!project) return blocked('automation.no-project', 'No project loaded');

@@ -34,7 +34,7 @@ const alarm = z.object({
 
 const embeddedFormat = z.enum([
   'c-vertical-lsb', 'c-horizontal-msb', 'c-horizontal-lsb', 'xbm',
-  'arduino-progmem', 'rust-embedded', 'esp-idf', 'binary'
+  'arduino-progmem', 'rust-embedded', 'esp-idf', 'stm8', 'binary'
 ]);
 
 const displayProfile = z.object({

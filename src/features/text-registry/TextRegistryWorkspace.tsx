@@ -13,7 +13,7 @@
 
 import type React from 'react';
 import { useMemo, useRef, useState } from 'react';
-import { Download, HelpCircle, Search, Upload, RefreshCw } from 'lucide-react';
+import { Download, HelpCircle, Search, Upload, RefreshCw, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useProjectStore } from '../../renderer/store/projectStore';
 import { UI_TEXT } from '../../renderer/config/i18n';
@@ -93,8 +93,12 @@ function exportCsv(entries: TextEntry[]): void {
   URL.revokeObjectURL(url);
 }
 
+function isEmptyEntry(entry: Pick<TextEntry, 'ru' | 'en' | 'zh'>): boolean {
+  return !entry.ru && !entry.en && !entry.zh;
+}
+
 export function TextRegistryWorkspace(): React.ReactElement {
-  const { project, language, updateCanvasObject } = useProjectStore();
+  const { project, language, updateCanvasObject, deleteCanvasObjects } = useProjectStore();
   const labels = UI_TEXT[language];
   const [search, setSearch] = useState('');
   const [filterSubsystem, setFilterSubsystem] = useState('');
@@ -133,7 +137,27 @@ export function TextRegistryWorkspace(): React.ReactElement {
     });
   }, [allEntries, search, filterSubsystem]);
 
-  const untranslated = filtered.filter((e) => !e.en || !e.zh).length;
+  // "Untranslated" only flags rows that have *some* content but a missing EN/ZH
+  // translation. Rows with no RU/EN/ZH at all are empty placeholders by design,
+  // not translation gaps — they get their own "Delete empty rows" cleanup action
+  // instead of the untranslated warning.
+  const untranslated = filtered.filter((e) => (!e.en || !e.zh) && !isEmptyEntry(e)).length;
+  const emptyEntries = useMemo(() => filtered.filter(isEmptyEntry), [filtered]);
+
+  const deleteEmptyRows = (): void => {
+    if (emptyEntries.length === 0) return;
+    const message = labels.deleteEmptyRowsConfirm.replace('{count}', String(emptyEntries.length));
+    if (!window.confirm(message)) return;
+    const byScreen = new Map<string, string[]>();
+    for (const entry of emptyEntries) {
+      const ids = byScreen.get(entry.screenId) ?? [];
+      ids.push(entry.objectId);
+      byScreen.set(entry.screenId, ids);
+    }
+    for (const [screenId, objectIds] of byScreen) {
+      deleteCanvasObjects(screenId, objectIds);
+    }
+  };
 
   const commitEdit = (entry: TextEntry, field: 'ru' | 'en' | 'zh', value: string): void => {
     const peerKey = entry.globalTextKey;
@@ -207,6 +231,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
           <span className="text-registry-count">
             {allEntries.length} {language === 'ru' ? 'строк' : 'strings'}
             {untranslated > 0 ? ` · ${untranslated} ${language === 'ru' ? 'без перевода' : 'untranslated'}` : ''}
+            {emptyEntries.length > 0 ? ` · ${emptyEntries.length} ${language === 'ru' ? 'пустых' : 'empty'}` : ''}
           </span>
         </h2>
         <div className="text-registry-toolbar">
@@ -240,6 +265,15 @@ export function TextRegistryWorkspace(): React.ReactElement {
           <button type="button" onClick={promoteRepeatedText} title={labels.promoteRepeatedText}>
             <RefreshCw size={14} /> {labels.syncRepeatsButton}
           </button>
+          <button
+            type="button"
+            className="hmi-btn-danger"
+            disabled={emptyEntries.length === 0}
+            onClick={deleteEmptyRows}
+            title={emptyEntries.length === 0 ? labels.noEmptyRows : labels.deleteEmptyRowsConfirm.replace('{count}', String(emptyEntries.length))}
+          >
+            <Trash2 size={14} /> {labels.deleteEmptyRows}{emptyEntries.length > 0 ? ` (${emptyEntries.length})` : ''}
+          </button>
           <button type="button" className="hmi-help-button" onClick={() => setShowTutorial(true)} title={language === 'ru' ? 'Обучение' : 'Training'}><HelpCircle size={15} /></button>
           <input
             ref={importRef}
@@ -271,11 +305,11 @@ export function TextRegistryWorkspace(): React.ReactElement {
             {filtered.map((entry) => {
               const key = `${entry.screenId}:${entry.objectId}`;
               const missing = !entry.en || !entry.zh;
-              const empty = !entry.ru && !entry.en && !entry.zh;
+              const empty = isEmptyEntry(entry);
               return (
                 <tr
                   key={key}
-                  className={missing ? 'text-registry-row-warn' : ''}
+                  className={missing && !empty ? 'text-registry-row-warn' : ''}
                 >
                   <td className="text-registry-screen">
                     <strong>{entry.screenName}</strong>
