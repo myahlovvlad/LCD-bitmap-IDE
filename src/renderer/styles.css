@@ -4096,7 +4096,20 @@ button:disabled {
 .hmi-device-display { display: grid; place-items: center; min-width: 0; border: 8px solid #17251d; border-radius: 8px; background: #87aa5c; overflow: auto; }
 .hmi-device-display canvas { display: block; max-width: 100%; height: auto; image-rendering: pixelated; }
 .hmi-device-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: center; gap: 8px; }
-.hmi-device-buttons button { min-width: 0; min-height: 40px; border: 2px solid; border-radius: 9px; font-weight: 700; cursor: pointer; }
+.hmi-device-buttons button {
+  min-width: 0;
+  min-height: 40px;
+  padding: 4px 6px;
+  border: 2px solid;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: clamp(9px, 2.2vw, 13px);
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
+  cursor: pointer;
+}
 .hmi-device-buttons button.active { outline: 3px solid #60a5fa; outline-offset: 2px; }
 .hmi-state-strip { display: grid; gap: 5px; margin-top: 10px; }
 .hmi-state-strip small, .hmi-designer-right small { color: var(--ide-text-secondary); }
