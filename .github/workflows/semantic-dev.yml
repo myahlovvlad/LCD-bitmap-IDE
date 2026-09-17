@@ -5,8 +5,12 @@ on:
     branches:
       - feat/ecros-5400-semantic-workflows
 
+permissions:
+  contents: write
+
 jobs:
   semantic:
+    if: ${{ !contains(github.event.head_commit.message, '[skip semantic-dev]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +19,20 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Apply semantic automation integration
+        run: node scripts/apply-semantic-automation-patch.mjs
       - name: Semantic unit tests
         run: npx vitest run tests/utils/semanticIndexBuilder.test.ts tests/utils/ecros5400SemanticProfile.test.ts tests/utils/semanticReport.test.ts tests/utils/automationDispatcherSemanticIndex.test.ts tests/utils/automationRegistrySemanticIndex.test.ts
       - name: Typecheck
         run: npm run typecheck
+      - name: Generate real ECROS semantic index
+        run: npx tsx scripts/generate-ecros-semantic-index.ts
+      - name: Commit generated semantic integration
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/shared/automation/registry.ts src/renderer/automation/automationDispatcher.ts ECROS-5400UV/semantic
+            git commit -m "chore: apply semantic automation and generated index [skip semantic-dev]"
+            git push
+          fi
