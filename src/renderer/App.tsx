@@ -22,6 +22,7 @@ import {
   RotateCw,
   Save,
   Settings,
+  ShieldCheck,
   Tag,
   Terminal,
   Wand2,
@@ -87,6 +88,7 @@ const SettingsWorkspace = lazy(() => import('../features/settings/SettingsWorksp
 const TextRegistryWorkspace = lazy(() => import('../features/text-registry/TextRegistryWorkspace').then((module) => ({ default: module.TextRegistryWorkspace })));
 const HmiHandoffWorkspace = lazy(() => import('../features/hmi-handoff/HmiHandoffWorkspace').then((module) => ({ default: module.HmiHandoffWorkspace })));
 const HmiDesignerWorkspace = lazy(() => import('../features/hmi-designer/HmiDesignerWorkspace').then((module) => ({ default: module.HmiDesignerWorkspace })));
+const UxValidationPanel = lazy(() => import('../features/ux-validation/UxValidationPanel').then((module) => ({ default: module.UxValidationPanel })));
 
 export function App(): React.ReactElement {
   return (
@@ -559,6 +561,7 @@ function AppShell(): React.ReactElement {
           {location.mode === 'screen-dsl' ? <EditorWorkspaceFrame mode="screen-dsl" project={project} labels={labels}><ScreenDslStudioWrapper screenId={location.screenId} /></EditorWorkspaceFrame> : null}
           {location.mode === 'text-registry' ? <EditorWorkspaceFrame mode="text-registry" project={project} labels={labels}><TextRegistryWorkspace /></EditorWorkspaceFrame> : null}
           {location.mode === 'handoff' ? <HmiHandoffWorkspace /> : null}
+          {location.mode === 'ux-validation' ? <UxValidationPanel /> : null}
           {location.mode === 'settings' ? (
             <SettingsWorkspace themePreference={theme.preference} onThemeChange={theme.setPreference} />
           ) : null}
@@ -620,7 +623,8 @@ function workspaceIcon(mode: WorkspaceMode): React.ReactNode {
     fsm: <Workflow size={17} />, lcd: <Monitor size={17} />, 'control-panel': <PanelTop size={17} />, preview: <Monitor size={17} />,
     hmi: <PanelsTopLeft size={17} />, tags: <Tag size={17} />, procedures: <Terminal size={17} />,
     alarms: <AlertCircle size={17} />, runtime: <PlayCircle size={17} />, 'screen-dsl': <Code2 size={17} />,
-    'text-registry': <Tag size={17} />, handoff: <Package size={17} />, settings: <Settings size={17} />
+    'text-registry': <Tag size={17} />, handoff: <Package size={17} />, settings: <Settings size={17} />,
+    'ux-validation': <ShieldCheck size={17} />
   };
   return icons[mode];
 }
@@ -630,7 +634,8 @@ function workspaceLabel(mode: WorkspaceMode, labels: UiText): string {
     fsm: labels.fsmEditor, lcd: labels.lcdEditor, 'control-panel': labels.controlPanel, preview: labels.preview,
     hmi: labels.hmiDesigner, tags: labels.tagsWorkspace, procedures: labels.proceduresWorkspace,
     alarms: labels.alarmsWorkspace, runtime: labels.runtimeWorkspace, 'screen-dsl': labels.screenDslWorkspace,
-    'text-registry': labels.textRegistryWorkspace, handoff: labels.hmiHandoffWorkspace, settings: labels.settingsWorkspace
+    'text-registry': labels.textRegistryWorkspace, handoff: labels.hmiHandoffWorkspace, settings: labels.settingsWorkspace,
+    'ux-validation': labels.uxValidationWorkspace
   };
   return values[mode];
 }

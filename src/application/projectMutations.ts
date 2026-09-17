@@ -19,6 +19,8 @@ import type {
 } from '../domain/project';
 import type { HardwareNotificationConfig } from '../domain/hardwareNotification';
 import { normalizeHardwareNotificationConfig } from '../domain/hardwareNotification';
+import type { ProjectUxContract } from '../domain/uxContract';
+import { buildUxContractIdRefs, normalizeUxContract } from '../domain/uxContract';
 import type { AnimationFrame, AnimationResource } from '../domain/animation';
 import { applyFsmInterchangeToProject } from '../fsm-interchange';
 import { screenInterchangeToLcdScreens } from '../screen-interchange';
@@ -46,6 +48,8 @@ export function applyProjectCommandMutation(
       return setAuthoringLanguage(workspace, command.payload.language, context);
     case 'project.setHardwareNotifications':
       return setHardwareNotifications(workspace, command.payload.hardwareNotifications, context);
+    case 'ux.contract.update':
+      return setUxContract(workspace, command.payload.uxContract, context);
     case 'fsm.state.add':
       return addFsmState(workspace, context, command.payload.title);
     case 'fsm.state.update':
@@ -271,6 +275,27 @@ function setHardwareNotifications(
     entityId: project.meta.id,
     path: '/hardwareNotifications',
     before: project.hardwareNotifications ?? null,
+    after: normalized
+  }]);
+}
+
+function setUxContract(
+  workspace: ApplicationWorkspace,
+  uxContract: ProjectUxContract,
+  context: ApplicationCommandContext
+): ProjectMutationResult {
+  const project = workspace.project;
+  const normalized = normalizeUxContract(uxContract, buildUxContractIdRefs(project));
+  return changedProject(workspace, {
+    ...project,
+    uxContract: normalized,
+    meta: { ...project.meta, updatedAt: context.now() }
+  }, [{
+    kind: 'updated',
+    entityType: 'project',
+    entityId: project.meta.id,
+    path: '/uxContract',
+    before: project.uxContract ?? null,
     after: normalized
   }]);
 }

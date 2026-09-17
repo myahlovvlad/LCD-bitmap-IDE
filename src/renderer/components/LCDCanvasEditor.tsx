@@ -540,6 +540,7 @@ export function LCDCanvasEditor({
 
   const copyCCode = async (): Promise<void> => {
     if (!codegenWorkspace) {
+      console.warn('copyCCode: no project loaded, nothing to export');
       return;
     }
     const cCode = generateSelectedScreenCHeader(codegenWorkspace, canvasData.stateId, { language: authoringLanguage });
@@ -548,6 +549,7 @@ export function LCDCanvasEditor({
 
   const downloadSelectedHeader = (): void => {
     if (!codegenWorkspace) {
+      console.warn('downloadSelectedHeader: no project loaded, nothing to export');
       return;
     }
     downloadBlob(
@@ -559,6 +561,7 @@ export function LCDCanvasEditor({
 
   const downloadSelectedBinary = (): void => {
     if (!codegenWorkspace) {
+      console.warn('downloadSelectedBinary: no project loaded, nothing to export');
       return;
     }
     downloadBlob(
@@ -570,6 +573,7 @@ export function LCDCanvasEditor({
 
   const downloadAllHeaders = (): void => {
     if (!project || !codegenWorkspace) {
+      console.warn('downloadAllHeaders: no project loaded, nothing to export');
       return;
     }
     downloadBlob(
@@ -581,6 +585,7 @@ export function LCDCanvasEditor({
 
   const downloadAllBinary = (): void => {
     if (!project || !codegenWorkspace) {
+      console.warn('downloadAllBinary: no project loaded, nothing to export');
       return;
     }
     downloadBlob(
@@ -767,6 +772,7 @@ export function LCDCanvasEditor({
           labels={labels}
           importStatus={importStatus}
           screenCount={allCanvases.length}
+          codegenReady={codegenWorkspace !== null}
           onCopyC={() => void copyCCode()}
           onDownloadHeader={downloadSelectedHeader}
           onDownloadBinary={downloadSelectedBinary}
@@ -912,6 +918,7 @@ function ExportImportPanel({
   labels,
   importStatus,
   screenCount,
+  codegenReady,
   onCopyC,
   onDownloadHeader,
   onDownloadBinary,
@@ -930,6 +937,7 @@ function ExportImportPanel({
   labels: UiText;
   importStatus: string;
   screenCount: number;
+  codegenReady: boolean;
   onCopyC: () => void;
   onDownloadHeader: () => void;
   onDownloadBinary: () => void;
@@ -949,12 +957,12 @@ function ExportImportPanel({
     <section className="editor-tools-card export-import-panel">
       <h3>{labels.screenExport}</h3>
       <div className="compact-action-grid">
-        <button type="button" onClick={onCopyC}>{labels.copyC}</button>
-        <button type="button" onClick={onDownloadHeader}>{labels.downloadHeader}</button>
-        <button type="button" onClick={onDownloadBinary}>{labels.downloadBin}</button>
+        <button type="button" disabled={!codegenReady} title={codegenReady ? undefined : labels.noProjectLoaded} onClick={onCopyC}>{labels.copyC}</button>
+        <button type="button" disabled={!codegenReady} title={codegenReady ? undefined : labels.noProjectLoaded} onClick={onDownloadHeader}>{labels.downloadHeader}</button>
+        <button type="button" disabled={!codegenReady} title={codegenReady ? undefined : labels.noProjectLoaded} onClick={onDownloadBinary}>{labels.downloadBin}</button>
         <button type="button" onClick={onImportHeader}>{labels.importHeader}</button>
-        <button type="button" onClick={onDownloadAllHeaders}>{labels.downloadAllHeaders}</button>
-        <button type="button" onClick={onDownloadAllBinary}>{labels.downloadAllBin}</button>
+        <button type="button" disabled={!codegenReady} title={codegenReady ? undefined : labels.noProjectLoaded} onClick={onDownloadAllHeaders}>{labels.downloadAllHeaders}</button>
+        <button type="button" disabled={!codegenReady} title={codegenReady ? undefined : labels.noProjectLoaded} onClick={onDownloadAllBinary}>{labels.downloadAllBin}</button>
       </div>
       <h3>{labels.embeddedExportFormat}</h3>
       <select
@@ -1860,7 +1868,10 @@ function downloadBlob(filename: string, data: string | Uint8Array, type: string)
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
 

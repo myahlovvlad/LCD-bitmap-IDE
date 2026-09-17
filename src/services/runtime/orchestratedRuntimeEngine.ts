@@ -151,6 +151,29 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
     return this.procedureStatus === 'running';
   }
 
+  /**
+   * Async pressButton — mirrors pressButton()'s exact routing (active-button
+   * identity for guard evaluation, input-session commit, navigation-only
+   * fast path) but awaits the full procedure lifecycle via sendEventAsync()
+   * instead of firing it and forgetting. Used where a caller needs the
+   * resulting state to be settled before continuing (e.g. scripted scenario
+   * runs), the same way sendEventAsync() is preferred over sendEvent() there.
+   */
+  async pressButtonAsync(buttonId: string): Promise<void> {
+    const element = this.project.controlPanel.elements[buttonId];
+    if (!element || element.type !== 'button') { this.inner.pressButton(buttonId); return; }
+    if (!this.inner.isButtonAllowed(element)) { this.inner.pressButton(buttonId); return; }
+    if (!element.fsmEventId) { this.inner.pressButton(buttonId); return; }
+    if (this.inner.isInputButtonEvent(element.fsmEventId)) { this.inner.pressButton(buttonId); return; }
+    const { transition, procedure } = this.resolveEventTarget(element.fsmEventId);
+    const automatic = transition?.trigger.mechanism === 'timer' || transition?.trigger.mechanism === 'fact';
+    if (!procedure || this.bypass || automatic) { this.inner.pressButton(buttonId); return; }
+    if (element.fsmEventId === 'UI.OK' && this.inner.inputSession) this.inner.commitInput();
+    this.activeButtonId = buttonId;
+    await this.sendEventAsync(element.fsmEventId);
+    this.activeButtonId = null;
+  }
+
   private refreshFormulaTags(): void {
     if (!this.project.dataSources?.['ecros.formulas']) {
       return;

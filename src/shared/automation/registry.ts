@@ -34,7 +34,15 @@ const alarm = z.object({
 
 const embeddedFormat = z.enum([
   'c-vertical-lsb', 'c-horizontal-msb', 'c-horizontal-lsb', 'xbm',
-  'arduino-progmem', 'rust-embedded', 'esp-idf', 'binary'
+  'arduino-progmem', 'rust-embedded', 'esp-idf', 'stm8', 'binary'
+]);
+
+const fsmScriptFormat = z.enum(['mermaid', 'python']);
+const tagValue = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+const fsmScenarioStep = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('event'), eventId: identifier }).strict(),
+  z.object({ type: z.literal('button'), buttonId: identifier }).strict(),
+  z.object({ type: z.literal('tag'), tagId: identifier, value: tagValue }).strict()
 ]);
 
 const displayProfile = z.object({
@@ -147,6 +155,24 @@ const definitions: InternalDefinition[] = [
   read('render_screen', 'Renders a screen as PNG and returns layout bounds, issues, and an issue-overlay PNG.', z.object({ screenId: identifier.optional() }).strict()),
   read('export_screen_html', 'Exports one LCD screen as deterministic, declarative HTML for Codex review and round-trip import.', z.object({ screenId: identifier }).strict()),
   read('analyze_128x64_screens', 'Audits selected or all screens against the ECROS 128×64 pixel layout contract.', z.object({ screenId: identifier.optional() }).strict()),
+  read('export_fsm_script', 'Exports the current FSM graph (states, transitions, events, layout) as deterministic Mermaid or Python DSL text for Codex review and round-trip import.', z.object({ format: fsmScriptFormat }).strict()),
+  read('run_fsm_scenario', 'Runs a scripted sequence of events, button presses, and tag writes against a headless FSM simulation (independent of any open runtime UI) and returns a deterministic per-step trace, to verify the FSM graph behaves as intended.', z.object({
+    steps: z.array(fsmScenarioStep).min(1).max(200),
+    initialStateId: identifier.optional(),
+    bypassProcedures: z.boolean().optional()
+  }).strict()),
+  read('get_project_ux_contract', 'Returns the project UX semantic contract (roles, intents, policies, goals, terminology, scenarios) and a coverage summary.'),
+  read('list_project_ux_scenarios', 'Returns the scripted UX scenarios declared in the UX contract.'),
+  read('analyze_project_ux', 'Runs the deterministic UX validator: screen/state/transition/control role and intent checks, navigation and recovery-path analysis, terminology consistency, safety/confirmation policy checks, and optionally scenario execution and visual layout checks. Returns a traceable, deterministically ordered finding list — never blocking on its own.', z.object({
+    locale: z.enum(['en', 'ru', 'zh']).optional(),
+    includeScenarioExecution: z.boolean().optional(),
+    scenarioIds: z.array(identifier).optional(),
+    includeVisualChecks: z.boolean().optional(),
+    includeHeuristicImportedFindings: z.boolean().optional()
+  }).strict()),
+  read('run_project_ux_scenario', 'Runs one named UX scenario through the existing headless FSM simulation and returns its trace plus a pass/fail UX verdict, without mutating the project.', z.object({ scenarioId: identifier }).strict()),
+  read('export_project_ux_review_packet', 'Builds a structured, self-contained packet (project purpose, UX contract, screen HTML, Mermaid FSM, deterministic UX report, scenario traces, reviewer instructions and a strict JSON Schema) for an external LLM to perform a non-blocking heuristic UX review.', z.object({ screenIds: z.array(identifier).optional() }).strict()),
+  read('import_project_ux_review', 'Validates a structured external LLM UX-review response against a strict schema and returns it as non-blocking heuristic findings (source: heuristic_llm). Never mutates the project; malformed input is rejected structurally.', z.object({ response: z.unknown() }).strict()),
   read('preview_export', 'Renders, encodes, decodes and compares a screen without writing files.', z.object({ screenId: identifier.optional() }).strict()),
   read('decode_artifact', 'Decodes base64 display bytes with the active or supplied DisplayProfile.', z.object({ content: z.string().min(1), profile: displayProfile.optional() }).strict()),
   read('compare_framebuffers', 'Compares two base64 RGBA canonical framebuffers.', z.object({ width: z.number().int().positive().max(4096), height: z.number().int().positive().max(4096), expectedRgbaBase64: z.string().min(1), decodedRgbaBase64: z.string().min(1) }).strict()),
@@ -179,6 +205,10 @@ const definitions: InternalDefinition[] = [
   write('update_control_panel_element', 'Updates one control-panel element.', z.object({ elementId: identifier, updates: partialObject }).strict(), ['controlPanel.element.update']),
   write('preview_screen_html_import', 'Validates LCD HTML and returns a non-mutating Screen DSL import preview.', z.object({ html: z.string().min(1).max(512 * 1024), importMode: z.enum(['create', 'update', 'clone']), targetScreenId: identifier.optional() }).strict(), [], { idempotent: true }),
   write('apply_screen_html_import', 'Applies a validated LCD HTML import through one undoable Screen DSL transaction.', z.object({ html: z.string().min(1).max(512 * 1024), importMode: z.enum(['create', 'update', 'clone']), targetScreenId: identifier.optional(), confirmDestructive: z.boolean().optional() }).strict(), [], { idempotent: false }),
+  write('preview_fsm_script_import', 'Parses Mermaid or Python FSM script text and returns a non-mutating semantic-diff preview against the current FSM graph.', z.object({ source: z.string().min(1).max(512 * 1024), format: fsmScriptFormat }).strict(), [], { idempotent: true }),
+  write('apply_fsm_script_import', 'Applies a validated Mermaid or Python FSM script import through one undoable transaction.', z.object({ source: z.string().min(1).max(512 * 1024), format: fsmScriptFormat }).strict(), [], { idempotent: false }),
+  write('preview_project_ux_contract_update', 'Normalizes a UX contract patch against current project ids and returns a non-mutating preview with diagnostics.', z.object({ uxContract: partialObject }).strict(), [], { idempotent: true }),
+  write('apply_project_ux_contract_update', 'Applies a previously previewed (or directly validated) UX contract update through one undoable transaction.', z.object({ uxContract: partialObject }).strict(), ['ux.contract.update'], { idempotent: false }),
 
   write('upsert_tag', 'Creates or updates an HMI tag.', z.object({ tag }).strict(), ['tag.upsert']),
   write('delete_tag', 'Deletes an HMI tag.', z.object({ tagId: identifier }).strict(), ['tag.delete'], { destructive: true }),

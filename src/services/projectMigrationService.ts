@@ -3,6 +3,7 @@ import { normalizeDisplayProfile } from '../domain/displayProfile';
 import { DEFAULT_DISPLAY_CONFIG } from '../domain/display';
 import { normalizeAnimationCatalog } from '../domain/animation';
 import { normalizeHardwareNotificationConfig } from '../domain/hardwareNotification';
+import { normalizeUxContract, buildUxContractIdRefs } from '../domain/uxContract';
 import { readProjectPayload } from './projectInterop';
 import type {
   CanvasData,
@@ -274,6 +275,8 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
     }
   ]));
   const layerCatalog = normalizeLayerCatalog(states, project.fsm.layers, project.fsm.layerOrder, project.fsm.visibilityPresets);
+  const controlPanel = project.controlPanel ?? createDefaultControlPanel(project.display.width, project.display.height, Object.values(project.fsm.events));
+  const uxContractRefs = buildUxContractIdRefs({ screens, fsm: { states, transitions }, controlPanel });
   const normalized: LcdBitmapProject = {
     ...project,
     meta: { ...project.meta, schemaVersion: PROJECT_SCHEMA_VERSION },
@@ -290,7 +293,7 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
       eventOrder: project.fsm.eventOrder.filter((id) => Boolean(project.fsm.events[id])),
       ...layerCatalog
     },
-    controlPanel: project.controlPanel ?? createDefaultControlPanel(project.display.width, project.display.height, Object.values(project.fsm.events)),
+    controlPanel,
     backendProcesses: project.backendProcesses ?? {},
     bindings: project.bindings ?? { statesByScreenId: {}, buttonsByEventId: {}, transitionsByEventId: {} },
     validation: project.validation ?? { issues: [], validatedAt: null },
@@ -302,7 +305,8 @@ function normalizeV5Project(project: LcdBitmapProject): LcdBitmapProject {
     cliCatalog: project.cliCatalog ?? {},
     alarms: project.alarms ?? {},
     trends: project.trends ?? {},
-    hardwareNotifications: normalizeHardwareNotificationConfig(project.hardwareNotifications, screens)
+    hardwareNotifications: normalizeHardwareNotificationConfig(project.hardwareNotifications, screens),
+    uxContract: normalizeUxContract(project.uxContract, uxContractRefs)
   };
   normalized.bindings = rebuildProjectBindings(normalized);
   normalized.validation = {

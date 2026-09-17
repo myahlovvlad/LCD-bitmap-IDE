@@ -35,6 +35,13 @@ import { ValidationPanel } from '../validation/ValidationPanel';
 import { TutorialOverlay } from '../tutorial/TutorialOverlay';
 import { registerRuntimeAutomationHandler } from '../../renderer/automation/runtimeAutomation';
 import { resolveRuntimeTimerDelay, type RuntimeTimerMode } from './runtimeTimer';
+import {
+  INITIAL_RUNTIME_ANIMATION_CLOCK,
+  advanceRuntimeAnimationClock,
+  runtimeAnimationElapsedMs,
+  screenHasAnimatedBitmap,
+  type RuntimeAnimationClock
+} from './runtimeAnimationClock';
 import { resolveRuntimeButtonAvailability, type RuntimeButtonAvailabilityCode } from '../../services/runtimeEngine';
 import { hardwareNotificationKey, type HardwareNotification } from '../../services/runtimeHardwareNotifications';
 import type { HardwareEquipmentKind } from '../../domain/hardwareNotification';
@@ -81,6 +88,9 @@ export function RuntimeWorkspace(): React.ReactElement {
   const engineRef = useRef<OrchestratedRuntimeEngine | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
   const notifiedKeyRef = useRef<string | null>(null);
+  const animationClockRef = useRef<RuntimeAnimationClock>(INITIAL_RUNTIME_ANIMATION_CLOCK);
+  const animationRafRef = useRef<number | null>(null);
+  const [animationElapsedMs, setAnimationElapsedMs] = useState(0);
 
   const fontRenderer = useMemo(() => project ? new FontRenderer(fontGlyphs) : null, [project, fontGlyphs]);
 
@@ -169,6 +179,36 @@ export function RuntimeWorkspace(): React.ReactElement {
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [revision]);
+
+  // Advance bitmap animations while the runtime shows a screen that has one
+  // bound (LCDCanvas already knows how to render an animated frame given
+  // elapsedMs + the project's animation catalog — see bytesForBitmap() in
+  // renderer/utils/render.ts — it just never received a moving clock here).
+  // Re-evaluated on every `revision` bump (the same signal every other FSM
+  // transition/action already uses in this component) rather than on every
+  // animation frame, so screen lookups + formula/tag binding resolution in
+  // getCurrentScreen() stay at the app's normal update rate; only the rAF
+  // loop itself — a plain elapsed-time tick — runs at frame rate, and only
+  // while the current screen actually has something to animate.
+  useEffect(() => {
+    if (!project) return;
+    const activeScreen = engineRef.current?.getCurrentScreen() ?? null;
+    animationClockRef.current = advanceRuntimeAnimationClock(animationClockRef.current, activeScreen?.id ?? null, performance.now());
+    if (!screenHasAnimatedBitmap(activeScreen, project.animations)) {
+      return;
+    }
+    const tick = (): void => {
+      setAnimationElapsedMs(runtimeAnimationElapsedMs(animationClockRef.current, performance.now()));
+      animationRafRef.current = requestAnimationFrame(tick);
+    };
+    animationRafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (animationRafRef.current !== null) {
+        cancelAnimationFrame(animationRafRef.current);
+        animationRafRef.current = null;
+      }
+    };
+  }, [project, revision]);
 
   if (!project) {
     return <section className="workspace-empty">{labels.noProjectLoaded}</section>;
@@ -364,6 +404,8 @@ export function RuntimeWorkspace(): React.ReactElement {
               }}
               language={project.authoringLanguage ?? 'en'}
               fontRenderer={fontRenderer}
+              animationCatalog={project.animations}
+              elapsedMs={animationElapsedMs}
             />
           ) : (
             <div className="runtime-no-screen">
@@ -387,6 +429,8 @@ export function RuntimeWorkspace(): React.ReactElement {
                     }}
                     language={project.authoringLanguage ?? 'en'}
                     fontRenderer={fontRenderer}
+                    animationCatalog={project.animations}
+                    elapsedMs={animationElapsedMs}
                   />
                 </div>
               ) : null}

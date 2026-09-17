@@ -18,6 +18,7 @@ import type { HmiTag, DataSource } from '../../domain/tag';
 import type { BackendProcedure, CliCommandDefinition } from '../../domain/procedure';
 import type { AlarmDefinition } from '../../domain/alarm';
 import type { AnimationFrame, AnimationResource } from '../../domain/animation';
+import { analyzeProjectUx, type ProjectUxAnalysisOptions, type ProjectUxAnalysisReport } from '../../services/ux/uxValidator';
 import {
   rebuildProjectBindings,
   type ControlPanelElement,
@@ -83,6 +84,8 @@ interface ProjectStoreState {
   selectTransition: (transitionId: string | null) => void;
   selectControlElements: (elementIds: string[]) => void;
   validate: () => ValidationIssue[];
+  uxAnalysis: { report: ProjectUxAnalysisReport; analyzedAt: string } | null;
+  runUxAnalysis: (options?: ProjectUxAnalysisOptions) => Promise<void>;
   updateProjectMetadata: (updates: Partial<Pick<LcdBitmapProject['meta'], 'name' | 'version' | 'author' | 'firmwareVersion' | 'modelId'>>) => void;
   updateDisplayConfig: (display: DisplayConfig) => void;
   addFsmState: () => void;
@@ -128,6 +131,7 @@ interface ProjectStoreState {
   addBitmapLayer: (screenId: string, name: string, bytes: number[]) => void;
   updateCanvasObjects: (screenId: string, objects: CanvasObject[], options?: { history?: boolean }) => void;
   deleteSelectedCanvasObjects: (screenId: string) => void;
+  deleteCanvasObjects: (screenId: string, objectIds: string[]) => void;
   createAnimation: (animation: AnimationResource) => void;
   updateAnimation: (animationId: string, updates: Partial<Pick<AnimationResource, 'name' | 'width' | 'height' | 'loop'>>) => void;
   deleteAnimation: (animationId: string) => void;
@@ -175,6 +179,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   canUndo: false,
   canRedo: false,
   pendingHistoryCapture: false,
+  uxAnalysis: null,
 
   setLanguage: (language) => {
     persistLanguage(language);
@@ -212,7 +217,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       redoStack: [],
       canUndo: false,
       canRedo: false,
-      pendingHistoryCapture: false
+      pendingHistoryCapture: false,
+      uxAnalysis: null
     });
   },
   selectState: (selectedStateId) => set((state) => (
@@ -242,6 +248,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       session: nextSession
     });
     return issues;
+  },
+  runUxAnalysis: async (options) => {
+    const project = get().project;
+    if (!project) return;
+    const report = await analyzeProjectUx(project, options);
+    set({ uxAnalysis: { report, analyzedAt: new Date().toISOString() } });
   },
   updateProjectMetadata: (updates) => commitProjectCommand(set, get, (state) => ({
     type: 'project.updateMetadata',
@@ -605,6 +617,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
   deleteSelectedCanvasObjects: (screenId) => {
     const objectIds = get().project?.screens[screenId]?.selectedObjectIds ?? [];
+    commitProjectCommand(set, get, (state) => ({
+      type: 'canvas.objects.delete',
+      meta: createCommandMeta(state, 'canvas.objects.delete'),
+      payload: { screenId, objectIds }
+    }));
+  },
+  deleteCanvasObjects: (screenId, objectIds) => {
     commitProjectCommand(set, get, (state) => ({
       type: 'canvas.objects.delete',
       meta: createCommandMeta(state, 'canvas.objects.delete'),

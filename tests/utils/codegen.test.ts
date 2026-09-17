@@ -146,6 +146,9 @@ describe("codegen utils", () => {
     expect(results.get("esp-idf")).toContain(
       "RODATA_ATTR uint8_t status_screen[8]",
     );
+    expect(results.get("stm8")).toContain("const uint8_t status_screen[8]");
+    expect(results.get("stm8")).not.toContain("RODATA_ATTR");
+    expect(results.get("stm8")).not.toContain("PROGMEM");
   });
 
   it("packs Rust ImageRaw pixels row-major and MSB-first", () => {

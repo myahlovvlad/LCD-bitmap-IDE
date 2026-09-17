@@ -1,6 +1,6 @@
 {
   "name": "lcd-bitmap-ide",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "LCD-bitmap IDE offline workbench for LCD screens, bitmap glyphs, FSM flows and firmware C exports.",
   "license": "MIT",
   "author": "myahlovvlad <myahlov@gmail.com>",

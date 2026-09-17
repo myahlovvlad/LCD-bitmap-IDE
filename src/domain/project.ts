@@ -8,6 +8,7 @@ import type { AlarmDefinition } from './alarm';
 import type { TrendDefinition } from './trend';
 import type { AnimationCatalog } from './animation';
 import type { HardwareNotificationConfig } from './hardwareNotification';
+import type { ProjectUxContract } from './uxContract';
 
 export const PROJECT_SCHEMA_VERSION = 7 as const;
 export const PROJECT_SCHEMA_VERSION_PREVIOUS = 6 as const;
@@ -26,7 +27,8 @@ export type WorkspaceMode =
   | 'screen-dsl'
   | 'settings'
   | 'text-registry'
-  | 'handoff';
+  | 'handoff'
+  | 'ux-validation';
 
 export type WorkspaceLocation =
   | { mode: 'fsm'; stateId?: string; transitionId?: string }
@@ -41,7 +43,8 @@ export type WorkspaceLocation =
   | { mode: 'screen-dsl'; screenId?: string }
   | { mode: 'settings' }
   | { mode: 'text-registry' }
-  | { mode: 'handoff'; screenId?: string };
+  | { mode: 'handoff'; screenId?: string }
+  | { mode: 'ux-validation'; findingId?: string };
 
 export interface ProjectMeta {
   id: string;
@@ -325,6 +328,9 @@ export interface LcdBitmapProject {
   trends?: Record<string, TrendDefinition>;
   /** Runtime-only transient overlays for USB/printer/PC presence; never emits FSM transitions. */
   hardwareNotifications?: HardwareNotificationConfig;
+  /** Operator-facing UX intent/policy metadata. Additive-only: never changes executable
+   *  FSM/screen/control-panel structure. See docs/UX_SEMANTIC_VALIDATION.md. */
+  uxContract?: ProjectUxContract;
 }
 
 export interface ProjectFileV5 {

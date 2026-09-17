@@ -203,6 +203,7 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
         { id: 'arduino-progmem', label: 'Arduino PROGMEM header', ext: '.h' },
         { id: 'rust-embedded', label: 'Rust embedded-graphics', ext: '.rs' },
         { id: 'esp-idf', label: 'ESP-IDF RODATA_ATTR header', ext: '.h' },
+        { id: 'stm8', label: 'STM8 C header (Cosmic / IAR-STM8 / SDCC)', ext: '.h' },
         { id: 'binary', label: 'Raw binary', ext: '.bin' }
       ]
     });
