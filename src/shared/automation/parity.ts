@@ -19,6 +19,7 @@ export const UI_AUTOMATION_PARITY: readonly UiAutomationParityEntry[] = [
   mapped('project.updateDisplayConfig', 'update_display_profile'),
   mapped('project.setAuthoringLanguage', 'set_authoring_language'),
   mapped('project.setHardwareNotifications', 'update_hardware_notifications'),
+  mapped('ux.contract.update', 'apply_project_ux_contract_update'),
   mapped('fsm.state.add', 'create_fsm_state'),
   mapped('fsm.state.update', 'update_fsm_state'),
   uiOnly('fsm.states.update', 'Bulk layer membership editing requires the planned semantic batch schema.'),

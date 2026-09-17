@@ -13,6 +13,7 @@ Use this page instead of scanning the `docs/` directory alphabetically.
 ## Contributors
 
 - [Conceptual model](CONCEPTUAL_MODEL.md)
+- [UX semantic validation](UX_SEMANTIC_VALIDATION.md)
 - [Architecture](ARCHITECTURE.md)
 - [FSM event scope audit](FSM_EVENT_SCOPE_AUDIT.md)
 - [Data model](DATA_MODEL.md)
@@ -41,8 +42,8 @@ Start from the conceptual model and architecture before reading them.
 ## Document Status
 
 - **Living documents:** this index, Start Here, conceptual model, architecture,
-  data model, operation manual, testing, security, traceability and debt register.
-  They must describe the current repository.
+  data model, operation manual, testing, security, traceability, debt register
+  and UX semantic validation. They must describe the current repository.
 - **Decision and contract documents:** ADRs and subsystem specifications. They
   may preserve the terminology and constraints from the phase in which a
   decision was made.

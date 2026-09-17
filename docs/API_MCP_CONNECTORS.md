@@ -141,6 +141,69 @@ Write tools:
 - `fire_runtime_event`
 - `set_runtime_tag`
 - `update_hardware_notifications`
+- `apply_project_ux_contract_update`
+
+## UX Validation
+
+A deterministic UX rule engine sits alongside the generic project validator. It reasons about
+operator experience — recovery paths, terminology consistency, destructive-action confirmation,
+whether a declared user goal actually has a working path through the FSM — using an explicit,
+typed **UX semantic contract** (`project.uxContract`) rather than an LLM's opinion. See
+[UX semantic validation](UX_SEMANTIC_VALIDATION.md) for the full rule catalogue and domain model;
+this section is the tool reference and example workflow.
+
+Read tools:
+
+- `get_project_ux_contract` — current contract plus a coverage summary (screens with a role,
+  states with a purpose, error states with a recovery path, critical goals with a scenario, …).
+- `list_project_ux_scenarios` — the scripted UX scenarios declared in the contract.
+- `analyze_project_ux` — runs every deterministic rule and returns a traceable
+  `ProjectUxAnalysisReport` (`{locale?, includeScenarioExecution?, scenarioIds?,
+  includeVisualChecks?, includeHeuristicImportedFindings?}`).
+- `run_project_ux_scenario` — runs one named scenario through the existing headless FSM
+  simulation (`run_fsm_scenario` under the hood) and returns a pass/fail UX verdict.
+- `export_project_ux_review_packet` — a self-contained bundle (contract, screen HTML, Mermaid
+  FSM, the deterministic report, reviewer instructions and a strict JSON Schema) for an
+  *external* LLM to perform an optional, non-blocking heuristic review.
+
+Write tools:
+
+- `preview_project_ux_contract_update` / `apply_project_ux_contract_update` — the standard
+  preview/apply pair; `apply_*` requires `expectedRevision` and is undoable like any other
+  command.
+- `import_project_ux_review` — validates a structured LLM review response against a strict
+  schema and returns it as **non-blocking heuristic findings** (`source: "heuristic_llm"`,
+  severity limited to `suggestion | info | warning | needs_human_review` — `error` is rejected
+  at the schema level, so a heuristic finding can never fail a project). Nothing is written to
+  the project; pass `includeHeuristicImportedFindings: true` to `analyze_project_ux` to see them
+  folded into the next report.
+
+Example end-to-end workflow:
+
+```bash
+# 1. Inspect current UX contract and coverage.
+curl http://127.0.0.1:8766/api/v1/commands/get_project_ux_contract -X POST -d '{}'
+
+# 2. Declare a role/intent/policy patch, preview it, then apply.
+curl -X POST http://127.0.0.1:8766/api/v1/commands/preview_project_ux_contract_update \
+  -H "Content-Type: application/json" \
+  -d '{"expectedRevision":0,"input":{"uxContract":{"screens":{"main-menu":{"role":"navigation"}}}}}'
+
+curl -X POST http://127.0.0.1:8766/api/v1/commands/apply_project_ux_contract_update \
+  -H "Content-Type: application/json" \
+  -d '{"expectedRevision":0,"input":{"uxContract":{"screens":{"main-menu":{"role":"navigation"}}}}}'
+
+# 3. Run the deterministic analysis, including scripted scenarios.
+curl -X POST http://127.0.0.1:8766/api/v1/commands/analyze_project_ux \
+  -H "Content-Type: application/json" \
+  -d '{"input":{"includeScenarioExecution":true,"includeVisualChecks":true}}'
+
+# 4. Optional: export a review packet, send it to any LLM, import the structured response.
+curl -X POST http://127.0.0.1:8766/api/v1/commands/export_project_ux_review_packet -d '{}'
+curl -X POST http://127.0.0.1:8766/api/v1/commands/import_project_ux_review \
+  -H "Content-Type: application/json" \
+  -d '{"input":{"response":{"findings":[]}}}'
+```
 
 ## Agent Workflows
 

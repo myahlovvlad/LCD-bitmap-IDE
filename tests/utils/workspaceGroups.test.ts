@@ -14,7 +14,8 @@ const EXPECTED_GROUPED_MODES: WorkspaceMode[] = [
   'runtime',
   'screen-dsl',
   'text-registry',
-  'handoff'
+  'handoff',
+  'ux-validation'
 ];
 
 describe('workspace navigation groups', () => {

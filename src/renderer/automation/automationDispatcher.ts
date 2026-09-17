@@ -19,18 +19,25 @@ import type { CommandMetadata, ProjectChangeSet, ProjectCommand, ProjectCommandR
 import {
   applyFsmScriptPreview,
   applyScreenDslPreview,
+  applyUxContractUpdate,
   createScreenHtmlPreview,
   exportFsmScript,
   exportSessionScreenInterchangeScreen,
   previewFsmScriptImport,
+  previewUxContractUpdate,
   undoProjectSession
 } from '../../application';
 import type { FsmScriptFormat } from '../../fsm-interchange';
 import { runFsmScenario, type FsmScenarioStep } from '../../services/runtime/fsmScenarioRunner';
+import { analyzeProjectUx, computeUxCoverage } from '../../services/ux/uxValidator';
+import { buildProjectUxGraph } from '../../services/ux/uxGraphBuilder';
+import { runUxScenario } from '../../services/ux/uxScenarioRunner';
+import { buildUxReviewPacket, importUxReview } from '../../services/ux/uxReviewPacket';
+import type { UxValidationFinding } from '../../services/ux/uxTypes';
 import type { AlarmDefinition, ControlPanelElement, FsmEvent, FsmState, FsmTransition } from '../../domain/project';
 import type { HmiTag } from '../../domain/tag';
 import type { BackendProcedure } from '../../domain/procedure';
-import { FontRenderer, normalizeDisplayProfile, type DisplayProfile, type HardwareNotificationConfig } from '../../domain';
+import { FontRenderer, normalizeDisplayProfile, type DisplayProfile, type HardwareNotificationConfig, type LanguageCode } from '../../domain';
 import {
   canonicalRasterToRgbaBytes,
   compareFramebuffers,
@@ -61,6 +68,9 @@ const MAX_AUDIT_EVENTS = 500;
 const MAX_IDEMPOTENCY_ENTRIES = 256;
 const auditLog: AutomationAuditEvent[] = [];
 const idempotencyCache = new Map<string, AutomationOutcome>();
+/** Last imported heuristic (LLM) UX review findings, keyed by project id. Session-lifetime only —
+ *  never written to the project or disk, so it can never become an authoritative/blocking source. */
+const heuristicUxFindingsByProject = new Map<string, UxValidationFinding[]>();
 
 export async function executeAutomationRequest(requestValue: unknown): Promise<AutomationOutcome> {
   const envelope = parseAutomationRequest(requestValue);
@@ -335,6 +345,73 @@ async function dispatchValidatedRequest(
       }
       replaceProjectStoreSession(applied.session);
       return { status: 'success', result: applied, output: { applied: true, operationCount: preview.diff?.operations.length ?? 0 }, diagnostics: [] };
+    }
+    case 'get_project_ux_contract': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const graph = buildProjectUxGraph(project);
+      return successful({ uxContract: graph.contract, coverage: computeUxCoverage(graph) });
+    }
+    case 'list_project_ux_scenarios': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      return successful({ scenarios: project.uxContract?.scenarios ?? [] });
+    }
+    case 'analyze_project_ux': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const heuristicFindings = input.includeHeuristicImportedFindings
+        ? heuristicUxFindingsByProject.get(project.meta.id)
+        : undefined;
+      const report = await analyzeProjectUx(project, {
+        locale: input.locale as LanguageCode | undefined,
+        includeScenarioExecution: input.includeScenarioExecution as boolean | undefined,
+        scenarioIds: input.scenarioIds as string[] | undefined,
+        includeVisualChecks: input.includeVisualChecks as boolean | undefined,
+        heuristicFindings
+      });
+      return successful({ ...report });
+    }
+    case 'run_project_ux_scenario': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const scenarioId = input.scenarioId as string;
+      const scenario = project.uxContract?.scenarios.find((candidate) => candidate.id === scenarioId);
+      if (!scenario) return failed('automation.ux-scenario-not-found', `UX scenario not found: ${scenarioId}`);
+      const result = await runUxScenario(project, scenario);
+      return successful({ ...result });
+    }
+    case 'export_project_ux_review_packet': {
+      if (!project || !store.session) return blocked('automation.no-project', 'No project loaded');
+      const report = await analyzeProjectUx(project, { includeScenarioExecution: true, includeVisualChecks: true });
+      const packet = buildUxReviewPacket(store.session, report, { screenIds: input.screenIds as string[] | undefined });
+      return successful({ ...packet });
+    }
+    case 'import_project_ux_review': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const result = importUxReview(input.response);
+      if (result.diagnostics.length > 0) {
+        return { status: 'failure', diagnostics: result.diagnostics };
+      }
+      heuristicUxFindingsByProject.set(project.meta.id, result.findings);
+      return successful({ findings: result.findings, count: result.findings.length });
+    }
+    case 'preview_project_ux_contract_update': {
+      if (!store.session) return blocked('automation.no-project', 'No project loaded');
+      const preview = previewUxContractUpdate(store.session, input.uxContract);
+      return successful({ ok: preview.ok, baseRevision: preview.baseRevision, candidate: preview.candidate, diagnostics: preview.diagnostics });
+    }
+    case 'apply_project_ux_contract_update': {
+      if (!store.session) return blocked('automation.no-project', 'No project loaded');
+      const preview = previewUxContractUpdate(store.session, input.uxContract);
+      if (!preview.ok) {
+        return { status: 'failure', diagnostics: preview.diagnostics.map((item) => ({ code: item.code, message: item.message })) };
+      }
+      const applied = applyUxContractUpdate(store.session, preview);
+      if (applied.status === 'rejected') {
+        return { status: 'failure', diagnostics: applied.diagnostics.map((item) => ({ code: item.code, message: item.message })) };
+      }
+      if (applied.status === 'noop') {
+        return { status: 'noop', result: applied, output: { applied: false }, diagnostics: [] };
+      }
+      replaceProjectStoreSession(applied.session);
+      return { status: 'success', result: applied, output: { applied: true }, diagnostics: [] };
     }
     case 'preview_export': {
       if (!project) return blocked('automation.no-project', 'No project loaded');
@@ -664,4 +741,5 @@ function rememberIdempotentOutcome(key: string, outcome: AutomationOutcome): voi
 export function resetAutomationDispatcherForTests(): void {
   auditLog.length = 0;
   idempotencyCache.clear();
+  heuristicUxFindingsByProject.clear();
 }

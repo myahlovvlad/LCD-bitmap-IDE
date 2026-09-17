@@ -14,4 +14,5 @@ export * from './screenDsl';
 export * from './screenHtml';
 export * from './screenInterchangeFacade';
 export * from './semanticChange';
+export * from './uxContract';
 export * from './workspace';

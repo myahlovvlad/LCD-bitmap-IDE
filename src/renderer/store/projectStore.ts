@@ -18,6 +18,7 @@ import type { HmiTag, DataSource } from '../../domain/tag';
 import type { BackendProcedure, CliCommandDefinition } from '../../domain/procedure';
 import type { AlarmDefinition } from '../../domain/alarm';
 import type { AnimationFrame, AnimationResource } from '../../domain/animation';
+import { analyzeProjectUx, type ProjectUxAnalysisOptions, type ProjectUxAnalysisReport } from '../../services/ux/uxValidator';
 import {
   rebuildProjectBindings,
   type ControlPanelElement,
@@ -83,6 +84,8 @@ interface ProjectStoreState {
   selectTransition: (transitionId: string | null) => void;
   selectControlElements: (elementIds: string[]) => void;
   validate: () => ValidationIssue[];
+  uxAnalysis: { report: ProjectUxAnalysisReport; analyzedAt: string } | null;
+  runUxAnalysis: (options?: ProjectUxAnalysisOptions) => Promise<void>;
   updateProjectMetadata: (updates: Partial<Pick<LcdBitmapProject['meta'], 'name' | 'version' | 'author' | 'firmwareVersion' | 'modelId'>>) => void;
   updateDisplayConfig: (display: DisplayConfig) => void;
   addFsmState: () => void;
@@ -176,6 +179,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   canUndo: false,
   canRedo: false,
   pendingHistoryCapture: false,
+  uxAnalysis: null,
 
   setLanguage: (language) => {
     persistLanguage(language);
@@ -213,7 +217,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       redoStack: [],
       canUndo: false,
       canRedo: false,
-      pendingHistoryCapture: false
+      pendingHistoryCapture: false,
+      uxAnalysis: null
     });
   },
   selectState: (selectedStateId) => set((state) => (
@@ -243,6 +248,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       session: nextSession
     });
     return issues;
+  },
+  runUxAnalysis: async (options) => {
+    const project = get().project;
+    if (!project) return;
+    const report = await analyzeProjectUx(project, options);
+    set({ uxAnalysis: { report, analyzedAt: new Date().toISOString() } });
   },
   updateProjectMetadata: (updates) => commitProjectCommand(set, get, (state) => ({
     type: 'project.updateMetadata',

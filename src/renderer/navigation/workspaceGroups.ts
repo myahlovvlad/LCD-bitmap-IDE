@@ -11,7 +11,7 @@ export const WORKSPACE_GROUPS: readonly WorkspaceGroup[] = [
   { id: 'interface', modes: ['lcd', 'control-panel', 'text-registry', 'screen-dsl'] },
   { id: 'logic', modes: ['fsm', 'alarms'] },
   { id: 'hardware', modes: ['tags', 'procedures'] },
-  { id: 'delivery', modes: ['hmi', 'preview', 'runtime', 'handoff'] }
+  { id: 'delivery', modes: ['hmi', 'preview', 'runtime', 'handoff', 'ux-validation'] }
 ];
 
 export function groupForWorkspace(mode: WorkspaceMode): WorkspaceGroupId {
