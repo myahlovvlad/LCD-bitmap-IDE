@@ -1,5 +1,7 @@
 # LCD-bitmap IDE
 
+[Читать на русском](README.ru.md)
+
 **LCD-bitmap IDE** is an offline desktop workbench for designing monochrome embedded HMI projects: LCD screens, finite-state-machine navigation, button bindings, runtime tags, procedures, alarms and firmware-ready display assets.
 
 The project is designed for embedded UI engineers, firmware developers, laboratory-instrument prototyping teams and technical writers who need one deterministic source file for a small display workflow. A portable `.lcdproj` file keeps the visual LCD model, FSM behavior, text registry, runtime metadata and export settings together.
@@ -34,12 +36,14 @@ Desktop builds are published from [GitHub Releases](https://github.com/myahlovvl
 
 | Platform | Stable artifacts |
 |---|---|
-| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.19-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.19-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.19-Portable-x64.exe) |
-| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.19-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.19-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.19-x86_64.AppImage) |
-| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.19-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.19-Tauri-macOS-x64.dmg) |
+| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-Portable-x64.exe) |
+| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-x86_64.AppImage) |
+| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-macOS-x64.dmg) |
 | Developers | Source checkout with `npm ci` and `npm run electron:dev` |
 
 If a direct asset link is not available yet, open the [latest Release page](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest) and download the matching file from the asset list.
+
+> Before installing an update, save your open project. The desktop app keeps your work in memory only until you save — replacing the running app discards anything unsaved.
 
 ## Quick Start From Source
 
