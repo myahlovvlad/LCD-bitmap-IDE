@@ -29,10 +29,13 @@ jobs:
         run: npx tsx scripts/generate-ecros-semantic-index.ts
       - name: Commit generated semantic integration
         run: |
-          if ! git diff --quiet; then
+          if ! git diff --quiet || [ -d ECROS-5400UV/semantic ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/shared/automation/registry.ts src/renderer/automation/automationDispatcher.ts ECROS-5400UV/semantic
-            git commit -m "chore: apply semantic automation and generated index [skip semantic-dev]"
-            git push
+            git add src/shared/automation/registry.ts src/renderer/automation/automationDispatcher.ts
+            git add -f ECROS-5400UV/semantic
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: apply semantic automation and generated index [skip semantic-dev]"
+              git push
+            fi
           fi
