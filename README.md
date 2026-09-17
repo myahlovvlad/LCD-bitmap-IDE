@@ -98,12 +98,13 @@ Manual index: [docs/user-manuals/index.html](docs/user-manuals/index.html)
 - **Raster import:** convert PNG/JPEG/BMP/SVG artwork to 1bpp (threshold + dithering) and continue editing the result pixel-by-pixel as a bitmap layer.
 - **1bpp animations:** author timed frame sequences, preview them on a deterministic clock, and bind one resource to a whole screen or to a single bitmap layer; export as `lcd_animation_t` frame tables with per-frame duration and a loop flag.
 - **FSM modeling:** draggable states, explicit global/state-local events, event-labeled transitions, validation and automatic graph layout. Transitions stay visible outside edit mode, with a shown/total counter and one-click filter reset.
+- **FSM scripting:** export/import the FSM graph as deterministic Mermaid or Python DSL text (round-trip via `export_fsm_script`/`preview_fsm_script_import`/`apply_fsm_script_import`), and run scripted event/button/tag scenarios headlessly with `run_fsm_scenario` to verify a graph behaves as intended without opening the runtime UI.
 - **Backend process documentation:** multiline engineering notes are stored with legacy backend processes and edited from the transition inspector.
 - **Control-panel binding:** connect physical button events to the screen workflow.
 - **Runtime preview:** step through state flows and validate operator paths before hardware handoff.
 - **Text registry:** maintain multilingual screen copy and CSV handoff.
 - **Screen DSL:** review and edit screen layouts as structured JSON/YAML.
-- **Embedded exports:** C headers, raw binary frame buffers, XBM, Arduino PROGMEM, Rust embedded-graphics and ESP-IDF-style assets.
+- **Embedded exports:** C headers, raw binary frame buffers, XBM, Arduino PROGMEM, Rust embedded-graphics, ESP-IDF-style and STM8 (Cosmic/IAR-STM8/SDCC) assets.
 - **Automation:** local REST API and MCP endpoint for Codex, Claude Code, OpenCode, LM Studio, Ollama wrappers and shell scripts.
 
 ## Public Demo

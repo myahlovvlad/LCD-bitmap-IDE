@@ -16,7 +16,17 @@ import {
   parseAutomationRequest
 } from '../../shared/automation';
 import type { CommandMetadata, ProjectChangeSet, ProjectCommand, ProjectCommandResult } from '../../application';
-import { applyScreenDslPreview, createScreenHtmlPreview, exportSessionScreenInterchangeScreen, undoProjectSession } from '../../application';
+import {
+  applyFsmScriptPreview,
+  applyScreenDslPreview,
+  createScreenHtmlPreview,
+  exportFsmScript,
+  exportSessionScreenInterchangeScreen,
+  previewFsmScriptImport,
+  undoProjectSession
+} from '../../application';
+import type { FsmScriptFormat } from '../../fsm-interchange';
+import { runFsmScenario, type FsmScenarioStep } from '../../services/runtime/fsmScenarioRunner';
 import type { AlarmDefinition, ControlPanelElement, FsmEvent, FsmState, FsmTransition } from '../../domain/project';
 import type { HmiTag } from '../../domain/tag';
 import type { BackendProcedure } from '../../domain/procedure';
@@ -268,6 +278,19 @@ async function dispatchValidatedRequest(
       const compliantScreenCount = screens.filter((screen) => screen.dimensionsMatch && !screen.issues.some((issue) => issue.severity === 'error')).length;
       return successful({ target: { width: 128, height: 64 }, screenCount: screens.length, compliantScreenCount, nonCompliantScreenCount: screens.length - compliantScreenCount, screens });
     }
+    case 'export_fsm_script': {
+      if (!project || !store.session) return blocked('automation.no-project', 'No project loaded');
+      const format = input.format as FsmScriptFormat;
+      return successful({ format, source: exportFsmScript(store.session, format) });
+    }
+    case 'run_fsm_scenario': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const scenario = await runFsmScenario(project, input.steps as FsmScenarioStep[], {
+        initialStateId: input.initialStateId as string | undefined,
+        bypassProcedures: input.bypassProcedures as boolean | undefined
+      });
+      return successful({ ...scenario });
+    }
     case 'preview_screen_html_import': {
       if (!store.session) return blocked('automation.no-project', 'No project loaded');
       const preview = createScreenHtmlPreview(store.session, { html: input.html as string, importMode: input.importMode as 'create' | 'update' | 'clone', expectedRevision: request.expectedRevision!, targetScreenId: input.targetScreenId as string | undefined, actor: request.actor });
@@ -282,6 +305,36 @@ async function dispatchValidatedRequest(
       if (!applied.applied || !applied.result) return { status: 'failure', diagnostics: applied.diagnostics.map((item) => ({ code: item.code, message: item.message, path: item.path })) };
       replaceProjectStoreSession(applied.result.session);
       return { status: 'success', result: applied.result, output: { applied: true, transaction: applied.transaction }, diagnostics: [] };
+    }
+    case 'preview_fsm_script_import': {
+      if (!store.session) return blocked('automation.no-project', 'No project loaded');
+      const format = input.format as FsmScriptFormat;
+      const preview = previewFsmScriptImport(store.session, input.source as string, format);
+      return successful({
+        ok: preview.ok,
+        format: preview.format,
+        baseRevision: preview.baseRevision,
+        diagnostics: preview.diagnostics,
+        diff: preview.diff ?? null,
+        applyAllowed: preview.ok && (preview.diff?.operations.length ?? 0) > 0
+      });
+    }
+    case 'apply_fsm_script_import': {
+      if (!store.session) return blocked('automation.no-project', 'No project loaded');
+      const format = input.format as FsmScriptFormat;
+      const preview = previewFsmScriptImport(store.session, input.source as string, format);
+      if (!preview.ok) {
+        return { status: 'failure', diagnostics: preview.diagnostics.map((item) => ({ code: item.code, message: item.message })) };
+      }
+      const applied = applyFsmScriptPreview(store.session, preview);
+      if (applied.status === 'rejected') {
+        return { status: 'failure', diagnostics: applied.diagnostics.map((item) => ({ code: item.code, message: item.message })) };
+      }
+      if (applied.status === 'noop') {
+        return { status: 'noop', result: applied, output: { applied: false }, diagnostics: [] };
+      }
+      replaceProjectStoreSession(applied.session);
+      return { status: 'success', result: applied, output: { applied: true, operationCount: preview.diff?.operations.length ?? 0 }, diagnostics: [] };
     }
     case 'preview_export': {
       if (!project) return blocked('automation.no-project', 'No project loaded');

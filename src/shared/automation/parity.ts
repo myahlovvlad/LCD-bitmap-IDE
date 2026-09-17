@@ -34,7 +34,7 @@ export const UI_AUTOMATION_PARITY: readonly UiAutomationParityEntry[] = [
   uiOnly('backendProcess.update', 'Backend process editing requires a dedicated bounded action schema.'),
   uiOnly('fsm.graphPosition.update', 'High-frequency direct canvas dragging is intentionally UI-only.'),
   mapped('fsm.graphPositions.update', 'auto_layout_fsm'),
-  uiOnly('fsm.semanticRoundTrip.apply', 'FSM interchange uses its own preview/apply transaction facade.'),
+  mapped('fsm.semanticRoundTrip.apply', 'apply_fsm_script_import'),
   mapped('screen.create', 'create_screen'),
   uiOnly('screen.duplicate', 'Duplicate semantics will be exposed with the screen catalog milestone.'),
   uiOnly('screen.duplicateLayout', 'Layout-only duplication requires an explicit resource-sharing contract.'),

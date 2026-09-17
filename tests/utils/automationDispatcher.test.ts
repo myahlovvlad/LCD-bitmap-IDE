@@ -186,6 +186,81 @@ describe('renderer automation dispatcher', () => {
     expect(useProjectStore.getState().revision).toBe(0);
   });
 
+  it('exports the FSM graph as Mermaid and round-trips an unmodified re-import as a noop', async () => {
+    const exported = await executeAutomationRequest(request('export_fsm_script', { format: 'mermaid' }));
+    expect(exported.status).toBe('success');
+    const source = (exported.output as { source: string }).source;
+    expect(source.length).toBeGreaterThan(0);
+
+    const preview = await executeAutomationRequest(request('preview_fsm_script_import', { source, format: 'mermaid' }, { expectedRevision: 0 }));
+    expect(preview.status).toBe('success');
+    expect(preview.output).toEqual(expect.objectContaining({ ok: true, format: 'mermaid' }));
+
+    const applied = await executeAutomationRequest(request('apply_fsm_script_import', { source, format: 'mermaid' }, { expectedRevision: 0 }));
+    expect(applied.status).toBe('noop');
+    expect(useProjectStore.getState().revision).toBe(0);
+  });
+
+  it('rejects a malformed FSM script import without mutating the project', async () => {
+    const preview = await executeAutomationRequest(request('preview_fsm_script_import', {
+      source: 'this is not a valid mermaid or python fsm script @@@ ///',
+      format: 'mermaid'
+    }, { expectedRevision: 0 }));
+    expect((preview.output as { ok: boolean } | undefined)?.ok ?? false).toBe(false);
+
+    const applied = await executeAutomationRequest(request('apply_fsm_script_import', {
+      source: 'this is not a valid mermaid or python fsm script @@@ ///',
+      format: 'mermaid'
+    }, { expectedRevision: 0 }));
+    expect(applied.status).toBe('failure');
+    expect(useProjectStore.getState().revision).toBe(0);
+  });
+
+  it('builds a two-state FSM via automation commands and verifies it deterministically with run_fsm_scenario', async () => {
+    const stateBefore = useProjectStore.getState().project!.fsm.stateOrder[0];
+
+    const created = await executeAutomationRequest(request('create_fsm_state', { title: 'Second State' }, { expectedRevision: 0 }));
+    expect(created.status).toBe('success');
+    const stateAfter = useProjectStore.getState().project!.fsm.stateOrder.find((id) => id !== stateBefore)!;
+    expect(stateAfter).toBeDefined();
+
+    const linked = await executeAutomationRequest(request('create_fsm_transition', {
+      from: stateBefore, to: stateAfter
+    }, { expectedRevision: 1 }));
+    expect(linked.status).toBe('success');
+    // create_fsm_transition auto-creates a fresh FSM event when none is given —
+    // read back its real id rather than assuming one, the same way an agent
+    // would discover it via list_fsm_transitions before scripting a scenario.
+    const transitionId = useProjectStore.getState().project!.fsm.transitionOrder.at(-1)!;
+    const eventId = useProjectStore.getState().project!.fsm.transitions[transitionId].trigger.eventId;
+
+    const scenario = await executeAutomationRequest(request('run_fsm_scenario', {
+      steps: [{ type: 'event', eventId }],
+      initialStateId: stateBefore
+    }));
+    expect(scenario.status).toBe('success');
+    expect(scenario.output).toEqual(expect.objectContaining({
+      initialStateId: stateBefore,
+      finalStateId: stateAfter
+    }));
+    expect((scenario.output as { steps: Array<{ blocked: boolean }> }).steps[0].blocked).toBe(false);
+    // A pure read/simulation tool must not touch the live project revision.
+    expect(useProjectStore.getState().revision).toBe(2);
+  });
+
+  it('reports a blocked step from run_fsm_scenario when no transition matches the event', async () => {
+    const stateId = useProjectStore.getState().project!.fsm.stateOrder[0];
+    const scenario = await executeAutomationRequest(request('run_fsm_scenario', {
+      steps: [{ type: 'event', eventId: 'NO_SUCH_EVENT' }],
+      initialStateId: stateId
+    }));
+    expect(scenario.status).toBe('success');
+    const output = scenario.output as { finalStateId: string; steps: Array<{ blocked: boolean; blockReason?: string }> };
+    expect(output.finalStateId).toBe(stateId);
+    expect(output.steps[0].blocked).toBe(true);
+    expect(output.steps[0].blockReason).toContain('NO_SUCH_EVENT');
+  });
+
   it('returns a structured failure for a malformed transport envelope', async () => {
     const outcome = await executeAutomationRequest({
       command: 'get_project_revision',
