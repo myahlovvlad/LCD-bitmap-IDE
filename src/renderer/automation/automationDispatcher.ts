@@ -31,6 +31,7 @@ import type { FsmScriptFormat } from '../../fsm-interchange';
 import { runFsmScenario, type FsmScenarioStep } from '../../services/runtime/fsmScenarioRunner';
 import { analyzeProjectUx, computeUxCoverage } from '../../services/ux/uxValidator';
 import { buildProjectUxGraph } from '../../services/ux/uxGraphBuilder';
+import { buildProjectSemanticIndex } from '../../services/semantic/semanticIndexBuilder';
 import { runUxScenario } from '../../services/ux/uxScenarioRunner';
 import { buildUxReviewPacket, importUxReview } from '../../services/ux/uxReviewPacket';
 import type { UxValidationFinding } from '../../services/ux/uxTypes';
@@ -345,6 +346,21 @@ async function dispatchValidatedRequest(
       }
       replaceProjectStoreSession(applied.session);
       return { status: 'success', result: applied, output: { applied: true, operationCount: preview.diff?.operations.length ?? 0 }, diagnostics: [] };
+    }
+    case 'get_project_semantic_index': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      return successful({ semanticIndex: buildProjectSemanticIndex(project) });
+    }
+    case 'list_project_semantic_workflows': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const semanticIndex = buildProjectSemanticIndex(project);
+      return successful({ workflows: semanticIndex.workflows.map((workflow) => ({ id: workflow.id, title: workflow.title, mode: workflow.mode, stepCount: workflow.steps.length })) });
+    }
+    case 'get_project_semantic_workflow': {
+      if (!project) return blocked('automation.no-project', 'No project loaded');
+      const workflowId = input.workflowId as string;
+      const workflow = buildProjectSemanticIndex(project).workflows.find((item) => item.id === workflowId);
+      return workflow ? successful({ workflow }) : failed('automation.semantic-workflow-not-found', `Semantic workflow not found: ${workflowId}`);
     }
     case 'get_project_ux_contract': {
       if (!project) return blocked('automation.no-project', 'No project loaded');

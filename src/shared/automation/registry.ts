@@ -162,6 +162,9 @@ const definitions: InternalDefinition[] = [
     bypassProcedures: z.boolean().optional()
   }).strict()),
   read('get_project_ux_contract', 'Returns the project UX semantic contract (roles, intents, policies, goals, terminology, scenarios) and a coverage summary.'),
+  read('get_project_semantic_index', 'Returns the deterministic derived semantic index for screens, FSM states, transitions, controls, relations and ECROS workflows.'),
+  read('list_project_semantic_workflows', 'Returns deterministic semantic workflow summaries for the active project.'),
+  read('get_project_semantic_workflow', 'Returns one derived semantic workflow by id.', z.object({ workflowId: identifier }).strict()),
   read('list_project_ux_scenarios', 'Returns the scripted UX scenarios declared in the UX contract.'),
   read('analyze_project_ux', 'Runs the deterministic UX validator: screen/state/transition/control role and intent checks, navigation and recovery-path analysis, terminology consistency, safety/confirmation policy checks, and optionally scenario execution and visual layout checks. Returns a traceable, deterministically ordered finding list — never blocking on its own.', z.object({
     locale: z.enum(['en', 'ru', 'zh']).optional(),
