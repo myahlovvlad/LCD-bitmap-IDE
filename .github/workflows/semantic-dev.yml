@@ -1,0 +1,21 @@
+name: Semantic dev checks
+
+on:
+  push:
+    branches:
+      - feat/ecros-5400-semantic-workflows
+
+jobs:
+  semantic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Semantic unit tests
+        run: npx vitest run tests/utils/semanticIndexBuilder.test.ts tests/utils/ecros5400SemanticProfile.test.ts tests/utils/semanticReport.test.ts tests/utils/automationDispatcherSemanticIndex.test.ts tests/utils/automationRegistrySemanticIndex.test.ts
+      - name: Typecheck
+        run: npm run typecheck
