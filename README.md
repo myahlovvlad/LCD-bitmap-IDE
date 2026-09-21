@@ -45,6 +45,17 @@ If a direct asset link is not available yet, open the [latest Release page](http
 
 > Before installing an update, save your open project. The desktop app keeps your work in memory only until you save — replacing the running app discards anything unsaved.
 
+## Cross-platform Tauri builds
+
+The [Tauri build workflow](.github/workflows/tauri-build.yml) runs on GitHub-hosted native runners and can also be started manually from the repository **Actions** tab. It produces downloadable CI artifacts for:
+
+- Windows x64 — NSIS installer;
+- Linux x64 — `.deb` and AppImage;
+- macOS Apple Silicon — DMG;
+- macOS Intel — DMG.
+
+Artifacts are retained for 30 days. A `v*` tag runs the separate [release workflow](.github/workflows/release.yml), which publishes the checked installers and `SHA256SUMS.txt` to GitHub Releases. See [RELEASE_HISTORY.md](RELEASE_HISTORY.md) for released and unreleased changes.
+
 ## Quick Start From Source
 
 ```bash
@@ -107,7 +118,8 @@ Manual index: [docs/user-manuals/index.html](docs/user-manuals/index.html)
 - **Backend process documentation:** multiline engineering notes are stored with legacy backend processes and edited from the transition inspector.
 - **Control-panel binding:** connect physical button events to the screen workflow.
 - **Runtime preview:** step through state flows and validate operator paths before hardware handoff.
-- **Text registry:** maintain multilingual screen copy and CSV handoff.
+- **Text registry:** maintain multilingual screen copy, select the language columns to review or hand off, and export the selected translations as CSV.
+- **Bitmap fonts:** import BDF and the app `.fnt` format; export either font slot as a Unicode-safe BDF file.
 - **Screen DSL:** review and edit screen layouts as structured JSON/YAML.
 - **Embedded exports:** C headers, raw binary frame buffers, XBM, Arduino PROGMEM, Rust embedded-graphics, ESP-IDF-style and STM8 (Cosmic/IAR-STM8/SDCC) assets.
 - **Automation:** local REST API and MCP endpoint for Codex, Claude Code, OpenCode, LM Studio, Ollama wrappers and shell scripts.
