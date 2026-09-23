@@ -1,6 +1,6 @@
 [package]
 name = "lcd-bitmap-ide-tauri"
-version = "0.1.20"
+version = "0.1.21"
 description = "Rust desktop shell for LCD-bitmap IDE"
 authors = ["Vlad Myahlov <myahlov@gmail.com>"]
 license = "MIT"

@@ -6,6 +6,8 @@ kept in [CHANGELOG.md](CHANGELOG.md).
 
 ## Unreleased
 
+## v0.1.21
+
 - BDF bitmap fonts can be exported with Unicode-safe glyph names and imported
   back without bitmap changes.
 - Text Registry can show only chosen translation columns, export that subset to

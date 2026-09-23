@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.21
+
 - Added a Unicode-safe BDF bitmap-font exporter and round-trip coverage with
   the existing BDF importer.
 - Added Text Registry language-column selection, CSV export scoping and bulk

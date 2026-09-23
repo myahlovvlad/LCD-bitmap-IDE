@@ -36,13 +36,13 @@ LCD-bitmap IDE помогает проектировать и проверять
 
 ## Загрузка
 
-Сборки десктоп-приложения публикуются на странице [GitHub Releases](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases). Актуальный релиз — **v0.1.20**.
+Сборки десктоп-приложения публикуются на странице [GitHub Releases](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases). Актуальный релиз — **v0.1.21**.
 
 | Платформа | Стабильные сборки |
 |---|---|
-| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-Portable-x64.exe) |
-| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-x86_64.AppImage) |
-| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-macOS-x64.dmg) |
+| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.21-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.21-Portable-x64.exe) |
+| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.21-x86_64.AppImage) |
+| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-macOS-x64.dmg) |
 | Разработчики | Исходники: `npm ci` и `npm run electron:dev` |
 
 Если прямая ссылка на файл пока недоступна, откройте страницу [последнего релиза](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest) и скачайте нужный файл из списка вложений. Контрольные суммы SHA-256 для всех файлов релиза — в приложенном `SHA256SUMS.txt`.
