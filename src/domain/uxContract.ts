@@ -55,6 +55,12 @@ export interface StateUxMetadata {
   screenId?: string;
   recoveryStateId?: string;
   isTerminal?: boolean;
+  /** Marks a state that is only ever reached through a runtime overlay mechanism (e.g. a
+   *  hardware-presence notification driven by a tag, not by an FSM transition) rather than
+   *  normal operator navigation. Reachability/orphan/recovery/loop rules treat it as exempt:
+   *  being unreachable from the initial state via ordinary transitions is expected for an
+   *  overlay state, not a defect. */
+  isOverlay?: boolean;
 }
 
 export interface TransitionUxMetadata {
@@ -125,6 +131,12 @@ export interface UxPolicySet {
   requireProgressFeedbackForLongRunningOperations: boolean;
   treatUnclassifiedInteractiveControlsAsWarning: boolean;
   defaultLocale: 'en' | 'ru' | 'zh';
+  /** ux.unintended-navigation-loop only reports a strongly-connected component at or below this
+   *  size. Above it, a cycle is presumed to be the ordinary "any mode can return to a navigation
+   *  hub and back" shape of a multi-mode device rather than a meaningfully surprising loop —
+   *  without a cap, one hub-centric project can produce a single finding spanning most of the
+   *  graph, which is technically true but not actionable. */
+  unintendedNavigationLoopMaxSize: number;
 }
 
 export const DEFAULT_UX_POLICIES: UxPolicySet = {
@@ -137,7 +149,8 @@ export const DEFAULT_UX_POLICIES: UxPolicySet = {
   requireScenarioForCriticalGoals: true,
   requireProgressFeedbackForLongRunningOperations: true,
   treatUnclassifiedInteractiveControlsAsWarning: true,
-  defaultLocale: 'ru'
+  defaultLocale: 'ru',
+  unintendedNavigationLoopMaxSize: 20
 };
 
 /** Normalized, always-present shape of the UX contract as stored on the project. */
@@ -185,6 +198,10 @@ function normalizePolicies(raw: unknown): UxPolicySet {
     const value = raw[key];
     if (key === 'defaultLocale') {
       if (value === 'en' || value === 'ru' || value === 'zh') merged.defaultLocale = value;
+      continue;
+    }
+    if (key === 'unintendedNavigationLoopMaxSize') {
+      if (typeof value === 'number' && Number.isFinite(value) && value >= 0) merged.unintendedNavigationLoopMaxSize = value;
       continue;
     }
     if (typeof value === 'boolean') (merged[key] as boolean) = value;
@@ -308,7 +325,8 @@ function normalizeStateMetadata(raw: unknown, refs: UxContractIdRefs): StateUxMe
     userGoalIds: raw.userGoalIds ? normalizeStringArray(raw.userGoalIds) : undefined,
     screenId,
     recoveryStateId,
-    isTerminal: typeof raw.isTerminal === 'boolean' ? raw.isTerminal : undefined
+    isTerminal: typeof raw.isTerminal === 'boolean' ? raw.isTerminal : undefined,
+    isOverlay: typeof raw.isOverlay === 'boolean' ? raw.isOverlay : undefined
   };
 }
 

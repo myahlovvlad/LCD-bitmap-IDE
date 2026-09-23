@@ -32,6 +32,33 @@ const SUBSYSTEM_PALETTE: Record<string, string> = {
   'shared':       'rgba(148, 163, 184, 0.06)',
   'user':         'rgba(100, 116, 139, 0.06)',
   'system':       'rgba(239, 68,  68,  0.06)',
+
+  // Scenario-stage sub-layers — one per functional phase within a subsystem,
+  // so a branch (e.g. "Кинетика: измерение") can be isolated in the FSM
+  // diagram independently of the rest of that subsystem. Same base hue as
+  // the parent subsystem above, to keep the family visually recognisable.
+  'diagnostic-selftest':         'rgba(239, 68,  68,  0.08)',
+  'diagnostic-warmup':           'rgba(239, 68,  68,  0.08)',
+  'photometry-zeroing':          'rgba(34,  197, 94,  0.08)',
+  'photometry-parameters':       'rgba(34,  197, 94,  0.08)',
+  'photometry-measurement':      'rgba(34,  197, 94,  0.08)',
+  'photometry-save-print':       'rgba(34,  197, 94,  0.08)',
+  'quantitative-curves-setup':   'rgba(20,  184, 166, 0.08)',
+  'quantitative-curves-measure': 'rgba(20,  184, 166, 0.08)',
+  'quantitative-curves-save':    'rgba(20,  184, 166, 0.08)',
+  'quantitative-analysis':       'rgba(20,  184, 166, 0.08)',
+  'quantitative-coefficients':   'rgba(20,  184, 166, 0.08)',
+  'kinetics-parameters':         'rgba(251, 191, 36,  0.08)',
+  'kinetics-measurement':        'rgba(251, 191, 36,  0.08)',
+  'kinetics-save':               'rgba(251, 191, 36,  0.08)',
+  'multiwave-parameters':        'rgba(168, 85,  247, 0.08)',
+  'multiwave-measurement':       'rgba(168, 85,  247, 0.08)',
+  'multiwave-save':              'rgba(168, 85,  247, 0.08)',
+  'settings-lamps':              'rgba(107, 114, 128, 0.10)',
+  'settings-diagnostics':        'rgba(107, 114, 128, 0.10)',
+  'settings-system':             'rgba(107, 114, 128, 0.10)',
+  'files-photometry':            'rgba(245, 158, 11,  0.08)',
+  'files-other':                 'rgba(245, 158, 11,  0.08)',
 };
 
 const SUBSYSTEM_LABELS: Record<string, string> = {
@@ -46,6 +73,29 @@ const SUBSYSTEM_LABELS: Record<string, string> = {
   'shared':       'Общие состояния',
   'user':         'Прочие',
   'system':       'Система',
+
+  'diagnostic-selftest':         '1 · Диагностика: самотестирование',
+  'diagnostic-warmup':           '1 · Диагностика: прогрев',
+  'photometry-zeroing':          '3 · Фотометрия: обнуление',
+  'photometry-parameters':       '3 · Фотометрия: параметры',
+  'photometry-measurement':      '3 · Фотометрия: измерение',
+  'photometry-save-print':       '3 · Фотометрия: сохранение/печать',
+  'quantitative-curves-setup':   '4 · Кол. анализ: градуировка — настройка',
+  'quantitative-curves-measure': '4 · Кол. анализ: градуировка — измерение',
+  'quantitative-curves-save':    '4 · Кол. анализ: градуировка — сохранение',
+  'quantitative-analysis':       '4 · Кол. анализ: анализ пробы',
+  'quantitative-coefficients':   '4 · Кол. анализ: метод коэффициентов',
+  'kinetics-parameters':         '5 · Кинетика: параметры',
+  'kinetics-measurement':        '5 · Кинетика: измерение',
+  'kinetics-save':               '5 · Кинетика: сохранение/печать',
+  'multiwave-parameters':        '6 · Многоволновый: параметры',
+  'multiwave-measurement':       '6 · Многоволновый: измерение',
+  'multiwave-save':              '6 · Многоволновый: сохранение/печать',
+  'settings-lamps':              '7 · Настройки: лампы',
+  'settings-diagnostics':        '7 · Настройки: диагностика/калибровка',
+  'settings-system':             '7 · Настройки: система',
+  'files-photometry':            '8 · Файлы: фотометрия',
+  'files-other':                 '8 · Файлы: прочее',
 };
 
 export interface ELKLayoutOptions {

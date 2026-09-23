@@ -6,7 +6,7 @@ import { ProjectRuntimeEngine, type RuntimeEngine, type RuntimeEvent, type Runti
 import type { HardwareNotification } from '../runtimeHardwareNotifications';
 import { executeProcedure } from './actionExecutor';
 import { MutableTagContext, defaultTagValues, type TagContext } from './TagContext';
-import { evaluateTypedGuard, parseBackendBehaviorStorage } from '../../fsm-behavior';
+import { evaluateTypedGuard, parseBackendBehaviorStorage, effectsFromTransition, RUNTIME_TAG_SET_EFFECT, RUNTIME_TAG_SET_FROM_INPUT_EFFECT, RUNTIME_TAG_INCREMENT_EFFECT, RUNTIME_TAG_COPY_EFFECT } from '../../fsm-behavior';
 import { resolveLcdScreenBindings } from './resolveLcdBindings';
 import { ECROS_5300_FORMULAS } from '../../spectrophotometer';
 import { evaluatePortableFormula } from '../../domain/portableFormula';
@@ -101,6 +101,7 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
     if (procedure && !this.bypass && !automatic) {
       void this.runOrchestrated(transition!, procedure, eventId);
     } else {
+      this.applyTypedEffects(transition);
       this.inner.sendEvent(eventId);
     }
   }
@@ -116,7 +117,7 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
     // The base engine owns the active physical-button identity used to match
     // button-triggered FSM edges.  Delegate every navigation-only (or bypassed)
     // press to it instead of turning the press into a context-free event.
-    if (!procedure || this.bypass || automatic) { this.inner.pressButton(buttonId); return; }
+    if (!procedure || this.bypass || automatic) { this.applyTypedEffects(transition); this.inner.pressButton(buttonId); return; }
     if (element.fsmEventId === 'UI.OK' && this.inner.inputSession) this.inner.commitInput();
     this.activeButtonId = buttonId;
     this.sendEvent(element.fsmEventId);
@@ -143,6 +144,7 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
         this.inFlightProcedure = null;
       }
     } else {
+      this.applyTypedEffects(transition);
       this.inner.sendEvent(eventId);
     }
   }
@@ -167,7 +169,7 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
     if (this.inner.isInputButtonEvent(element.fsmEventId)) { this.inner.pressButton(buttonId); return; }
     const { transition, procedure } = this.resolveEventTarget(element.fsmEventId);
     const automatic = transition?.trigger.mechanism === 'timer' || transition?.trigger.mechanism === 'fact';
-    if (!procedure || this.bypass || automatic) { this.inner.pressButton(buttonId); return; }
+    if (!procedure || this.bypass || automatic) { this.applyTypedEffects(transition); this.inner.pressButton(buttonId); return; }
     if (element.fsmEventId === 'UI.OK' && this.inner.inputSession) this.inner.commitInput();
     this.activeButtonId = buttonId;
     await this.sendEventAsync(element.fsmEventId);
@@ -274,11 +276,19 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
     const currentStateId = this.inner.currentStateId;
     if (!currentStateId) return { transition: null, procedure: null };
 
-    const transition = this.project.fsm.transitionOrder
+    // Multiple transitions can share the same (from, eventId) pair, branching
+    // on `condition` (e.g. an io.usb_present true/false pair). Picking the
+    // first array match regardless of condition — as this used to do — could
+    // select the sibling whose guard doesn't actually hold for the current
+    // tag state, silently misattributing that sibling's backendProcessId /
+    // typed effects. Mirror the inner engine's findTransition: filter by
+    // (from, eventId), then take the first candidate whose guard is satisfied.
+    const candidates = this.project.fsm.transitionOrder
       .map((id) => this.project.fsm.transitions[id])
-      .find((t): t is FsmTransition =>
+      .filter((t): t is FsmTransition =>
         Boolean(t) && t.from === currentStateId && t.trigger.eventId === eventId
-      ) ?? null;
+      );
+    const transition = candidates.find((t) => this.evaluateGuard(t, eventId)) ?? null;
 
     if (!transition?.backendProcessId) return { transition, procedure: null };
 
@@ -289,11 +299,52 @@ export class OrchestratedRuntimeEngine implements RuntimeEngine {
     return { transition, procedure };
   }
 
+  /**
+   * Applies a transition's typed effects (currently only `runtime.tag.set`)
+   * as it commits. Runs for navigation-only transitions right before the
+   * state change is delegated to the inner engine, so a later guard reading
+   * `this.tags` (e.g. a condition on the next transition out of the target
+   * state) sees the write immediately.
+   */
+  private applyTypedEffects(transition: FsmTransition | null): void {
+    if (!transition) return;
+    for (const effect of effectsFromTransition(transition)) {
+      if (effect.contractId === RUNTIME_TAG_SET_EFFECT) {
+        const tagId = effect.args.tagId;
+        const value = effect.args.value;
+        if (typeof tagId !== 'string') continue;
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value === null) {
+          this.tags.set(tagId, value);
+        }
+      } else if (effect.contractId === RUNTIME_TAG_SET_FROM_INPUT_EFFECT) {
+        const tagId = effect.args.tagId;
+        if (typeof tagId !== 'string') continue;
+        const raw = this.inner.inputSession?.value;
+        if (raw === undefined) continue;
+        const parsed = Number(raw);
+        this.tags.set(tagId, Number.isFinite(parsed) ? parsed : raw);
+      } else if (effect.contractId === RUNTIME_TAG_INCREMENT_EFFECT) {
+        const tagId = effect.args.tagId;
+        if (typeof tagId !== 'string') continue;
+        const by = typeof effect.args.by === 'number' && Number.isFinite(effect.args.by) ? effect.args.by : 1;
+        const current = this.tags.get(tagId);
+        const base = typeof current === 'number' && Number.isFinite(current) ? current : 0;
+        this.tags.set(tagId, base + by);
+      } else if (effect.contractId === RUNTIME_TAG_COPY_EFFECT) {
+        const tagId = effect.args.tagId;
+        const fromTagId = effect.args.fromTagId;
+        if (typeof tagId !== 'string' || typeof fromTagId !== 'string') continue;
+        this.tags.set(tagId, this.tags.get(fromTagId));
+      }
+    }
+  }
+
   private evaluateGuard(transition: FsmTransition, eventId: string): boolean {
     const activeButton = this.activeButtonId
       ? this.project.controlPanel.elements[this.activeButtonId]
       : null;
-    const { matched } = evaluateTypedGuard(transition.condition ?? null, {
+    const expression = transition.condition || transition.trigger.fact;
+    const { matched } = evaluateTypedGuard(expression ?? null, {
       event: eventId,
       button: activeButton?.type === 'button' ? activeButton.label : this.activeButtonId ?? '',
       button_id: this.activeButtonId ?? '',

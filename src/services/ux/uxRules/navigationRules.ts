@@ -26,9 +26,11 @@ export function evaluateNavigationRules(graph: ProjectUxGraph): UxValidationFind
   }
 
   // ux.error-state-without-recovery
+  // Overlay states are exempt: their "recovery" is leaving the runtime overlay condition (e.g.
+  // hardware being reconnected), not navigating the FSM.
   if (policies.requireErrorRecoveryPath) {
     for (const state of graph.states) {
-      if (state.role !== 'error') continue;
+      if (state.role !== 'error' || state.isOverlay) continue;
       const reachesInitial = hasPathTo(graph, state.stateId, initialSet);
       const declaredRecoveryOk = state.meta.recoveryStateId
         ? hasPathTo(graph, state.stateId, new Set([state.meta.recoveryStateId]))
@@ -117,7 +119,12 @@ export function evaluateNavigationRules(graph: ProjectUxGraph): UxValidationFind
   }
 
   // ux.unintended-navigation-loop
+  // Skipped: cycles larger than the configured threshold (an ordinary "any mode returns to a
+  // navigation hub" shape on a multi-mode device is technically a cycle but not an actionable
+  // finding at production scale) and cycles made up entirely of overlay states.
   for (const cycle of findCycles(graph)) {
+    if (cycle.length > policies.unintendedNavigationLoopMaxSize) continue;
+    if (cycle.every((stateId) => graph.statesById.get(stateId)?.isOverlay)) continue;
     const justified = cycle.some((stateId) =>
       (graph.statesById.get(stateId)?.outgoingTransitionIds ?? []).some((tid) => graph.transitionsById.get(tid)?.meta.rationale)
     );
@@ -133,9 +140,10 @@ export function evaluateNavigationRules(graph: ProjectUxGraph): UxValidationFind
     }
   }
 
-  // ux.orphan-state
+  // ux.orphan-state — overlay states are exempt (see isOverlay doc comment).
   const reachable = forwardReachable(graph, initialIds);
   for (const state of graph.states) {
+    if (state.isOverlay) continue;
     if (!reachable.has(state.stateId)) {
       findings.push(makeFinding({
         ruleId: 'ux.orphan-state',

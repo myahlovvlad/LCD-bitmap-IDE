@@ -107,8 +107,11 @@ export function evaluateStructureRules(graph: ProjectUxGraph): UxValidationFindi
   }
 
   // ux.transition-to-unreachable-state — flags transitions whose source state cannot be reached.
+  // Overlay states (e.g. hardware-presence notifications) are exempt: they are legitimately
+  // reached through a runtime mechanism other than FSM transitions.
   const reachable = forwardReachable(graph, initialStateIds(graph));
   for (const transition of graph.transitions) {
+    if (graph.statesById.get(transition.from)?.isOverlay) continue;
     if (!reachable.has(transition.from)) {
       findings.push(makeFinding({
         ruleId: 'ux.transition-to-unreachable-state',
