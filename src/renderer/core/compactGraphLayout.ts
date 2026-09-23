@@ -2,12 +2,39 @@ import type { FsmState, GraphPosition } from '../types/domain';
 
 const subsystemOrder = [
   'system',
+  // legacy single-layer-per-subsystem names, kept for projects that don't split scenario stages
+  'diagnostic',
   'photometry',
   'quant',
+  'quantitative',
   'kinetics',
   'multiwave',
   'settings',
   'files',
+  // scenario-stage sub-layers (see elkLayout.ts SUBSYSTEM_LABELS for the matching Russian names)
+  'diagnostic-selftest',
+  'diagnostic-warmup',
+  'main-menu',
+  'photometry-zeroing',
+  'photometry-parameters',
+  'photometry-measurement',
+  'photometry-save-print',
+  'quantitative-curves-setup',
+  'quantitative-curves-measure',
+  'quantitative-curves-save',
+  'quantitative-analysis',
+  'quantitative-coefficients',
+  'kinetics-parameters',
+  'kinetics-measurement',
+  'kinetics-save',
+  'multiwave-parameters',
+  'multiwave-measurement',
+  'multiwave-save',
+  'settings-lamps',
+  'settings-diagnostics',
+  'settings-system',
+  'files-photometry',
+  'files-other',
   'shared'
 ];
 

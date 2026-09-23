@@ -1,7 +1,7 @@
 import { useRef, type ChangeEvent } from 'react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { Globe2, Monitor, Server } from 'lucide-react';
+import { Globe2, Monitor, Server, RefreshCw } from 'lucide-react';
 import { UI_TEXT } from '../../renderer/config/i18n';
 import { DISPLAY_PROFILES, SUPPORTED_LANGUAGES } from '../../renderer/config/constants';
 import { useProjectStore } from '../../renderer/store/projectStore';
@@ -11,6 +11,8 @@ import { executeAutomationRequest } from '../../renderer/automation/automationDi
 import { beginOperation, notify } from '../../renderer/notifications/notificationStore';
 import { ThemeSelector } from '../../renderer/theme/ThemeSelector';
 import type { ThemePreference } from '../../renderer/theme/themePreference';
+import { APP_SOFTWARE_VERSION } from '../../renderer/config/constants';
+import { checkForUpdate, RELEASES_URL, type AvailableUpdate } from '../../renderer/utils/updateChecker';
 
 const API_PORT = 8766;
 const MCP_PORT = 8767;
@@ -27,6 +29,8 @@ export function SettingsWorkspace({
   const isDesktop = Boolean(window.spectroDesigner);
   const hasAutomationStatus = Boolean(window.spectroDesigner?.automationStatus);
   const [automationStatus, setAutomationStatus] = useState<Awaited<ReturnType<NonNullable<NonNullable<typeof window.spectroDesigner>['automationStatus']>>> | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'current' | 'error'>('idle');
+  const [availableUpdate, setAvailableUpdate] = useState<AvailableUpdate | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -96,6 +100,18 @@ export function SettingsWorkspace({
     );
   };
 
+  const checkUpdates = async (): Promise<void> => {
+    setUpdateStatus('checking');
+    setAvailableUpdate(null);
+    try {
+      const update = await checkForUpdate(APP_SOFTWARE_VERSION);
+      setAvailableUpdate(update);
+      setUpdateStatus('current');
+    } catch {
+      setUpdateStatus('error');
+    }
+  };
+
   return (
     <section className="workspace-root settings-workspace" aria-label={labels.settingsWorkspace}>
       <div className="settings-column">
@@ -108,6 +124,26 @@ export function SettingsWorkspace({
             testId="settings-theme-selector"
           />
           <p className="settings-hint">{labels.themeSystemHint}</p>
+        </section>
+
+        <section className="inspector-card settings-card">
+          <h3><RefreshCw size={16} /> {labels.settingsSoftwareUpdates}</h3>
+          <p className="settings-hint">{labels.settingsCurrentSoftwareVersion}: {APP_SOFTWARE_VERSION}</p>
+          <div className="settings-server-row">
+            <button type="button" onClick={() => void checkUpdates()} disabled={updateStatus === 'checking'}>
+              {updateStatus === 'checking' ? labels.settingsCheckingForUpdates : labels.settingsCheckForUpdates}
+            </button>
+            <a className="settings-release-link" href={availableUpdate?.releaseUrl ?? RELEASES_URL} target="_blank" rel="noreferrer">
+              {labels.settingsOpenReleases}
+            </a>
+          </div>
+          {availableUpdate ? (
+            <p className="settings-update-available">{labels.settingsUpdateAvailable.replace('{version}', availableUpdate.version)}</p>
+          ) : updateStatus === 'current' ? (
+            <p className="settings-hint">{labels.settingsAlreadyUpToDate}</p>
+          ) : updateStatus === 'error' ? (
+            <p className="settings-update-error">{labels.settingsUpdateCheckFailed}</p>
+          ) : null}
         </section>
 
         <section className="inspector-card settings-card">

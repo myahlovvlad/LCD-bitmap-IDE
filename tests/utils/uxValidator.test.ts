@@ -132,6 +132,21 @@ describe('UX structure rules', () => {
     const graph = buildProjectUxGraph(project);
     expect(ruleIds(evaluateStructureRules(graph))).toContain('ux.transition-to-unreachable-state');
   });
+
+  it('exempts an overlay state\'s transitions from ux.transition-to-unreachable-state', () => {
+    const project = loadDemoProject();
+    project.fsm.events['BACK'] = { id: 'BACK', name: 'Back' };
+    project.fsm.eventOrder.push('BACK');
+    project.fsm.transitions['tr-glyph-loop'] = {
+      id: 'tr-glyph-loop', from: 'glyph-test', to: 'main-menu',
+      trigger: { eventId: 'BACK', mechanism: 'event', buttonId: null, timerMs: null, fact: null },
+      kind: 'navigation', condition: null, source: null, backendProcessId: null
+    };
+    project.fsm.transitionOrder.push('tr-glyph-loop');
+    setUxContract(project, { states: { 'glyph-test': { isOverlay: true } } });
+    const graph = buildProjectUxGraph(project);
+    expect(ruleIds(evaluateStructureRules(graph))).not.toContain('ux.transition-to-unreachable-state');
+  });
 });
 
 describe('UX navigation and recovery rules', () => {
@@ -232,6 +247,29 @@ describe('UX navigation and recovery rules', () => {
     const graph = buildProjectUxGraph(project);
     const finding = evaluateNavigationRules(graph).find((f) => f.ruleId === 'ux.orphan-state');
     expect(finding?.affected.stateIds).toContain('glyph-test');
+  });
+
+  it('exempts a state marked isOverlay from ux.orphan-state', () => {
+    const project = loadDemoProject();
+    setUxContract(project, { states: { 'glyph-test': { isOverlay: true } } });
+    const graph = buildProjectUxGraph(project);
+    const finding = evaluateNavigationRules(graph).find((f) => f.ruleId === 'ux.orphan-state' && f.affected.stateIds?.includes('glyph-test'));
+    expect(finding).toBeUndefined();
+  });
+
+  it('exempts an overlay error state from ux.error-state-without-recovery', () => {
+    const project = loadDemoProject();
+    setUxContract(project, { states: { 'glyph-test': { role: 'error', isOverlay: true } } });
+    const graph = buildProjectUxGraph(project);
+    expect(ruleIds(evaluateNavigationRules(graph))).not.toContain('ux.error-state-without-recovery');
+  });
+
+  it('stops reporting a cycle once it exceeds the configured loop-size threshold', () => {
+    const project = loadDemoProject();
+    setUxContract(project, { policies: { unintendedNavigationLoopMaxSize: 2 } });
+    const graph = buildProjectUxGraph(project);
+    // The demo project's default main-menu/measure/error cycle has 3 states, above the threshold.
+    expect(ruleIds(evaluateNavigationRules(graph))).not.toContain('ux.unintended-navigation-loop');
   });
 
   it('flags a goal whose start state cannot reach its success state (ux.goal-has-no-success-path)', () => {
@@ -532,5 +570,14 @@ describe('analyzeProjectUx', () => {
     const report = await analyzeProjectUx(project, { heuristicFindings });
     expect(report.verdict).not.toBe('fail');
     expect(report.verdict).toBe('needs_review');
+  });
+
+  it('excludes overlay error states from the errorStatesWithRecovery coverage denominator', async () => {
+    const project = withoutOrphanState(loadDemoProject());
+    delete project.fsm.transitions['tr-error-main'];
+    project.fsm.transitionOrder = project.fsm.transitionOrder.filter((id) => id !== 'tr-error-main');
+    setUxContract(project, { states: { error: { role: 'error', isOverlay: true } } });
+    const report = await analyzeProjectUx(project);
+    expect(report.coverage.errorStatesWithRecovery.total).toBe(0);
   });
 });

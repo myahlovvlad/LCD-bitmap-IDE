@@ -20,6 +20,7 @@ import {
 } from '../utils/codegen';
 import { packFrameBuffer, unpackBytesToFrameBuffer, type FrameBuffer } from '../utils/render';
 import { importFont, summarizeImportedFont, type FontMergeMode } from '../utils/fontImport';
+import { exportGlyphSetToBdf } from '../utils/fontExport';
 import {
   createElementExport,
   serializeElementHeader,
@@ -688,6 +689,20 @@ export function LCDCanvasEditor({
     }
   };
 
+  const downloadFontBdf = (): void => {
+    try {
+      const fontName = project?.meta.name ?? 'LCD-bitmap-IDE';
+      downloadBlob(
+        `${sanitizeFilename(fontName)}_font_${fontTargetVariant}.bdf`,
+        exportGlyphSetToBdf(fontGlyphs[fontTargetVariant], { fontName }),
+        'application/x-font-bdf'
+      );
+      setFontStatus(`BDF: ${Object.keys(fontGlyphs[fontTargetVariant]).length} glyphs`);
+    } catch (error) {
+      setFontStatus(error instanceof Error ? error.message : 'Font export failed');
+    }
+  };
+
   return (
     <section className="lcd-editor bg-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-7xl flex flex-col xl:flex-row gap-8">
       <div className="flex-1 flex flex-col gap-5 min-w-[320px]">
@@ -799,6 +814,7 @@ export function LCDCanvasEditor({
           onTargetVariantChange={setFontTargetVariant}
           onMergeModeChange={setFontMergeMode}
           onChooseFile={() => fontInputRef.current?.click()}
+          onExportBdf={downloadFontBdf}
         />
 
         <ObjectProperties
@@ -1004,7 +1020,8 @@ function FontLoaderPanel({
   status,
   onTargetVariantChange,
   onMergeModeChange,
-  onChooseFile
+  onChooseFile,
+  onExportBdf
 }: {
   labels: UiText;
   loadedFonts: FontMetadata[];
@@ -1015,6 +1032,7 @@ function FontLoaderPanel({
   onTargetVariantChange: (variant: FontVariantKey) => void;
   onMergeModeChange: (mode: FontMergeMode) => void;
   onChooseFile: () => void;
+  onExportBdf: () => void;
 }): React.ReactElement {
   const summary = useMemo(() => summarizeImportedFont(glyphs), [glyphs]);
   const preview = useMemo(() => buildFontPreview(glyphs), [glyphs]);
@@ -1031,6 +1049,7 @@ function FontLoaderPanel({
           <option value="replace">{labels.replaceFont}</option>
         </select>
         <button type="button" onClick={onChooseFile}>{labels.loadFont}</button>
+        <button type="button" onClick={onExportBdf}>{labels.exportFontBdf}</button>
       </div>
       {status ? <small>{status}</small> : null}
       <div className="font-import-preview" data-testid="font-import-preview">

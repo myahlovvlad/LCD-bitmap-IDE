@@ -41,6 +41,7 @@ export interface UxStateNode {
   role: ScreenRole;
   isInitial: boolean;
   isTerminal: boolean;
+  isOverlay: boolean;
   outgoingTransitionIds: string[];
   incomingTransitionIds: string[];
   meta: StateUxMetadata;
@@ -159,6 +160,7 @@ export function buildProjectUxGraph(project: LcdBitmapProject): ProjectUxGraph {
       role: meta.role ?? inferRoleFromStateType(state.stateType),
       isInitial: state.initial,
       isTerminal: meta.isTerminal ?? state.terminal,
+      isOverlay: meta.isOverlay ?? false,
       outgoingTransitionIds: outgoingByState.get(stateId) ?? [],
       incomingTransitionIds: incomingByState.get(stateId) ?? [],
       meta

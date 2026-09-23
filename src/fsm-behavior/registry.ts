@@ -13,7 +13,12 @@ export const CORE_ALWAYS_GUARD = 'core.always';
 export const CORE_NEVER_GUARD = 'core.never';
 export const RUNTIME_CONTEXT_TRUTHY_GUARD = 'runtime.context.truthy';
 export const RUNTIME_CONTEXT_COMPARE_GUARD = 'runtime.context.compare';
+export const RUNTIME_TAG_EQUALS_TAG_GUARD = 'runtime.tag.equals-tag';
 export const BACKEND_PROCESS_REQUEST_EFFECT = 'backend.process.request';
+export const RUNTIME_TAG_SET_EFFECT = 'runtime.tag.set';
+export const RUNTIME_TAG_SET_FROM_INPUT_EFFECT = 'runtime.tag.set-from-input';
+export const RUNTIME_TAG_INCREMENT_EFFECT = 'runtime.tag.increment';
+export const RUNTIME_TAG_COPY_EFFECT = 'runtime.tag.copy';
 
 const guardContracts: Record<string, GuardContractDefinition> = {
   [CORE_ALWAYS_GUARD]: {
@@ -56,6 +61,18 @@ const guardContracts: Record<string, GuardContractDefinition> = {
       if (operator === '<=') return actualNumber <= expectedNumber;
       return false;
     }
+  },
+  [RUNTIME_TAG_EQUALS_TAG_GUARD]: {
+    id: RUNTIME_TAG_EQUALS_TAG_GUARD,
+    version: FSM_BEHAVIOR_VERSION,
+    description: 'Compares two runtime tag values for equality (e.g. a keypad-entered PIN against a stored, admin-editable PIN). Args: { tagId: string, compareTagId: string }.',
+    evaluate: (invocation, context) => {
+      const tagId = invocation.args.tagId;
+      const compareTagId = invocation.args.compareTagId;
+      if (typeof tagId !== 'string' || typeof compareTagId !== 'string') return false;
+      const values = context.values ?? {};
+      return String(values[tagId]) === String(values[compareTagId]);
+    }
   }
 };
 
@@ -64,6 +81,26 @@ const effectContracts: Record<string, EffectContractDefinition> = {
     id: BACKEND_PROCESS_REQUEST_EFFECT,
     version: FSM_BEHAVIOR_VERSION,
     description: 'Requests an application backend process by ID.'
+  },
+  [RUNTIME_TAG_SET_EFFECT]: {
+    id: RUNTIME_TAG_SET_EFFECT,
+    version: FSM_BEHAVIOR_VERSION,
+    description: 'Writes a scalar value to a runtime tag as the transition commits. Args: { tagId: string, value: scalar }.'
+  },
+  [RUNTIME_TAG_SET_FROM_INPUT_EFFECT]: {
+    id: RUNTIME_TAG_SET_FROM_INPUT_EFFECT,
+    version: FSM_BEHAVIOR_VERSION,
+    description: 'Writes the current numeric input session value to a runtime tag as the transition commits (e.g. capturing a keypad-entered count). Args: { tagId: string }.'
+  },
+  [RUNTIME_TAG_INCREMENT_EFFECT]: {
+    id: RUNTIME_TAG_INCREMENT_EFFECT,
+    version: FSM_BEHAVIOR_VERSION,
+    description: 'Increments a numeric runtime tag by a fixed step (default 1) as the transition commits (e.g. counting failed PIN attempts). Args: { tagId: string, by?: number }.'
+  },
+  [RUNTIME_TAG_COPY_EFFECT]: {
+    id: RUNTIME_TAG_COPY_EFFECT,
+    version: FSM_BEHAVIOR_VERSION,
+    description: 'Copies the current value of one runtime tag into another as the transition commits (e.g. stamping who performed an action). Args: { tagId: string, fromTagId: string }.'
   }
 };
 

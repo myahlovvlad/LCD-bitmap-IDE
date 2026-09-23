@@ -34,9 +34,13 @@ jobs:
             artifact: tauri-linux
             bundles: deb,appimage
             bundlePath: apps/tauri/src-tauri/target/release/bundle
-          - platform: macos-latest
-            artifact: tauri-macos
-            bundles: app,dmg
+          - platform: macos-15
+            artifact: tauri-macos-arm64
+            bundles: dmg
+            bundlePath: apps/tauri/src-tauri/target/release/bundle
+          - platform: macos-15-intel
+            artifact: tauri-macos-x64
+            bundles: dmg
             bundlePath: apps/tauri/src-tauri/target/release/bundle
 
     runs-on: ${{ matrix.platform }}

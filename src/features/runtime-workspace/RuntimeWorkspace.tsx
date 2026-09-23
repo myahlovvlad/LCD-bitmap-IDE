@@ -13,6 +13,7 @@ import {
   Play,
   Printer,
   RotateCcw,
+  Route,
   Square,
   StepForward,
   Usb,
@@ -45,6 +46,7 @@ import {
 import { resolveRuntimeButtonAvailability, type RuntimeButtonAvailabilityCode } from '../../services/runtimeEngine';
 import { hardwareNotificationKey, type HardwareNotification } from '../../services/runtimeHardwareNotifications';
 import type { HardwareEquipmentKind } from '../../domain/hardwareNotification';
+import { RuntimeScenarioPanel } from './RuntimeScenarioPanel';
 
 const HARDWARE_NOTIFICATION_POLL_MS = 200;
 
@@ -83,7 +85,7 @@ export function RuntimeWorkspace(): React.ReactElement {
   const [transportKind] = useState<TransportKind>('simulation');
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<'log' | 'tags' | 'procedure'>('log');
+  const [activeTab, setActiveTab] = useState<'log' | 'tags' | 'procedure' | 'scenario'>('log');
   const [showTutorial, setShowTutorial] = useState(false);
   const engineRef = useRef<OrchestratedRuntimeEngine | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -91,6 +93,9 @@ export function RuntimeWorkspace(): React.ReactElement {
   const animationClockRef = useRef<RuntimeAnimationClock>(INITIAL_RUNTIME_ANIMATION_CLOCK);
   const animationRafRef = useRef<number | null>(null);
   const [animationElapsedMs, setAnimationElapsedMs] = useState(0);
+  const [timerSession, setTimerSession] = useState(0);
+  const [timerNow, setTimerNow] = useState(0);
+  const timerStartedAtRef = useRef<{ stateId: string; startedAtMs: number } | null>(null);
 
   const fontRenderer = useMemo(() => project ? new FontRenderer(fontGlyphs) : null, [project, fontGlyphs]);
 
@@ -153,27 +158,49 @@ export function RuntimeWorkspace(): React.ReactElement {
     return () => window.clearInterval(interval);
   }, [project]);
 
-  // Auto-fire timer transitions
+  const runtimeStateId = engineRef.current?.currentStateId ?? null;
+
+  // Auto-fire timer transitions and expose their remaining instrument time.
+  // Timing is anchored to state entry rather than component renders, so a log
+  // update or animation frame cannot restart a diagnostic warm-up countdown.
   useEffect(() => {
     const engine = engineRef.current;
-    if (!project || !engine || !engine.currentStateId || stepMode) return;
+    if (!project || !engine || !runtimeStateId || stepMode) {
+      timerStartedAtRef.current = null;
+      setTimerNow(0);
+      return;
+    }
     const timers = project.fsm.transitionOrder
       .map((id) => project.fsm.transitions[id])
       .filter((t) =>
-        t?.from === engine.currentStateId &&
+        t?.from === runtimeStateId &&
         t.trigger.mechanism === 'timer' &&
         Number.isFinite(t.trigger.timerMs) &&
         (t.trigger.timerMs ?? 0) > 0
       );
-    if (timers.length === 0) return;
+    if (timers.length === 0) {
+      timerStartedAtRef.current = null;
+      setTimerNow(0);
+      return;
+    }
+    const now = performance.now();
+    if (timerStartedAtRef.current?.stateId !== runtimeStateId) {
+      timerStartedAtRef.current = { stateId: runtimeStateId, startedAtMs: now };
+    }
+    const startedAtMs = timerStartedAtRef.current.startedAtMs;
+    setTimerNow(now);
     const handles = timers.map((t) =>
       window.setTimeout(() => {
         engine.sendEvent(t.trigger.eventId);
         setRevision((r) => r + 1);
-      }, resolveRuntimeTimerDelay(t.trigger.timerMs ?? 0, timerMode))
+      }, Math.max(0, resolveRuntimeTimerDelay(t.trigger.timerMs ?? 0, timerMode) - (now - startedAtMs)))
     );
-    return () => handles.forEach((h) => window.clearTimeout(h));
-  }, [project, revision, stepMode, timerMode]);
+    const interval = window.setInterval(() => setTimerNow(performance.now()), 100);
+    return () => {
+      handles.forEach((h) => window.clearTimeout(h));
+      window.clearInterval(interval);
+    };
+  }, [project, runtimeStateId, stepMode, timerMode, timerSession]);
 
   // Scroll log to bottom
   useEffect(() => {
@@ -231,13 +258,33 @@ export function RuntimeWorkspace(): React.ReactElement {
 
   const refresh = (action: () => void) => { action(); setRevision((r) => r + 1); };
 
-  const handleReset = () => {
+  const startAtState = (stateId?: string): void => {
     const newEngine = buildEngine();
     if (!newEngine) return;
-    newEngine.start();
+    newEngine.start(stateId);
     engineRef.current = newEngine;
+    timerStartedAtRef.current = null;
+    setTimerSession((value) => value + 1);
     setRevision((r) => r + 1);
   };
+
+  const handleReset = () => startAtState();
+
+  const activeTimer = currentStateId && !stepMode
+    ? project.fsm.transitionOrder
+      .map((id) => project.fsm.transitions[id])
+      .filter((transition): transition is FsmTransition => Boolean(transition)
+        && transition.from === currentStateId
+        && transition.trigger.mechanism === 'timer'
+        && (transition.trigger.timerMs ?? 0) > 0)
+      .sort((left, right) => (left.trigger.timerMs ?? 0) - (right.trigger.timerMs ?? 0))[0]
+    : undefined;
+  const timerStartedAt = timerStartedAtRef.current?.stateId === currentStateId ? timerStartedAtRef.current.startedAtMs : null;
+  const timerSpeed = timerMode === 'express' ? 60 : 1;
+  const timerDurationMs = activeTimer?.trigger.timerMs ?? 0;
+  const timerRemainingMs = activeTimer && timerStartedAt !== null
+    ? Math.max(0, timerDurationMs - Math.max(0, timerNow - timerStartedAt) * timerSpeed)
+    : 0;
 
   return (
     <section
@@ -457,6 +504,18 @@ export function RuntimeWorkspace(): React.ReactElement {
           )}
         </div>
 
+        {activeTimer ? (
+          <section className="runtime-countdown" aria-live="polite" data-testid="runtime-countdown">
+            <div>
+              <Route size={14} />
+              <strong>{labels.runtimeTimerCountdown}</strong>
+              <span>{runtimeTransitionLabel(project, activeTimer)}</span>
+            </div>
+            <output>{formatRuntimeDuration(timerRemainingMs)}</output>
+            <progress value={Math.max(0, timerDurationMs - timerRemainingMs)} max={timerDurationMs} />
+          </section>
+        ) : null}
+
         {/* Available FSM events (for keyboard testing) */}
         <div className="runtime-event-chips">
           {project.fsm.transitionOrder
@@ -483,14 +542,14 @@ export function RuntimeWorkspace(): React.ReactElement {
         <header className="workspace-section-header">
           {!rightCollapsed && (
             <div className="runtime-log-tabs">
-              {(['log', 'tags', 'procedure'] as const).map((tab) => (
+              {(['log', 'tags', 'procedure', 'scenario'] as const).map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   className={activeTab === tab ? 'active' : ''}
                   onClick={() => setActiveTab(tab)}
                 >
-                  {tab === 'log' ? labels.runtimeEventLog : tab === 'tags' ? labels.runtimeTagValues : labels.runtimeProcedureLog}
+                  {tab === 'log' ? labels.runtimeEventLog : tab === 'tags' ? labels.runtimeTagValues : tab === 'procedure' ? labels.runtimeProcedureLog : labels.runtimeScenarios}
                 </button>
               ))}
             </div>
@@ -532,6 +591,10 @@ export function RuntimeWorkspace(): React.ReactElement {
                 ))}
               </div>
             )}
+
+            {activeTab === 'scenario' ? (
+              <RuntimeScenarioPanel project={project} labels={labels} onStartAtState={startAtState} />
+            ) : null}
 
             {activeTab === 'procedure' && (
               <div className="runtime-proc-panel">
@@ -590,4 +653,11 @@ function runtimeButtonReason(
     'hardware-notification': labels.runtimeButtonHardwareNotification
   };
   return reasons[code];
+}
+
+function formatRuntimeDuration(valueMs: number): string {
+  const totalSeconds = Math.ceil(Math.max(0, valueMs) / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }

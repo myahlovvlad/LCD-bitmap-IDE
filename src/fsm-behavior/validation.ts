@@ -15,6 +15,7 @@ import {
   CORE_NEVER_GUARD,
   RUNTIME_CONTEXT_COMPARE_GUARD,
   RUNTIME_CONTEXT_TRUTHY_GUARD,
+  RUNTIME_TAG_EQUALS_TAG_GUARD,
   getEffectContract,
   getGuardContract,
   isComparisonOperator,
@@ -40,6 +41,11 @@ export function validateGuardInvocation(invocation: GuardInvocationV1): readonly
       .concat(isGuardContextKey(invocation.args.key) ? [] : [error('fsm.behavior.guard.invalid-key', 'Guard argument "key" must be a supported runtime context key.')])
       .concat(isComparisonOperator(invocation.args.operator) ? [] : [error('fsm.behavior.guard.invalid-operator', 'Guard argument "operator" must be one of ==, !=, >, <, >=, <=.')])
       .concat(isBehaviorScalarValue(invocation.args.value) ? [] : [error('fsm.behavior.guard.invalid-value', 'Guard argument "value" must be a scalar JSON-safe value.')]);
+  }
+  if (invocation.contractId === RUNTIME_TAG_EQUALS_TAG_GUARD) {
+    return validateAllowedArgs(invocation.args, ['tagId', 'compareTagId'])
+      .concat(typeof invocation.args.tagId === 'string' ? [] : [error('fsm.behavior.guard.invalid-tag-id', 'Guard argument "tagId" must be a string.')])
+      .concat(typeof invocation.args.compareTagId === 'string' ? [] : [error('fsm.behavior.guard.invalid-compare-tag-id', 'Guard argument "compareTagId" must be a string.')]);
   }
   return [];
 }

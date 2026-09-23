@@ -15,6 +15,7 @@ LCD-bitmap IDE помогает проектировать и проверять
 - привязка физических кнопок и runtime-тегов к поведению FSM;
 - предпросмотр workflow до интеграции с целевым оборудованием;
 - экспорт экранных ресурсов для embedded-прошивок;
+- импорт bitmap-шрифтов BDF и собственного текстового `.fnt`, а также экспорт любого слота шрифта в Unicode-совместимый BDF;
 - предоставление локальным LLM-агентам возможности инспектировать и редактировать открытый проект через REST или MCP.
 
 Приложение не выполняет физические измерения само по себе. Реальный сбор данных требует собственной прошивки прибора, backend-сервиса или аппаратного коннектора.
@@ -35,13 +36,13 @@ LCD-bitmap IDE помогает проектировать и проверять
 
 ## Загрузка
 
-Сборки десктоп-приложения публикуются на странице [GitHub Releases](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases). Актуальный релиз — **v0.1.20**.
+Сборки десктоп-приложения публикуются на странице [GitHub Releases](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases). Актуальный релиз — **v0.1.21**.
 
 | Платформа | Стабильные сборки |
 |---|---|
-| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-Portable-x64.exe) |
-| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.20-x86_64.AppImage) |
-| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.20-Tauri-macOS-x64.dmg) |
+| Windows | [Tauri Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-Windows-x64-Setup.exe) · [Electron Setup x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.21-Setup-x64.exe) · [Electron Portable x64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.21-Portable-x64.exe) |
+| Linux | [Tauri AppImage x86_64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-Linux-x86_64.AppImage) · [Tauri deb amd64](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-Linux-amd64.deb) · [Electron AppImage](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap.IDE-0.1.21-x86_64.AppImage) |
+| macOS | [Apple Silicon (arm64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-macOS-arm64.dmg) · [Intel (x64) DMG](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest/download/LCD-bitmap-IDE-0.1.21-Tauri-macOS-x64.dmg) |
 | Разработчики | Исходники: `npm ci` и `npm run electron:dev` |
 
 Если прямая ссылка на файл пока недоступна, откройте страницу [последнего релиза](https://github.com/myahlovvlad/LCD-bitmap-IDE/releases/latest) и скачайте нужный файл из списка вложений. Контрольные суммы SHA-256 для всех файлов релиза — в приложенном `SHA256SUMS.txt`.
@@ -49,6 +50,17 @@ LCD-bitmap IDE помогает проектировать и проверять
 Системные требования соответствуют выбранной сборке: для Tauri-сборок — актуальная версия WebView2 (Windows) или системного WebKitGTK (Linux); отдельного рантайма устанавливать не нужно. Electron-сборки самодостаточны.
 
 > **Перед обновлением обязательно сохраните открытый проект.** Приложение хранит текущую работу только в памяти, пока вы не сохраните её на диск — замена/перезапуск приложения при обновлении версии отменяет всё несохранённое.
+
+## Кроссплатформенные Tauri-сборки
+
+[Workflow сборки Tauri](.github/workflows/tauri-build.yml) выполняется на нативных GitHub-hosted runner'ах; его также можно вручную запустить во вкладке репозитория **Actions**. В артефактах CI доступны:
+
+- Windows x64 — установщик NSIS;
+- Linux x64 — `.deb` и AppImage;
+- macOS Apple Silicon — DMG;
+- macOS Intel — DMG.
+
+Артефакты хранятся 30 дней. Тег `v*` запускает отдельный [release workflow](.github/workflows/release.yml): он публикует проверенные установщики и `SHA256SUMS.txt` в GitHub Releases. Список выпущенных и ещё не выпущенных изменений — в [RELEASE_HISTORY.md](RELEASE_HISTORY.md).
 
 ## Проверка UX-семантики проекта
 

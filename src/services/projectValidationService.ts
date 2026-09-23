@@ -267,17 +267,28 @@ function findReachableStates(project: LcdBitmapProject, initialStateId?: string)
   if (!initialStateId || !project.fsm.states[initialStateId]) {
     return reachable;
   }
+  // Build the from-state adjacency list once (O(transitions)) instead of re-scanning every
+  // transition per dequeued state (O(states * transitions), ~543K visits at 479 states /
+  // 1135 transitions — the dominant cost of a hang traced to this function running twice per
+  // command-bus mutation, including on every control-panel drag pointermove).
+  const outgoing = new Map<string, string[]>();
+  for (const transition of Object.values(project.fsm.transitions)) {
+    if (!project.fsm.states[transition.to]) continue;
+    const targets = outgoing.get(transition.from);
+    if (targets) targets.push(transition.to);
+    else outgoing.set(transition.from, [transition.to]);
+  }
   const queue = [initialStateId];
-  while (queue.length > 0) {
-    const stateId = queue.shift()!;
+  let head = 0;
+  while (head < queue.length) {
+    const stateId = queue[head];
+    head += 1;
     if (reachable.has(stateId)) {
       continue;
     }
     reachable.add(stateId);
-    for (const transition of Object.values(project.fsm.transitions)) {
-      if (transition.from === stateId && project.fsm.states[transition.to] && !reachable.has(transition.to)) {
-        queue.push(transition.to);
-      }
+    for (const to of outgoing.get(stateId) ?? []) {
+      if (!reachable.has(to)) queue.push(to);
     }
   }
   return reachable;

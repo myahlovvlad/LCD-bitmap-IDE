@@ -29,7 +29,12 @@ interface TextEntry {
   zh: string;
   subsystem: string;
   globalTextKey?: string;
+  displayLanguage?: RegistryLanguage | null;
 }
+
+type RegistryLanguage = 'ru' | 'en' | 'zh';
+
+const REGISTRY_LANGUAGES: readonly RegistryLanguage[] = ['ru', 'en', 'zh'];
 
 function buildTextEntries(
   screens: Record<string, { id: string; name: string; objects: TextCanvasObject[] }>,
@@ -59,6 +64,7 @@ function buildTextEntries(
         zh: obj.text.zh ?? '',
         subsystem: screenToSubsystem[screenId] ?? '',
         globalTextKey: obj.globalTextKey,
+        displayLanguage: obj.displayLanguage,
       });
     }
   }
@@ -78,10 +84,10 @@ function cell(row: Record<string, unknown>, ...names: string[]): string {
   return '';
 }
 
-function exportCsv(entries: TextEntry[]): void {
-  const header = ['Screen ID', 'Screen Name', 'Object ID', 'Subsystem', 'RU', 'EN', 'ZH'];
+function exportCsv(entries: TextEntry[], languages: readonly RegistryLanguage[]): void {
+  const header = ['Screen ID', 'Screen Name', 'Object ID', 'Subsystem', ...languages.map((language) => language.toUpperCase())];
   const rows = entries.map((e) => [
-    e.screenId, e.screenName, e.objectId, e.subsystem, e.ru, e.en, e.zh
+    e.screenId, e.screenName, e.objectId, e.subsystem, ...languages.map((language) => e[language])
   ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','));
   const csv = [header.join(','), ...rows].join('\r\n');
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
@@ -98,10 +104,12 @@ function isEmptyEntry(entry: Pick<TextEntry, 'ru' | 'en' | 'zh'>): boolean {
 }
 
 export function TextRegistryWorkspace(): React.ReactElement {
-  const { project, language, updateCanvasObject, deleteCanvasObjects } = useProjectStore();
+  const { project, language, updateCanvasObject, updateCanvasObjects, deleteCanvasObjects } = useProjectStore();
   const labels = UI_TEXT[language];
   const [search, setSearch] = useState('');
   const [filterSubsystem, setFilterSubsystem] = useState('');
+  const [visibleLanguages, setVisibleLanguages] = useState<Record<RegistryLanguage, boolean>>({ ru: true, en: true, zh: true });
+  const [bulkDisplayLanguage, setBulkDisplayLanguage] = useState<RegistryLanguage | 'inherit'>('inherit');
   const [editingCell, setEditingCell] = useState<{ id: string; field: 'ru' | 'en' | 'zh' } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
@@ -124,6 +132,8 @@ export function TextRegistryWorkspace(): React.ReactElement {
     [allEntries]
   );
 
+  const selectedLanguages = REGISTRY_LANGUAGES.filter((language) => visibleLanguages[language]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return allEntries.filter((e) => {
@@ -141,7 +151,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
   // translation. Rows with no RU/EN/ZH at all are empty placeholders by design,
   // not translation gaps — they get their own "Delete empty rows" cleanup action
   // instead of the untranslated warning.
-  const untranslated = filtered.filter((e) => (!e.en || !e.zh) && !isEmptyEntry(e)).length;
+  const untranslated = filtered.filter((entry) => selectedLanguages.some((language) => !entry[language]) && !isEmptyEntry(entry)).length;
   const emptyEntries = useMemo(() => filtered.filter(isEmptyEntry), [filtered]);
 
   const deleteEmptyRows = (): void => {
@@ -223,6 +233,32 @@ export function TextRegistryWorkspace(): React.ReactElement {
 
   const cellKey = (e: TextEntry, f: string): string => `${e.screenId}:${e.objectId}:${f}`;
 
+  const toggleLanguage = (selectedLanguage: RegistryLanguage): void => {
+    setVisibleLanguages((current) => {
+      if (current[selectedLanguage] && selectedLanguages.length === 1) return current;
+      return { ...current, [selectedLanguage]: !current[selectedLanguage] };
+    });
+  };
+
+  const applyDisplayLanguage = (): void => {
+    if (filtered.length === 0) return;
+    const targetIdsByScreen = new Map<string, Set<string>>();
+    for (const entry of filtered) {
+      const ids = targetIdsByScreen.get(entry.screenId) ?? new Set<string>();
+      ids.add(entry.objectId);
+      targetIdsByScreen.set(entry.screenId, ids);
+    }
+    for (const [screenId, objectIds] of targetIdsByScreen) {
+      const screen = project.screens[screenId];
+      if (!screen) continue;
+      updateCanvasObjects(screenId, screen.objects.map((object) => (
+        object.type === 'text' && objectIds.has(object.id)
+          ? { ...object, displayLanguage: bulkDisplayLanguage === 'inherit' ? null : bulkDisplayLanguage }
+          : object
+      )));
+    }
+  };
+
   return (
     <section className="workspace-root text-registry-workspace" aria-label={labels.textRegistryWorkspace}>
       <header className="workspace-section-header text-registry-header">
@@ -243,6 +279,43 @@ export function TextRegistryWorkspace(): React.ReactElement {
               placeholder={language === 'ru' ? 'Поиск по тексту или ID экрана…' : 'Search text or screen ID…'}
             />
           </div>
+          <fieldset className="text-registry-language-filter" aria-label={labels.textRegistryLanguages}>
+            <legend>{labels.textRegistryLanguages}</legend>
+            {REGISTRY_LANGUAGES.map((registryLanguage) => (
+              <label key={registryLanguage}>
+                <input
+                  type="checkbox"
+                  checked={visibleLanguages[registryLanguage]}
+                  disabled={visibleLanguages[registryLanguage] && selectedLanguages.length === 1}
+                  onChange={() => toggleLanguage(registryLanguage)}
+                  data-testid={`text-registry-language-${registryLanguage}`}
+                />
+                {registryLanguage.toUpperCase()}
+              </label>
+            ))}
+          </fieldset>
+          <div className="text-registry-bulk-language">
+            <label>
+              {labels.textRegistryLcdLanguage}
+              <select
+                value={bulkDisplayLanguage}
+                onChange={(event) => setBulkDisplayLanguage(event.target.value as RegistryLanguage | 'inherit')}
+              >
+                <option value="inherit">{labels.textRegistryFollowProjectLanguage}</option>
+                {REGISTRY_LANGUAGES.map((registryLanguage) => (
+                  <option key={registryLanguage} value={registryLanguage}>{registryLanguage.toUpperCase()}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              disabled={filtered.length === 0}
+              onClick={applyDisplayLanguage}
+              title={labels.textRegistryApplyLcdLanguageHint.replace('{count}', String(filtered.length))}
+            >
+              {labels.textRegistryApplyLcdLanguage} ({filtered.length})
+            </button>
+          </div>
           <select
             value={filterSubsystem}
             onChange={(e) => setFilterSubsystem(e.target.value)}
@@ -253,7 +326,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
           <button
             type="button"
             className="hmi-btn-primary"
-            onClick={() => exportCsv(filtered)}
+            onClick={() => exportCsv(filtered, selectedLanguages)}
             title={language === 'ru' ? 'Экспорт в CSV (с BOM для Excel)' : 'Export to CSV (BOM for Excel)'}
           >
             <Download size={14} />
@@ -295,9 +368,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
             <tr>
               <th>{language === 'ru' ? 'Экран' : 'Screen'}</th>
               <th>{language === 'ru' ? 'Подсистема' : 'Subsystem'}</th>
-              <th>RU</th>
-              <th>EN</th>
-              <th>ZH</th>
+              {selectedLanguages.map((registryLanguage) => <th key={registryLanguage}>{registryLanguage.toUpperCase()}</th>)}
               <th>{language === 'ru' ? 'Статус' : 'Status'}</th>
             </tr>
           </thead>
@@ -320,7 +391,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
                       <span className="text-registry-badge">{entry.subsystem}</span>
                     ) : null}
                   </td>
-                  {(['ru', 'en', 'zh'] as const).map((lang) => {
+                  {selectedLanguages.map((lang) => {
                     const ck = cellKey(entry, lang);
                     const isEditing = editingCell?.id === key && editingCell?.field === lang;
                     return (
@@ -365,7 +436,7 @@ export function TextRegistryWorkspace(): React.ReactElement {
             })}
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-registry-empty-row">
+                  <td colSpan={selectedLanguages.length + 3} className="text-registry-empty-row">
                   {labels.noEntriesFound}
                 </td>
               </tr>

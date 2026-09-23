@@ -41,8 +41,19 @@ Key types: `ScreenUxMetadata`, `StateUxMetadata`, `TransitionUxMetadata`, `Contr
 (role/purpose/intent per object), `UxTerminologyEntry` (preferred/forbidden labels per intent),
 `UxUserGoal` (start/success/failure states, required/prohibited intents, criticality),
 `UxScenarioDefinition` (a scripted `run_fsm_scenario`-compatible step list with pass/fail
-expectations), and `UxPolicySet` (ten boolean toggles plus `defaultLocale`, all defaulting to
-`true`/`'ru'`).
+expectations), and `UxPolicySet` (ten boolean toggles plus `defaultLocale` and
+`unintendedNavigationLoopMaxSize`, all defaulting to `true`/`'ru'`/`20`).
+
+`StateUxMetadata.isOverlay` marks a state that is only ever reached through a runtime overlay
+mechanism — e.g. a hardware-presence notification driven by a tag (USB/printer/PC connected or
+disconnected) — rather than through ordinary FSM navigation. Reachability-based rules
+(`ux.orphan-state`, `ux.error-state-without-recovery`, `ux.transition-to-unreachable-state`, and
+cycles in `ux.unintended-navigation-loop`) treat such a state as exempt: being unreachable from
+the initial state via normal transitions is expected for an overlay, not a defect. This was added
+after a real project's overlay-style states (paired `*_CONN`/`*_DISC` states with no incoming FSM
+transition) produced false-positive orphan/no-recovery errors — the project's own
+`hardwareNotifications` config was empty, so a fix scoped to that mechanism alone would not have
+helped; `isOverlay` is the general, contract-level escape hatch.
 
 ### Extraction layer
 

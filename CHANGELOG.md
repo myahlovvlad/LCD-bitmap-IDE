@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.1.21
+
+- Added a Unicode-safe BDF bitmap-font exporter and round-trip coverage with
+  the existing BDF importer.
+- Added Text Registry language-column selection, CSV export scoping and bulk
+  display-language assignment for LCD text.
+- Added Runtime scenario selection, headless scenario execution, an
+  interactive user-route map and a live diagnostic-warming countdown.
+- Added a manual software-update check against the latest GitHub Release.
+- Expanded GitHub-hosted Tauri CI with Windows, Linux, Apple Silicon macOS and
+  Intel macOS package artifacts.
 - Added custom Unicode glyph authoring and quick `?`/`!` insertion in the LCD
   editor.
 - Added a stateful ECROS-5501 HMI simulator covering wavelength/filter

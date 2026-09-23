@@ -65,7 +65,10 @@ export interface ProjectUxAnalysisReport {
 
 export function computeUxCoverage(graph: ProjectUxGraph): ProjectUxAnalysisReport['coverage'] {
   const initialSet = new Set(initialStateIds(graph));
-  const errorStates = graph.states.filter((s) => s.role === 'error');
+  // Overlay error states (e.g. hardware-presence notifications) are excluded: "recovery" for them
+  // means the overlay condition clearing, not an FSM path, so they are not meaningful denominator
+  // members for this metric.
+  const errorStates = graph.states.filter((s) => s.role === 'error' && !s.isOverlay);
   const errorStatesCovered = errorStates.filter((s) => {
     if (hasPathTo(graph, s.stateId, initialSet)) return true;
     return Boolean(s.meta.recoveryStateId) && hasPathTo(graph, s.stateId, new Set([s.meta.recoveryStateId!]));
