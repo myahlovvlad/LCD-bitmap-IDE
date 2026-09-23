@@ -27,6 +27,7 @@ import type {
 } from '../../domain/project';
 import type { ValueExpression } from '../../domain/tag';
 import { useProjectStore } from '../../renderer/store/projectStore';
+import { DraftTextInput } from '../../renderer/components/DraftTextInput';
 import { UI_TEXT, type UiText } from '../../renderer/config/i18n';
 import { assertImportFileSize } from '../../shared/lib/security';
 import { ValidationPanel } from '../validation/ValidationPanel';
@@ -51,6 +52,10 @@ interface InteractionState {
   elementId: string;
   startX: number;
   startY: number;
+  // Live pointer position, updated on every pointermove as plain local state
+  // (no store commit). Defaults to startX/Y until the pointer actually moves.
+  currentX: number;
+  currentY: number;
   originX: number;
   originY: number;
   originWidth: number;
@@ -125,6 +130,8 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
       elementId: element.id,
       startX: event.clientX,
       startY: event.clientY,
+      currentX: event.clientX,
+      currentY: event.clientY,
       originX: element.x,
       originY: element.y,
       originWidth: element.width,
@@ -146,6 +153,8 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
       elementId: element.id,
       startX: event.clientX,
       startY: event.clientY,
+      currentX: event.clientX,
+      currentY: event.clientY,
       originX: element.x,
       originY: element.y,
       originWidth: element.width,
@@ -153,25 +162,53 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
     });
   };
 
+  // Purely local — tracks the live pointer position during a drag/resize without
+  // touching the project store. Committing a mutation on every pointermove used to
+  // run the full command-bus pipeline (including two full-project validateProject()
+  // passes) per event, which was fine on a small project but froze the app once the
+  // FSM grew into the hundreds of states. The store is only written once, in
+  // commitInteraction below, when the gesture ends.
   const updateInteraction = (event: React.PointerEvent): void => {
     if (!interaction) {
       return;
     }
-    const dx = (event.clientX - interaction.startX) / zoom;
-    const dy = (event.clientY - interaction.startY) / zoom;
+    setInteraction({ ...interaction, currentX: event.clientX, currentY: event.clientY });
+  };
+
+  // Computes this gesture's not-yet-committed geometry, purely from local state.
+  // Returned overrides are merged into the affected element(s) at render time so
+  // the drag/resize is visually live without any store mutation in the loop.
+  const liveOverrides = (): Record<string, Partial<Pick<ControlPanelElement, 'x' | 'y' | 'width' | 'height'>>> => {
+    if (!interaction) return {};
+    const dx = (interaction.currentX - interaction.startX) / zoom;
+    const dy = (interaction.currentY - interaction.startY) / zoom;
     const grid = panel.snapToGrid ? panel.gridSize : 1;
     if (interaction.mode === 'resize') {
-      updateControlElement(interaction.elementId, {
-        width: Math.max(8, snap(interaction.originWidth + dx, grid)),
-        height: Math.max(8, snap(interaction.originHeight + dy, grid))
-      }, { history: false });
-      return;
+      return {
+        [interaction.elementId]: {
+          width: Math.max(8, snap(interaction.originWidth + dx, grid)),
+          height: Math.max(8, snap(interaction.originHeight + dy, grid))
+        }
+      };
     }
     const origins = interaction.elementOrigins ?? { [interaction.elementId]: { x: interaction.originX, y: interaction.originY } };
-    updateControlElements(Object.fromEntries(Object.entries(origins).map(([id, origin]) => [id, {
+    return Object.fromEntries(Object.entries(origins).map(([id, origin]) => [id, {
       x: snap(origin.x + dx, grid),
       y: snap(origin.y + dy, grid)
-    }])), { history: false });
+    }]));
+  };
+
+  // The one and only store commit for a drag/resize gesture, fired on pointerup/cancel.
+  const commitInteraction = (): void => {
+    if (!interaction) return;
+    const overrides = liveOverrides();
+    if (interaction.mode === 'resize') {
+      const override = overrides[interaction.elementId];
+      if (override) updateControlElement(interaction.elementId, override, { history: false });
+    } else {
+      updateControlElements(overrides, { history: false });
+    }
+    setInteraction(null);
   };
 
   return (
@@ -208,7 +245,7 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
           </button>
         </header>
 
-        <div className="control-panel-stage" onPointerMove={updateInteraction} onPointerUp={() => setInteraction(null)} onPointerCancel={() => setInteraction(null)}>
+        <div className="control-panel-stage" onPointerMove={updateInteraction} onPointerUp={commitInteraction} onPointerCancel={commitInteraction}>
           <svg
             className="control-panel-canvas"
             width={panel.width * zoom}
@@ -224,28 +261,38 @@ export function ControlPanelWorkspace({ requestedElementId }: { requestedElement
             }}
           >
             {panel.gridEnabled ? <GridPattern width={panel.width} height={panel.height} size={panel.gridSize} /> : null}
-            {panel.elementOrder.map((elementId) => {
-              const element = panel.elements[elementId];
-              if (!element?.visible) {
-                return null;
-              }
-              return (
-                <ControlElementView
-                  key={element.id}
-                  element={element}
-                  selected={selectedControlElementIds.includes(element.id)}
-                  tokens={panel.tokens}
-                  language={language}
-                  onPointerDown={(event) => beginDrag(event, element)}
-                  onResizePointerDown={(event) => beginResize(event, element)}
-                />
-              );
-            })}
+            {(() => {
+              const overrides = liveOverrides();
+              return panel.elementOrder.map((elementId) => {
+                const element = panel.elements[elementId];
+                if (!element?.visible) {
+                  return null;
+                }
+                const override = overrides[elementId];
+                const liveElement = override ? { ...element, ...override } : element;
+                return (
+                  <ControlElementView
+                    key={element.id}
+                    element={liveElement}
+                    selected={selectedControlElementIds.includes(element.id)}
+                    tokens={panel.tokens}
+                    language={language}
+                    onPointerDown={(event) => beginDrag(event, element)}
+                    onResizePointerDown={(event) => beginResize(event, element)}
+                  />
+                );
+              });
+            })()}
           </svg>
         </div>
 
         <footer className="control-panel-status">
-          <span>{primary ? `x ${Math.round(primary.x)}, y ${Math.round(primary.y)}` : labels.noSelection}</span>
+          <span>{primary ? (() => {
+            const override = liveOverrides()[primary.id];
+            const x = override?.x ?? primary.x;
+            const y = override?.y ?? primary.y;
+            return `x ${Math.round(x)}, y ${Math.round(y)}`;
+          })() : labels.noSelection}</span>
           <span>{labels.zoom} {Math.round(zoom * 100)}%</span>
           <span>{labels.grid} {panel.gridEnabled ? `${panel.gridSize}px` : labels.off}</span>
           <span>{labels.snap} {panel.snapToGrid ? labels.on : labels.off}</span>
@@ -463,7 +510,7 @@ function ButtonFields({
   };
   return (
     <>
-      <label>{labels.labelText}<input value={button.label} onChange={(event) => onUpdate({ label: event.target.value })} /></label>
+      <label>{labels.labelText}<DraftTextInput value={button.label} onCommit={(label) => onUpdate({ label })} /></label>
       <label>
         {labels.shape}
         <select value={button.shape} onChange={(event) => onUpdate({ shape: event.target.value as ControlPanelButton['shape'] })}>
@@ -477,7 +524,7 @@ function ButtonFields({
           {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
         </select>
       </label>
-      <label>{labels.keyCode}<input value={button.keyCode ?? ''} onChange={(event) => onUpdate({ keyCode: event.target.value || undefined })} /></label>
+      <label>{labels.keyCode}<DraftTextInput value={button.keyCode ?? ''} onCommit={(keyCode) => onUpdate({ keyCode: keyCode || undefined })} /></label>
       <label>
         {labels.allowedStates}
         <select multiple value={button.allowedStates ?? []} onChange={(event) => onUpdate({ allowedStates: selectedValues(event) })}>

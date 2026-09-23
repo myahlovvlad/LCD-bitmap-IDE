@@ -20,6 +20,7 @@ import {
 } from '@xyflow/react';
 import { Copy, Expand, HelpCircle, LayoutGrid, Minimize2, Monitor, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Search, Trash2 } from 'lucide-react';
 import { useWorkspaceRouter } from '../../app/WorkspaceRouter';
+import { DraftTextInput } from '../../renderer/components/DraftTextInput';
 import { LCDCanvas } from '../../renderer/components/LCDCanvas';
 import { StateNode, type FsmStateNodeData } from '../../renderer/components/StateNode';
 import { FontRenderer } from '../../renderer/core/fonts';
@@ -1834,45 +1835,6 @@ function BackendDescriptionInput({
         }}
       />
     </label>
-  );
-}
-
-function DraftTextInput({
-  value,
-  disabled,
-  onCommit
-}: {
-  value: string;
-  disabled?: boolean;
-  onCommit: (value: string) => void;
-}): React.ReactElement {
-  const [draft, setDraft] = useState(value);
-  const cancelledRef = useRef(false);
-
-  useEffect(() => setDraft(value), [value]);
-
-  return (
-    <input
-      value={draft}
-      disabled={disabled}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={() => {
-        if (cancelledRef.current) {
-          cancelledRef.current = false;
-          return;
-        }
-        if (draft !== value) onCommit(draft);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          cancelledRef.current = true;
-          setDraft(value);
-          event.currentTarget.blur();
-        } else if (event.key === 'Enter') {
-          event.currentTarget.blur();
-        }
-      }}
-    />
   );
 }
 
